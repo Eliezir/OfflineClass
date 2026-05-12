@@ -1,5 +1,5 @@
 <p align="center">
-  <img src="assets/logo.png" alt="OfflineClass — Avaliações sem internet, sincronizadas na sua rede local" width="600"/>
+  <img src="assets/logo-horizontal.png" alt="OfflineClass — Avaliações sem internet, sincronizadas na sua rede local" width="600"/>
 </p>
 
 <p align="center">
