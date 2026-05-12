@@ -12,6 +12,7 @@ Servidor de formulário offline para validar a ideia base do projeto:
   expõe um QR code apontando para o IP da LAN como fallback.
 """
 
+import io
 import socket
 import sqlite3
 from contextlib import asynccontextmanager
@@ -368,11 +369,14 @@ def conexao() -> dict:
 def qr_code() -> Response:
     # O QR aponta pro IP da LAN — universalmente alcançável se o aluno está
     # na mesma rede. Não depende de o dispositivo resolver mDNS.
-    svg = segno.make(url_ip(), error="m").svg_inline(
-        scale=6, dark="#1f2937", light="#ffffff"
+    # Geramos o SVG via save(), que inclui XML decl + xmlns — necessário
+    # quando o navegador carrega via <img src>; svg_inline() omite ambos.
+    buf = io.BytesIO()
+    segno.make(url_ip(), error="m").save(
+        buf, kind="svg", scale=6, dark="#1f2937", light="#ffffff"
     )
     return Response(
-        content=svg,
+        content=buf.getvalue(),
         media_type="image/svg+xml",
         headers={"Cache-Control": "no-store"},
     )
