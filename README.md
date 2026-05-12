@@ -68,13 +68,18 @@ cd OfflineClass
 # instruções de setup do server e client
 ```
 
+## Contexto acadêmico
+
+Projeto desenvolvido para a disciplina de **Laboratório de Sistemas Operacionais e Redes (LSOR)** do curso de **Sistemas de Informação** do **Instituto Federal de Alagoas (IFAL) — Campus Maceió**.
+
+- **Período:** 2026.1
+- **Professor:** Breno Jacinto
+
 ## Equipe
 
 - **Eliezir Moreira**
 - **Pedro Roberto**
 - **Raphael Phillipe**
-
-Projeto desenvolvido como trabalho acadêmico nas disciplinas de Sistemas Operacionais e Redes.
 
 ## Licença
 
