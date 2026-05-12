@@ -1,0 +1,7 @@
+{
+  "name": "offlineclass",
+  "private": true,
+  "version": "0.0.0",
+  "description": "OfflineClass — avaliações digitais para salas sem internet.",
+  "packageManager": "pnpm@9.12.0"
+}
