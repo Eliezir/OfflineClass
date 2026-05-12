@@ -8,24 +8,77 @@ Servidor de formulário offline para validar a ideia base do projeto:
 - Aberto em 0.0.0.0 para ser acessível na rede local
 - Presença em memória: alunos enviam heartbeat a cada 5s; professor vê
   quem está online consultando /conectados.
+- Descoberta sem IP: registra `offlineclass.local` via mDNS (zeroconf) e
+  expõe um QR code apontando para o IP da LAN como fallback.
 """
 
+import socket
 import sqlite3
 from contextlib import asynccontextmanager
 from datetime import datetime, timedelta
 from pathlib import Path
 
+import segno
 import uvicorn
 from fastapi import FastAPI, Form
-from fastapi.responses import HTMLResponse
+from fastapi.responses import HTMLResponse, Response
+from zeroconf import ServiceInfo
+from zeroconf.asyncio import AsyncZeroconf
 
 DB_PATH = Path(__file__).parent / "respostas.db"
 TIMER_DURATION = timedelta(minutes=10)
 PRESENCA_TIMEOUT = timedelta(seconds=10)
+PORT = 8000
+HOSTNAME = "offlineclass"
 
 server_started_at: datetime | None = None
+ip_local: str = "127.0.0.1"
+aiozc: AsyncZeroconf | None = None
 # nome -> último heartbeat. Estado efêmero, vive só na execução.
 conectados: dict[str, datetime] = {}
+
+
+def detectar_ip_local() -> str:
+    """IP da NIC que sairia pra internet — sem precisar de internet, só do routing table."""
+    s = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
+    try:
+        s.connect(("8.8.8.8", 80))
+        return s.getsockname()[0]
+    except OSError:
+        return "127.0.0.1"
+    finally:
+        s.close()
+
+
+async def registrar_mdns(ip: str) -> AsyncZeroconf | None:
+    """Publica `offlineclass.local` na LAN via multicast DNS.
+
+    Se a rede bloqueia multicast (algumas WiFi corporativas fazem), falha
+    silenciosamente — o QR code continua sendo o caminho garantido.
+    """
+    try:
+        info = ServiceInfo(
+            type_="_http._tcp.local.",
+            name="OfflineClass._http._tcp.local.",
+            addresses=[socket.inet_aton(ip)],
+            port=PORT,
+            server=f"{HOSTNAME}.local.",
+        )
+        z = AsyncZeroconf()
+        await z.async_register_service(info)
+        return z
+    except Exception as e:
+        print(f"[mDNS] registro falhou ({type(e).__name__}): {e!r}")
+        print("[mDNS] alunos só conseguirão acessar via IP ou QR code.")
+        return None
+
+
+def url_ip() -> str:
+    return f"http://{ip_local}:{PORT}/"
+
+
+def url_mdns() -> str:
+    return f"http://{HOSTNAME}.local:{PORT}/"
 
 
 def init_db() -> None:
@@ -44,10 +97,19 @@ def init_db() -> None:
 
 @asynccontextmanager
 async def lifespan(_: FastAPI):
-    global server_started_at
+    global server_started_at, ip_local, aiozc
     server_started_at = datetime.now()
+    ip_local = detectar_ip_local()
+    aiozc = await registrar_mdns(ip_local)
     init_db()
-    yield
+    print(f"[OfflineClass] IP local: {ip_local}")
+    print(f"[OfflineClass] URL IP: {url_ip()}")
+    print(f"[OfflineClass] URL mDNS: {url_mdns()}")
+    try:
+        yield
+    finally:
+        if aiozc is not None:
+            await aiozc.async_close()
 
 
 app = FastAPI(title="OfflineClass — PoC", lifespan=lifespan)
@@ -152,6 +214,12 @@ PAGE_PROFESSOR = """\
   <style>
     body { font-family: system-ui, sans-serif; max-width: 720px; margin: 3rem auto; padding: 0 1rem; color: #1f2937; }
     h1 { margin-bottom: .25rem; }
+    .acesso { display: flex; gap: 1.5rem; align-items: center; padding: 1.25rem; border: 1px solid #e5e7eb; border-radius: .5rem; background: #f9fafb; margin: 1.5rem 0; }
+    .acesso .qr svg { display: block; }
+    .acesso .urls { flex: 1; }
+    .acesso h3 { margin: 0 0 .5rem; font-size: .95rem; }
+    .acesso .url { font-family: ui-monospace, "SF Mono", Consolas, monospace; font-size: .95rem; padding: .35rem .6rem; background: #fff; border: 1px solid #e5e7eb; border-radius: .375rem; margin-bottom: .4rem; word-break: break-all; }
+    .acesso .hint { font-size: .8rem; color: #6b7280; margin-top: .35rem; }
     .stats { display: flex; gap: 1rem; margin: 1.5rem 0; }
     .stat { flex: 1; padding: 1rem; border: 1px solid #e5e7eb; border-radius: .5rem; background: #f9fafb; }
     .stat .label { font-size: .8rem; text-transform: uppercase; color: #6b7280; letter-spacing: .05em; }
@@ -167,6 +235,17 @@ PAGE_PROFESSOR = """\
 <body>
   <h1>Painel do professor</h1>
   <p>Alunos conectados em tempo real (atualiza a cada 2 segundos).</p>
+
+  <div class="acesso">
+    <div class="qr"><img src="/qr.svg" alt="QR code de acesso" width="200" height="200" /></div>
+    <div class="urls">
+      <h3>Como os alunos entram</h3>
+      <div class="url" id="url-mdns">—</div>
+      <p class="hint">Funciona em iOS/macOS/Windows 10+. Se não resolver, use o IP:</p>
+      <div class="url" id="url-ip">—</div>
+      <p class="hint">Ou aponte a câmera para o QR ao lado.</p>
+    </div>
+  </div>
 
   <div class="stats">
     <div class="stat">
@@ -188,6 +267,11 @@ PAGE_PROFESSOR = """\
       if (segundos < 2) return 'agora';
       return `há ${segundos}s`;
     }
+
+    fetch('/conexao').then(r => r.json()).then(c => {
+      document.getElementById('url-mdns').textContent = c.url_mdns;
+      document.getElementById('url-ip').textContent = c.url_ip;
+    }).catch(() => {});
 
     async function atualizar() {
       try {
@@ -273,6 +357,25 @@ def timer() -> dict:
         "restante_segundos": segundos,
         "restante_formatado": f"{segundos // 60:02d}:{segundos % 60:02d}",
     }
+
+
+@app.get("/conexao")
+def conexao() -> dict:
+    return {"url_ip": url_ip(), "url_mdns": url_mdns()}
+
+
+@app.get("/qr.svg")
+def qr_code() -> Response:
+    # O QR aponta pro IP da LAN — universalmente alcançável se o aluno está
+    # na mesma rede. Não depende de o dispositivo resolver mDNS.
+    svg = segno.make(url_ip(), error="m").svg_inline(
+        scale=6, dark="#1f2937", light="#ffffff"
+    )
+    return Response(
+        content=svg,
+        media_type="image/svg+xml",
+        headers={"Cache-Control": "no-store"},
+    )
 
 
 @app.get("/respostas")
