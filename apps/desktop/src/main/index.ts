@@ -8,6 +8,7 @@ import { runMigrations } from './db/migrate'
 import { publishMdns, type MdnsHandle } from './discovery/mdns'
 import { registerIpcHandlers } from './ipc'
 import { startServer, type ServerHandle } from './server'
+import { Rooms } from './sessions/rooms'
 
 const DEFAULT_PORT = 8000
 
@@ -47,21 +48,26 @@ async function bootstrap(): Promise<void> {
   const db = getDb()
   runMigrations(db)
 
-  // 2. Start the LAN-facing Hono server (HTTP + WS upgrade).
-  serverHandle = await startServer(port)
+  // 2. Shared WS subscription registry — populated by /api/ws upgrades and
+  //    consumed by IPC handlers when they need to broadcast.
+  const rooms = new Rooms()
 
-  // 3. Announce the service over mDNS so students can hit offlineclass.local.
+  // 3. Start the LAN-facing Hono server (HTTP + WS upgrade).
+  serverHandle = await startServer(port, { db, rooms })
+
+  // 4. Announce the service over mDNS so students can hit offlineclass.local.
   mdnsHandle = await publishMdns(serverHandle.port)
 
-  // 4. Wire IPC handlers — depends on the server (for port) and mDNS (for name).
+  // 5. Wire IPC handlers.
   registerIpcHandlers({
     auth: { db },
     discovery: { port: serverHandle.port, mdnsName: mdnsHandle.name },
     exams: { db },
-    questions: { db }
+    questions: { db },
+    sessions: { db, rooms }
   })
 
-  // 5. UI.
+  // 6. UI.
   createWindow()
 }
 

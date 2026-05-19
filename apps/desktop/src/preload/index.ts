@@ -10,6 +10,8 @@ import type {
   Question,
   QuestionInput,
   RegisterInput,
+  SessionCreateInput,
+  SessionDetail,
   Teacher
 } from '@offlineclass/shared'
 
@@ -18,10 +20,12 @@ const api = {
     getStatus: (): Promise<DiscoveryStatus> => ipcRenderer.invoke('discovery.getStatus')
   },
   auth: {
-    register: (input: RegisterInput): Promise<Teacher> => ipcRenderer.invoke('auth.register', input),
+    register: (input: RegisterInput): Promise<Teacher> =>
+      ipcRenderer.invoke('auth.register', input),
     login: (input: LoginInput): Promise<Teacher> => ipcRenderer.invoke('auth.login', input),
     me: (): Promise<Teacher | null> => ipcRenderer.invoke('auth.me'),
-    logout: (): Promise<null> => ipcRenderer.invoke('auth.logout')
+    logout: (): Promise<null> => ipcRenderer.invoke('auth.logout'),
+    getToken: (): Promise<string | null> => ipcRenderer.invoke('auth.getToken')
   },
   exams: {
     list: (): Promise<ExamSummary[]> => ipcRenderer.invoke('exams.list'),
@@ -40,6 +44,16 @@ const api = {
     delete: (id: string): Promise<null> => ipcRenderer.invoke('questions.delete', id),
     reorder: (examId: string, orderedIds: string[]): Promise<Question[]> =>
       ipcRenderer.invoke('questions.reorder', examId, orderedIds)
+  },
+  sessions: {
+    create: (input: SessionCreateInput): Promise<SessionDetail> =>
+      ipcRenderer.invoke('sessions.create', input),
+    get: (id: string): Promise<SessionDetail> => ipcRenderer.invoke('sessions.get', id),
+    active: (): Promise<SessionDetail | null> => ipcRenderer.invoke('sessions.active'),
+    start: (id: string): Promise<SessionDetail> => ipcRenderer.invoke('sessions.start', id),
+    end: (id: string): Promise<SessionDetail> => ipcRenderer.invoke('sessions.end', id),
+    broadcastLobby: (id: string): Promise<null> =>
+      ipcRenderer.invoke('sessions.broadcastLobby', id)
   }
 }
 

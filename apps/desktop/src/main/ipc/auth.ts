@@ -91,4 +91,15 @@ export function registerAuthHandlers(ctx: AuthContext): void {
     }
     return null
   })
+
+  // Returns the active teacher's session token (or null). The renderer
+  // needs it to authenticate the teacher-side WebSocket. Safe to expose
+  // inside the renderer process — context isolation keeps it from page
+  // scripts, and the token is the same one persisted to userData.
+  ipcMain.handle('auth.getToken', async (): Promise<string | null> => {
+    const token = loadActiveToken()
+    if (!token) return null
+    const session = resolveSession(db, token)
+    return session ? token : null
+  })
 }
