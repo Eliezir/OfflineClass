@@ -1,5 +1,9 @@
+import { existsSync, readFileSync } from 'node:fs'
+import { join, resolve } from 'node:path'
 import { serve, type ServerType } from '@hono/node-server'
+import { serveStatic } from '@hono/node-server/serve-static'
 import { createNodeWebSocket } from '@hono/node-ws'
+import { app as electronApp } from 'electron'
 import { Hono, type Context } from 'hono'
 import { and, eq } from 'drizzle-orm'
 import {
@@ -182,6 +186,33 @@ export async function startServer(port: number, deps: ServerDeps): Promise<Serve
     } catch (err) {
       return mapSessionError(c, err)
     }
+  })
+
+  // ---- Static SPA --------------------------------------------------------
+  // Serves apps/student-web/dist on every non-API path so a phone scanning
+  // the QR loads the student SPA from the same origin as the API (no CORS).
+  // The path is resolved against the Electron app dir; Stage 7 will adjust
+  // it for the packaged asar layout.
+  const studentWebRoot = resolve(electronApp.getAppPath(), '../student-web/dist')
+
+  app.use('*', async (c, next) => {
+    if (c.req.path.startsWith('/api/')) return next()
+    return next()
+  })
+  app.use('*', serveStatic({ root: studentWebRoot }))
+
+  // SPA fallback: any unmatched non-API GET serves index.html so client-side
+  // routing works on hard refresh / direct URL load.
+  app.get('*', (c) => {
+    if (c.req.path.startsWith('/api/')) return c.json({ error: 'not-found' }, 404)
+    const indexPath = join(studentWebRoot, 'index.html')
+    if (!existsSync(indexPath)) {
+      return c.text(
+        'student-web bundle not built yet — run `pnpm --filter @offlineclass/student-web build`',
+        503
+      )
+    }
+    return c.html(readFileSync(indexPath, 'utf-8'))
   })
 
   // ---- WebSocket --------------------------------------------------------
