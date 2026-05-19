@@ -14,21 +14,29 @@ interface Props {
 export default function EssayEditor({ question, onSave, isSaving }: Props): React.JSX.Element {
   const [prompt, setPrompt] = useState(question.prompt)
   const [error, setError] = useState<string | null>(null)
+  const [savedFlash, setSavedFlash] = useState(false)
 
   useEffect(() => {
     setPrompt(question.prompt)
     setError(null)
+    setSavedFlash(false)
   }, [question.id])
 
   const onSubmit: React.FormEventHandler<HTMLFormElement> = (e) => {
     e.preventDefault()
     setError(null)
+    setSavedFlash(false)
     const parsed = EssayInput.safeParse({ kind: 'essay', prompt })
     if (!parsed.success) {
       setError(parsed.error.issues[0]?.message ?? 'Dados inválidos')
       return
     }
-    onSave(parsed.data).catch((err: Error) => setError(err.message))
+    onSave(parsed.data)
+      .then(() => {
+        setSavedFlash(true)
+        setTimeout(() => setSavedFlash(false), 2000)
+      })
+      .catch((err: Error) => setError(err.message))
   }
 
   return (
@@ -40,14 +48,14 @@ export default function EssayEditor({ question, onSave, isSaving }: Props): Reac
           value={prompt}
           onChange={(e) => setPrompt(e.target.value)}
           rows={6}
-          required
         />
         <p className="text-muted-foreground text-xs">
           Os alunos respondem em campo livre. Sem correção automática.
         </p>
       </div>
       {error && <p className="text-destructive text-sm">{error}</p>}
-      <div className="flex justify-end">
+      <div className="flex items-center justify-end gap-3">
+        {savedFlash && <span className="text-muted-foreground text-sm">Salvo ✓</span>}
         <Button type="submit" disabled={isSaving}>
           {isSaving ? 'Salvando…' : 'Salvar questão'}
         </Button>

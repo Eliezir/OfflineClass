@@ -22,12 +22,14 @@ export default function McqEditor({ question, onSave, isSaving }: Props): React.
   const [prompt, setPrompt] = useState(question.prompt)
   const [options, setOptions] = useState<McqOption[]>(question.options)
   const [error, setError] = useState<string | null>(null)
+  const [savedFlash, setSavedFlash] = useState(false)
 
   // When the user selects a different question, swap state in.
   useEffect(() => {
     setPrompt(question.prompt)
     setOptions(question.options)
     setError(null)
+    setSavedFlash(false)
   }, [question.id])
 
   const correctId = options.find((o) => o.correct)?.id ?? null
@@ -51,13 +53,19 @@ export default function McqEditor({ question, onSave, isSaving }: Props): React.
   const onSubmit: React.FormEventHandler<HTMLFormElement> = (e) => {
     e.preventDefault()
     setError(null)
+    setSavedFlash(false)
     const draft: unknown = { kind: 'mcq', prompt, options }
     const parsed = McqInput.safeParse(draft)
     if (!parsed.success) {
       setError(parsed.error.issues[0]?.message ?? 'Dados inválidos')
       return
     }
-    onSave(parsed.data).catch((err: Error) => setError(err.message))
+    onSave(parsed.data)
+      .then(() => {
+        setSavedFlash(true)
+        setTimeout(() => setSavedFlash(false), 2000)
+      })
+      .catch((err: Error) => setError(err.message))
   }
 
   return (
@@ -69,7 +77,6 @@ export default function McqEditor({ question, onSave, isSaving }: Props): React.
           value={prompt}
           onChange={(e) => setPrompt(e.target.value)}
           rows={3}
-          required
         />
       </div>
 
@@ -90,7 +97,6 @@ export default function McqEditor({ question, onSave, isSaving }: Props): React.
                 onChange={(e) => updateOption(opt.id, { text: e.target.value })}
                 placeholder={`Opção ${String.fromCharCode(65 + idx)}`}
                 className="flex-1"
-                required
               />
               <Button
                 type="button"
@@ -112,7 +118,8 @@ export default function McqEditor({ question, onSave, isSaving }: Props): React.
 
       {error && <p className="text-destructive text-sm">{error}</p>}
 
-      <div className="flex justify-end">
+      <div className="flex items-center justify-end gap-3">
+        {savedFlash && <span className="text-muted-foreground text-sm">Salvo ✓</span>}
         <Button type="submit" disabled={isSaving}>
           {isSaving ? 'Salvando…' : 'Salvar questão'}
         </Button>
