@@ -1,5 +1,7 @@
 import { createHashRouter } from 'react-router-dom'
 
+import ExamEditorRoute from '../routes/exams/Editor'
+import ExamListRoute from '../routes/exams/List'
 import HomeRoute from '../routes/Home'
 import LoginRoute from '../routes/Login'
 import RegisterRoute from '../routes/Register'
@@ -27,6 +29,22 @@ export const router = createHashRouter([
     element: (
       <RequireAuth>
         <HomeRoute />
+      </RequireAuth>
+    )
+  },
+  {
+    path: '/exams',
+    element: (
+      <RequireAuth>
+        <ExamListRoute />
+      </RequireAuth>
+    )
+  },
+  {
+    path: '/exams/:id',
+    element: (
+      <RequireAuth>
+        <ExamEditorRoute />
       </RequireAuth>
     )
   }

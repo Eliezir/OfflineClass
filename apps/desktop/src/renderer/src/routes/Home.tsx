@@ -1,5 +1,5 @@
 import { useQuery, useQueryClient } from '@tanstack/react-query'
-import { useNavigate } from 'react-router-dom'
+import { Link, useNavigate } from 'react-router-dom'
 
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
@@ -42,8 +42,8 @@ export default function HomeRoute(): React.JSX.Element {
             <CardDescription>Crie e edite provas para aplicar na sala.</CardDescription>
           </CardHeader>
           <CardContent>
-            <Button disabled variant="secondary">
-              Em breve (Stage 2)
+            <Button asChild>
+              <Link to="/exams">Abrir provas</Link>
             </Button>
           </CardContent>
         </Card>

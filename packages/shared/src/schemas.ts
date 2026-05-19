@@ -51,11 +51,13 @@ export const McqInput = z.object({
       'Exatamente uma opção correta'
     )
 })
+export type McqInput = z.infer<typeof McqInput>
 
 export const EssayInput = z.object({
   kind: z.literal('essay'),
   prompt: z.string().min(1, 'Enunciado obrigatório').max(2000)
 })
+export type EssayInput = z.infer<typeof EssayInput>
 
 export const QuestionInput = z.discriminatedUnion('kind', [McqInput, EssayInput])
 export type QuestionInput = z.infer<typeof QuestionInput>
