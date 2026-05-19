@@ -6,6 +6,7 @@ import {
   Question,
   SessionAnswersReview,
   SessionDetail,
+  SessionSummary,
   Teacher,
   type ExamInput,
   type ExamUpdate,
@@ -19,6 +20,7 @@ const TeacherOrNull = Teacher.nullable()
 const ExamSummaries = z.array(ExamSummary)
 const QuestionList = z.array(Question)
 const SessionOrNull = SessionDetail.nullable()
+const SessionSummaries = z.array(SessionSummary)
 
 export const api = {
   discovery: {
@@ -55,6 +57,7 @@ export const api = {
       QuestionList.parse(await window.api.questions.reorder(examId, orderedIds))
   },
   sessions: {
+    list: async () => SessionSummaries.parse(await window.api.sessions.list()),
     create: async (input: SessionCreateInput) =>
       SessionDetail.parse(await window.api.sessions.create(input)),
     get: async (id: string) => SessionDetail.parse(await window.api.sessions.get(id)),

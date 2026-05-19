@@ -11,6 +11,7 @@ import type {
   SessionLobbyStudent,
   SessionPublic,
   SessionStatus,
+  SessionSummary,
   StudentAnswerReview,
   StudentAnswerSnapshot,
   StudentExam,
@@ -167,6 +168,45 @@ export function endSession(db: Db, sessionId: string, ownerId: string): SessionD
     .where(eq(examSessions.id, sessionId))
     .run()
   return getSession(db, sessionId, ownerId)
+}
+
+export function listSessionsForOwner(db: Db, ownerId: string): SessionSummary[] {
+  const rows = db
+    .select({
+      id: examSessions.id,
+      examId: examSessions.examId,
+      examTitle: exams.title,
+      status: examSessions.status,
+      durationMinutes: examSessions.durationMinutes,
+      createdAt: examSessions.createdAt,
+      startedAt: examSessions.startedAt,
+      endedAt: examSessions.endedAt,
+      studentsCount: sql<number>`(
+        SELECT COUNT(*) FROM ${students} WHERE ${students.sessionId} = ${examSessions.id}
+      )`,
+      submittedCount: sql<number>`(
+        SELECT COUNT(*) FROM ${students}
+        WHERE ${students.sessionId} = ${examSessions.id}
+          AND ${students.submittedAt} IS NOT NULL
+      )`
+    })
+    .from(examSessions)
+    .innerJoin(exams, eq(exams.id, examSessions.examId))
+    .where(eq(examSessions.ownerId, ownerId))
+    .orderBy(desc(examSessions.createdAt))
+    .all()
+  return rows.map((r) => ({
+    id: r.id,
+    examId: r.examId,
+    examTitle: r.examTitle,
+    status: r.status as SessionStatus,
+    durationMinutes: r.durationMinutes,
+    studentsCount: Number(r.studentsCount),
+    submittedCount: Number(r.submittedCount),
+    createdAt: r.createdAt.getTime(),
+    startedAt: r.startedAt ? r.startedAt.getTime() : null,
+    endedAt: r.endedAt ? r.endedAt.getTime() : null
+  }))
 }
 
 export function findActiveSessionForOwner(db: Db, ownerId: string): SessionDetail | null {

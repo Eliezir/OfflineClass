@@ -275,3 +275,18 @@ export const SessionAnswersReview = z.object({
   answers: z.array(StudentAnswerReview)
 })
 export type SessionAnswersReview = z.infer<typeof SessionAnswersReview>
+
+// Compact row for the "activities applied" list on the teacher Home.
+export const SessionSummary = z.object({
+  id: z.string(),
+  examId: z.string(),
+  examTitle: z.string(),
+  status: SessionStatus,
+  durationMinutes: z.number().int(),
+  studentsCount: z.number().int().nonnegative(),
+  submittedCount: z.number().int().nonnegative(),
+  createdAt: z.number().int(),
+  startedAt: z.number().int().nullable(),
+  endedAt: z.number().int().nullable()
+})
+export type SessionSummary = z.infer<typeof SessionSummary>

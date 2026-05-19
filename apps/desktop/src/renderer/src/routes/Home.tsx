@@ -1,10 +1,24 @@
 import { useQuery, useQueryClient } from '@tanstack/react-query'
 import { Link, useNavigate } from 'react-router-dom'
+import type { SessionStatus } from '@offlineclass/shared'
 
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
+import { cn } from '@/lib/utils'
 import { api } from '../lib/api'
 import { useAuth } from '../lib/auth'
+
+function statusBadge(status: SessionStatus): { label: string; tone: string } {
+  if (status === 'lobby')
+    return { label: 'No lobby', tone: 'bg-amber-500/15 text-amber-700 dark:text-amber-300' }
+  if (status === 'running')
+    return { label: 'Em andamento', tone: 'bg-green-500/15 text-green-700 dark:text-green-300' }
+  return { label: 'Encerrada', tone: 'bg-muted text-muted-foreground' }
+}
+
+function formatDate(ms: number): string {
+  return new Date(ms).toLocaleString('pt-BR', { dateStyle: 'short', timeStyle: 'short' })
+}
 
 export default function HomeRoute(): React.JSX.Element {
   const { teacher } = useAuth()
@@ -19,6 +33,11 @@ export default function HomeRoute(): React.JSX.Element {
   const activeSession = useQuery({
     queryKey: ['sessions', 'active'],
     queryFn: api.sessions.active
+  })
+
+  const sessionsList = useQuery({
+    queryKey: ['sessions', 'list'],
+    queryFn: api.sessions.list
   })
 
   const onLogout = async (): Promise<void> => {
@@ -70,6 +89,64 @@ export default function HomeRoute(): React.JSX.Element {
           </CardContent>
         </Card>
       </section>
+
+      <Card>
+        <CardHeader>
+          <CardTitle>Atividades aplicadas</CardTitle>
+          <CardDescription>
+            Sessões anteriores, ao vivo e em andamento. Clique para ver os alunos e corrigir as respostas.
+          </CardDescription>
+        </CardHeader>
+        <CardContent>
+          {sessionsList.isPending && (
+            <p className="text-muted-foreground text-sm">Carregando…</p>
+          )}
+          {sessionsList.data && sessionsList.data.length === 0 && (
+            <p className="text-muted-foreground py-6 text-center text-sm">
+              Nenhuma atividade ainda. Abra uma nova sessão para começar.
+            </p>
+          )}
+          {sessionsList.data && sessionsList.data.length > 0 && (
+            <ul className="divide-border divide-y">
+              {sessionsList.data.map((s) => {
+                const badge = statusBadge(s.status)
+                const when = s.startedAt ?? s.createdAt
+                return (
+                  <li key={s.id}>
+                    <Link
+                      to={`/sessions/${s.id}`}
+                      className="hover:bg-muted/60 -mx-2 flex items-center justify-between gap-3 rounded-md px-2 py-3 transition-colors"
+                    >
+                      <div className="min-w-0">
+                        <p className="truncate font-medium">{s.examTitle}</p>
+                        <p className="text-muted-foreground text-xs">
+                          {formatDate(when)} · {s.durationMinutes} min
+                        </p>
+                      </div>
+                      <div className="flex items-center gap-3 text-right text-xs">
+                        <div>
+                          <p className="text-muted-foreground">Alunos</p>
+                          <p className="font-medium">
+                            {s.submittedCount}/{s.studentsCount}
+                          </p>
+                        </div>
+                        <span
+                          className={cn(
+                            'rounded-full px-2 py-0.5 text-xs font-medium',
+                            badge.tone
+                          )}
+                        >
+                          {badge.label}
+                        </span>
+                      </div>
+                    </Link>
+                  </li>
+                )
+              })}
+            </ul>
+          )}
+        </CardContent>
+      </Card>
 
       {discovery.data && (
         <Card>

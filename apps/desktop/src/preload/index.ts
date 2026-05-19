@@ -13,6 +13,7 @@ import type {
   SessionAnswersReview,
   SessionCreateInput,
   SessionDetail,
+  SessionSummary,
   Teacher
 } from '@offlineclass/shared'
 
@@ -47,6 +48,7 @@ const api = {
       ipcRenderer.invoke('questions.reorder', examId, orderedIds)
   },
   sessions: {
+    list: (): Promise<SessionSummary[]> => ipcRenderer.invoke('sessions.list'),
     create: (input: SessionCreateInput): Promise<SessionDetail> =>
       ipcRenderer.invoke('sessions.create', input),
     get: (id: string): Promise<SessionDetail> => ipcRenderer.invoke('sessions.get', id),
