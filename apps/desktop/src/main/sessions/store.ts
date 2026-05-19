@@ -4,11 +4,14 @@ import type {
   JoinInput,
   JoinResult,
   McqOption,
+  Question,
+  SessionAnswersReview,
   SessionCreateInput,
   SessionDetail,
   SessionLobbyStudent,
   SessionPublic,
   SessionStatus,
+  StudentAnswerReview,
   StudentAnswerSnapshot,
   StudentExam,
   StudentQuestion,
@@ -482,4 +485,82 @@ export function getStudentSessionId(db: Db, studentId: string): string | null {
     .where(eq(students.id, studentId))
     .get()
   return row?.sessionId ?? null
+}
+
+// -- Teacher answer review -----------------------------------------------
+
+function rowToFullQuestion(row: typeof questions.$inferSelect): Question {
+  if (row.kind === 'mcq') {
+    const opts = row.optionsJson ? (JSON.parse(row.optionsJson) as McqOption[]) : []
+    return {
+      kind: 'mcq',
+      id: row.id,
+      position: row.position,
+      prompt: row.prompt,
+      options: opts
+    }
+  }
+  return { kind: 'essay', id: row.id, position: row.position, prompt: row.prompt }
+}
+
+export function loadStudentAnswers(
+  db: Db,
+  sessionId: string,
+  studentId: string,
+  ownerId: string
+): SessionAnswersReview {
+  const sessionRow = db
+    .select({
+      id: examSessions.id,
+      examId: examSessions.examId,
+      examTitle: exams.title,
+      ownerId: examSessions.ownerId
+    })
+    .from(examSessions)
+    .innerJoin(exams, eq(exams.id, examSessions.examId))
+    .where(eq(examSessions.id, sessionId))
+    .get()
+  if (!sessionRow || sessionRow.ownerId !== ownerId) {
+    throw new SessionError('Sessão não encontrada', 'NOT_FOUND')
+  }
+  const studentRow = db
+    .select()
+    .from(students)
+    .where(and(eq(students.id, studentId), eq(students.sessionId, sessionId)))
+    .get()
+  if (!studentRow) throw new SessionError('Aluno não encontrado', 'NOT_FOUND')
+
+  const questionRows = db
+    .select()
+    .from(questions)
+    .where(eq(questions.examId, sessionRow.examId))
+    .orderBy(asc(questions.position))
+    .all()
+  const answerRows = db
+    .select()
+    .from(answers)
+    .where(eq(answers.studentId, studentId))
+    .all()
+  const answerByQ = new Map(answerRows.map((a) => [a.questionId, a.value]))
+
+  const reviews: StudentAnswerReview[] = questionRows.map((row) => {
+    const question = rowToFullQuestion(row)
+    const value = answerByQ.get(row.id) ?? null
+    let correct: boolean | null = null
+    if (question.kind === 'mcq' && value !== null) {
+      const opt = question.options.find((o) => o.id === value)
+      correct = opt?.correct === true
+    }
+    return { question, value, correct }
+  })
+
+  return {
+    sessionId,
+    studentId,
+    studentName: studentRow.name,
+    studentMatricula: studentRow.matricula,
+    examTitle: sessionRow.examTitle,
+    submittedAt: studentRow.submittedAt ? studentRow.submittedAt.getTime() : null,
+    answers: reviews
+  }
 }

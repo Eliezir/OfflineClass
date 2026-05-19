@@ -1,10 +1,18 @@
 import { useEffect, useMemo, useState } from 'react'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { Link, useParams } from 'react-router-dom'
+import { Check, X } from 'lucide-react'
 import type { SessionDetail, SessionLobbyStudent, WsServerEvent } from '@offlineclass/shared'
 
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle
+} from '@/components/ui/dialog'
 import { cn } from '@/lib/utils'
 import { api } from '../../lib/api'
 import { connectWs, type WsStatus } from '../../lib/ws'
@@ -81,6 +89,7 @@ export default function LobbyRoute(): React.JSX.Element {
   const qc = useQueryClient()
   const [wsStatus, setWsStatus] = useState<WsStatus>('connecting')
   const [now, setNow] = useState(() => Date.now())
+  const [reviewingStudentId, setReviewingStudentId] = useState<string | null>(null)
 
   // Tick every second so idle pills and the countdown stay fresh without
   // hammering the server.
@@ -330,6 +339,11 @@ export default function LobbyRoute(): React.JSX.Element {
                     status={status}
                     secondsSinceLastSeen={secondsSinceLastSeen}
                     questionsCount={session.questionsCount}
+                    onReview={
+                      student.submittedAt || session.status === 'ended'
+                        ? () => setReviewingStudentId(student.id)
+                        : undefined
+                    }
                   />
                 ))}
               </ul>
@@ -337,6 +351,12 @@ export default function LobbyRoute(): React.JSX.Element {
           </CardContent>
         </Card>
       </section>
+
+      <AnswersReviewDialog
+        sessionId={id}
+        studentId={reviewingStudentId}
+        onClose={() => setReviewingStudentId(null)}
+      />
     </main>
   )
 }
@@ -374,13 +394,15 @@ interface StudentRowProps {
   status: StudentStatus
   secondsSinceLastSeen: number
   questionsCount: number
+  onReview?: () => void
 }
 
 function StudentRow({
   student,
   status,
   secondsSinceLastSeen,
-  questionsCount
+  questionsCount,
+  onReview
 }: StudentRowProps): React.JSX.Element {
   const lastSeenLabel =
     status === 'submitted'
@@ -388,13 +410,28 @@ function StudentRow({
       : status === 'idle'
         ? `há ${secondsSinceLastSeen}s`
         : `há ${secondsSinceLastSeen}s`
+  const isClickable = !!onReview
   return (
     <li
       className={cn(
-        'border-border bg-card flex items-center justify-between gap-3 rounded-md border p-3 text-sm',
+        'border-border bg-card flex items-center justify-between gap-3 rounded-md border p-3 text-sm transition-colors',
         status === 'idle' && 'border-red-500/30',
-        status === 'submitted' && 'border-green-500/30'
+        status === 'submitted' && 'border-green-500/30',
+        isClickable && 'hover:bg-muted/60 cursor-pointer'
       )}
+      onClick={isClickable ? onReview : undefined}
+      role={isClickable ? 'button' : undefined}
+      tabIndex={isClickable ? 0 : undefined}
+      onKeyDown={
+        isClickable
+          ? (e) => {
+              if (e.key === 'Enter' || e.key === ' ') {
+                e.preventDefault()
+                onReview?.()
+              }
+            }
+          : undefined
+      }
     >
       <div className="min-w-0">
         <p className="truncate font-medium">{student.name}</p>
@@ -417,5 +454,113 @@ function StudentRow({
         </span>
       </div>
     </li>
+  )
+}
+
+interface AnswersReviewDialogProps {
+  sessionId: string
+  studentId: string | null
+  onClose: () => void
+}
+
+function AnswersReviewDialog({
+  sessionId,
+  studentId,
+  onClose
+}: AnswersReviewDialogProps): React.JSX.Element {
+  const reviewQuery = useQuery({
+    queryKey: ['sessions', sessionId, 'answers', studentId],
+    queryFn: () => api.sessions.studentAnswers(sessionId, studentId ?? ''),
+    enabled: !!studentId
+  })
+
+  const review = reviewQuery.data
+  const mcqCorrect =
+    review?.answers.filter((a) => a.question.kind === 'mcq' && a.correct === true).length ?? 0
+  const mcqTotal = review?.answers.filter((a) => a.question.kind === 'mcq').length ?? 0
+
+  return (
+    <Dialog open={!!studentId} onOpenChange={(open) => !open && onClose()}>
+      <DialogContent className="max-h-[85vh] max-w-3xl overflow-y-auto">
+        <DialogHeader>
+          <DialogTitle>
+            {review ? `${review.studentName} · ${review.studentMatricula}` : 'Respostas'}
+          </DialogTitle>
+          <DialogDescription>
+            {review
+              ? `${review.examTitle} · ${mcqTotal > 0 ? `${mcqCorrect}/${mcqTotal} acertos (MCQ)` : 'sem MCQ'}`
+              : 'Carregando…'}
+          </DialogDescription>
+        </DialogHeader>
+        {reviewQuery.isPending && (
+          <p className="text-muted-foreground text-sm">Carregando respostas…</p>
+        )}
+        {reviewQuery.error && (
+          <p className="text-destructive text-sm">
+            Erro ao carregar: {String(reviewQuery.error)}
+          </p>
+        )}
+        {review && (
+          <ol className="space-y-4">
+            {review.answers.map((ans, idx) => (
+              <li
+                key={ans.question.id}
+                className="border-border bg-muted/30 space-y-2 rounded-md border p-3"
+              >
+                <p className="text-sm font-medium">
+                  {idx + 1}. {ans.question.prompt}
+                </p>
+                {ans.question.kind === 'mcq' ? (
+                  <ul className="space-y-1 text-sm">
+                    {ans.question.options.map((opt) => {
+                      const selected = ans.value === opt.id
+                      return (
+                        <li
+                          key={opt.id}
+                          className={cn(
+                            'flex items-center gap-2 rounded-sm px-2 py-1',
+                            opt.correct && 'bg-green-500/10',
+                            selected &&
+                              !opt.correct &&
+                              'bg-red-500/10 text-red-700 dark:text-red-300'
+                          )}
+                        >
+                          <span className="text-muted-foreground w-5 text-xs">
+                            {selected ? '●' : '○'}
+                          </span>
+                          <span className="flex-1">{opt.text}</span>
+                          {opt.correct && (
+                            <Check className="size-4 text-green-600 dark:text-green-400" />
+                          )}
+                          {selected && !opt.correct && (
+                            <X className="size-4 text-red-600 dark:text-red-400" />
+                          )}
+                        </li>
+                      )
+                    })}
+                    {ans.value === null && (
+                      <li className="text-muted-foreground italic text-xs">
+                        Aluno não respondeu.
+                      </li>
+                    )}
+                  </ul>
+                ) : (
+                  <p
+                    className={cn(
+                      'whitespace-pre-wrap rounded-sm border-l-2 pl-3 text-sm',
+                      ans.value
+                        ? 'border-sky-500/60 bg-sky-500/5'
+                        : 'border-muted-foreground/40 text-muted-foreground italic'
+                    )}
+                  >
+                    {ans.value ?? 'Aluno não respondeu.'}
+                  </p>
+                )}
+              </li>
+            ))}
+          </ol>
+        )}
+      </DialogContent>
+    </Dialog>
   )
 }

@@ -1,6 +1,7 @@
 import { ipcMain } from 'electron'
 import {
   SessionCreateInput,
+  type SessionAnswersReview,
   type SessionDetail,
   type WsServerEvent
 } from '@offlineclass/shared'
@@ -13,6 +14,7 @@ import {
   findActiveSessionForOwner,
   getSession,
   listLobbyStudents,
+  loadStudentAnswers,
   startSession
 } from '../sessions/store'
 import type { Rooms } from '../sessions/rooms'
@@ -76,4 +78,14 @@ export function registerSessionsHandlers(ctx: SessionsContext): void {
     })
     return null
   })
+
+  ipcMain.handle(
+    'sessions.studentAnswers',
+    async (_event, rawSessionId, rawStudentId): Promise<SessionAnswersReview> => {
+      const ownerId = requireTeacherId(db)
+      const sessionId = typeof rawSessionId === 'string' ? rawSessionId : ''
+      const studentId = typeof rawStudentId === 'string' ? rawStudentId : ''
+      return loadStudentAnswers(db, sessionId, studentId, ownerId)
+    }
+  )
 }

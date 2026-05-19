@@ -10,6 +10,7 @@ import type {
   Question,
   QuestionInput,
   RegisterInput,
+  SessionAnswersReview,
   SessionCreateInput,
   SessionDetail,
   Teacher
@@ -53,7 +54,9 @@ const api = {
     start: (id: string): Promise<SessionDetail> => ipcRenderer.invoke('sessions.start', id),
     end: (id: string): Promise<SessionDetail> => ipcRenderer.invoke('sessions.end', id),
     broadcastLobby: (id: string): Promise<null> =>
-      ipcRenderer.invoke('sessions.broadcastLobby', id)
+      ipcRenderer.invoke('sessions.broadcastLobby', id),
+    studentAnswers: (sessionId: string, studentId: string): Promise<SessionAnswersReview> =>
+      ipcRenderer.invoke('sessions.studentAnswers', sessionId, studentId)
   }
 }
 

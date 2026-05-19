@@ -4,6 +4,7 @@ import {
   Exam,
   ExamSummary,
   Question,
+  SessionAnswersReview,
   SessionDetail,
   Teacher,
   type ExamInput,
@@ -62,6 +63,8 @@ export const api = {
     end: async (id: string) => SessionDetail.parse(await window.api.sessions.end(id)),
     broadcastLobby: async (id: string) => {
       await window.api.sessions.broadcastLobby(id)
-    }
+    },
+    studentAnswers: async (sessionId: string, studentId: string) =>
+      SessionAnswersReview.parse(await window.api.sessions.studentAnswers(sessionId, studentId))
   }
 }

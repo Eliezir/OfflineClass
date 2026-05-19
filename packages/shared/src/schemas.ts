@@ -255,3 +255,23 @@ export const AnswerInput = z.object({
   value: z.string().max(10_000)
 })
 export type AnswerInput = z.infer<typeof AnswerInput>
+
+// -- Teacher-side review of submitted answers (Stage 5) -------------------
+
+export const StudentAnswerReview = z.object({
+  question: Question,
+  value: z.string().nullable(),
+  correct: z.boolean().nullable()
+})
+export type StudentAnswerReview = z.infer<typeof StudentAnswerReview>
+
+export const SessionAnswersReview = z.object({
+  sessionId: z.string(),
+  studentId: z.string(),
+  studentName: z.string(),
+  studentMatricula: z.string(),
+  examTitle: z.string(),
+  submittedAt: z.number().int().nullable(),
+  answers: z.array(StudentAnswerReview)
+})
+export type SessionAnswersReview = z.infer<typeof SessionAnswersReview>
