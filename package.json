@@ -3,5 +3,11 @@
   "private": true,
   "version": "0.0.0",
   "description": "OfflineClass — avaliações digitais para salas sem internet.",
-  "packageManager": "pnpm@9.12.0"
+  "packageManager": "pnpm@9.12.0",
+  "scripts": {
+    "dev": "pnpm --filter @offlineclass/desktop dev",
+    "dev:student": "pnpm --filter @offlineclass/student-web dev",
+    "build": "pnpm -r build",
+    "typecheck": "pnpm -r --if-present typecheck"
+  }
 }
