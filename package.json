@@ -8,6 +8,10 @@
     "dev": "pnpm --filter @offlineclass/desktop dev",
     "dev:student": "pnpm --filter @offlineclass/student-web dev",
     "build": "pnpm -r build",
-    "typecheck": "pnpm -r --if-present typecheck"
+    "typecheck": "pnpm -r --if-present typecheck",
+    "mock-student": "tsx scripts/mock-student.ts"
+  },
+  "devDependencies": {
+    "tsx": "^4.22.3"
   }
 }
