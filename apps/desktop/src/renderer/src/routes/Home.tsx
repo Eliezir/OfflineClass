@@ -16,6 +16,11 @@ export default function HomeRoute(): React.JSX.Element {
     queryFn: api.discovery.getStatus
   })
 
+  const activeSession = useQuery({
+    queryKey: ['sessions', 'active'],
+    queryFn: api.sessions.active
+  })
+
   const onLogout = async (): Promise<void> => {
     await api.auth.logout()
     await qc.invalidateQueries({ queryKey: ['auth', 'me'] })
@@ -50,11 +55,17 @@ export default function HomeRoute(): React.JSX.Element {
         <Card>
           <CardHeader>
             <CardTitle>Aplicar prova</CardTitle>
-            <CardDescription>Inicie uma sessão para os alunos entrarem pela LAN.</CardDescription>
+            <CardDescription>
+              {activeSession.data
+                ? 'Há uma sessão ativa — retomar.'
+                : 'Inicie uma sessão para os alunos entrarem pela LAN.'}
+            </CardDescription>
           </CardHeader>
           <CardContent>
-            <Button disabled variant="secondary">
-              Em breve (Stage 3)
+            <Button asChild>
+              <Link to={activeSession.data ? `/sessions/${activeSession.data.id}` : '/sessions/new'}>
+                {activeSession.data ? 'Voltar ao lobby' : 'Nova sessão'}
+              </Link>
             </Button>
           </CardContent>
         </Card>

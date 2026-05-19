@@ -4,17 +4,20 @@ import {
   Exam,
   ExamSummary,
   Question,
+  SessionDetail,
   Teacher,
   type ExamInput,
   type ExamUpdate,
   type LoginInput,
   type QuestionInput,
-  type RegisterInput
+  type RegisterInput,
+  type SessionCreateInput
 } from '@offlineclass/shared'
 
 const TeacherOrNull = Teacher.nullable()
 const ExamSummaries = z.array(ExamSummary)
 const QuestionList = z.array(Question)
+const SessionOrNull = SessionDetail.nullable()
 
 export const api = {
   discovery: {
@@ -49,5 +52,16 @@ export const api = {
     },
     reorder: async (examId: string, orderedIds: string[]) =>
       QuestionList.parse(await window.api.questions.reorder(examId, orderedIds))
+  },
+  sessions: {
+    create: async (input: SessionCreateInput) =>
+      SessionDetail.parse(await window.api.sessions.create(input)),
+    get: async (id: string) => SessionDetail.parse(await window.api.sessions.get(id)),
+    active: async () => SessionOrNull.parse(await window.api.sessions.active()),
+    start: async (id: string) => SessionDetail.parse(await window.api.sessions.start(id)),
+    end: async (id: string) => SessionDetail.parse(await window.api.sessions.end(id)),
+    broadcastLobby: async (id: string) => {
+      await window.api.sessions.broadcastLobby(id)
+    }
   }
 }
