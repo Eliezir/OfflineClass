@@ -105,3 +105,87 @@ export const Exam = z.object({
   updatedAt: z.number().int()
 })
 export type Exam = z.infer<typeof Exam>
+
+// -- Exam sessions (lobby / running / ended) -------------------------------
+
+export const SessionStatus = z.enum(['lobby', 'running', 'ended'])
+export type SessionStatus = z.infer<typeof SessionStatus>
+
+export const SessionLobbyStudent = z.object({
+  id: z.string(),
+  name: z.string(),
+  matricula: z.string(),
+  joinedAt: z.number().int(),
+  lastSeenAt: z.number().int(),
+  submittedAt: z.number().int().nullable()
+})
+export type SessionLobbyStudent = z.infer<typeof SessionLobbyStudent>
+
+export const SessionCreateInput = z.object({
+  examId: z.string(),
+  durationMinutes: z.number().int().positive().max(600),
+  allowLateJoin: z.boolean().optional()
+})
+export type SessionCreateInput = z.infer<typeof SessionCreateInput>
+
+export const SessionDetail = z.object({
+  id: z.string(),
+  examId: z.string(),
+  examTitle: z.string(),
+  status: SessionStatus,
+  durationMinutes: z.number().int(),
+  allowLateJoin: z.boolean(),
+  students: z.array(SessionLobbyStudent),
+  createdAt: z.number().int(),
+  startedAt: z.number().int().nullable(),
+  endedAt: z.number().int().nullable()
+})
+export type SessionDetail = z.infer<typeof SessionDetail>
+
+// What `/api/session/active` returns to anyone on the LAN (no auth).
+// Intentionally narrower than SessionDetail — no examId, no students list.
+export const SessionPublic = z.object({
+  id: z.string(),
+  status: SessionStatus,
+  examTitle: z.string(),
+  durationMinutes: z.number().int(),
+  allowLateJoin: z.boolean()
+})
+export type SessionPublic = z.infer<typeof SessionPublic>
+
+export const JoinInput = z.object({
+  name: z.string().min(2, 'Nome obrigatório').max(80),
+  matricula: z.string().min(2, 'Matrícula obrigatória').max(40)
+})
+export type JoinInput = z.infer<typeof JoinInput>
+
+export const JoinResult = z.object({
+  token: z.string(),
+  studentId: z.string(),
+  sessionId: z.string(),
+  status: SessionStatus,
+  studentName: z.string(),
+  studentMatricula: z.string()
+})
+export type JoinResult = z.infer<typeof JoinResult>
+
+export const WsServerEvent = z.discriminatedUnion('type', [
+  z.object({
+    type: z.literal('connection.ack'),
+    role: z.enum(['teacher', 'student'])
+  }),
+  z.object({
+    type: z.literal('session.lobby.update'),
+    students: z.array(SessionLobbyStudent)
+  }),
+  z.object({
+    type: z.literal('session.started'),
+    startedAt: z.number().int(),
+    durationMinutes: z.number().int()
+  }),
+  z.object({
+    type: z.literal('session.ended'),
+    endedAt: z.number().int()
+  })
+])
+export type WsServerEvent = z.infer<typeof WsServerEvent>
