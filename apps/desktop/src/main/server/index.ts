@@ -188,34 +188,10 @@ export async function startServer(port: number, deps: ServerDeps): Promise<Serve
     }
   })
 
-  // ---- Static SPA --------------------------------------------------------
-  // Serves apps/student-web/dist on every non-API path so a phone scanning
-  // the QR loads the student SPA from the same origin as the API (no CORS).
-  // The path is resolved against the Electron app dir; Stage 7 will adjust
-  // it for the packaged asar layout.
-  const studentWebRoot = resolve(electronApp.getAppPath(), '../student-web/dist')
-
-  app.use('*', async (c, next) => {
-    if (c.req.path.startsWith('/api/')) return next()
-    return next()
-  })
-  app.use('*', serveStatic({ root: studentWebRoot }))
-
-  // SPA fallback: any unmatched non-API GET serves index.html so client-side
-  // routing works on hard refresh / direct URL load.
-  app.get('*', (c) => {
-    if (c.req.path.startsWith('/api/')) return c.json({ error: 'not-found' }, 404)
-    const indexPath = join(studentWebRoot, 'index.html')
-    if (!existsSync(indexPath)) {
-      return c.text(
-        'student-web bundle not built yet — run `pnpm --filter @offlineclass/student-web build`',
-        503
-      )
-    }
-    return c.html(readFileSync(indexPath, 'utf-8'))
-  })
-
   // ---- WebSocket --------------------------------------------------------
+  // MUST come before the static / SPA-fallback handlers below: Hono matches
+  // routes in declaration order and `app.get('*')` would otherwise swallow
+  // GET /api/ws (returning 404 JSON instead of the WS upgrade response).
 
   app.get(
     '/api/ws',
@@ -281,6 +257,29 @@ export async function startServer(port: number, deps: ServerDeps): Promise<Serve
       }
     })
   )
+
+  // ---- Static SPA --------------------------------------------------------
+  // Serves apps/student-web/dist on every non-API path so a phone scanning
+  // the QR loads the student SPA from the same origin as the API (no CORS).
+  // Declared AFTER the /api/* routes and /api/ws so wildcards don't
+  // intercept them. The path is resolved against the Electron app dir;
+  // Stage 7 will adjust it for the packaged asar layout.
+  const studentWebRoot = resolve(electronApp.getAppPath(), '../student-web/dist')
+  app.use('*', serveStatic({ root: studentWebRoot }))
+
+  // SPA fallback: unmatched non-API GET serves index.html so client-side
+  // routing works on hard refresh / direct URL load.
+  app.get('*', (c) => {
+    if (c.req.path.startsWith('/api/')) return c.json({ error: 'not-found' }, 404)
+    const indexPath = join(studentWebRoot, 'index.html')
+    if (!existsSync(indexPath)) {
+      return c.text(
+        'student-web bundle not built yet — run `pnpm --filter @offlineclass/student-web build`',
+        503
+      )
+    }
+    return c.html(readFileSync(indexPath, 'utf-8'))
+  })
 
   const server = await new Promise<ServerType>((resolve) => {
     const s = serve(
