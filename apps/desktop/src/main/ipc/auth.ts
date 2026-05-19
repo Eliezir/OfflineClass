@@ -13,13 +13,29 @@ export interface AuthContext {
   db: Db
 }
 
+export type AuthErrorCode = 'EMAIL_TAKEN' | 'INVALID_CREDENTIALS' | 'NOT_AUTHENTICATED'
+
 export class AuthError extends Error {
   constructor(
     message: string,
-    public code: 'EMAIL_TAKEN' | 'INVALID_CREDENTIALS'
+    public code: AuthErrorCode
   ) {
     super(message)
   }
+}
+
+// Resolves the active session's teacher id; throws AuthError('NOT_AUTHENTICATED')
+// if the saved token is missing or stale. Used by every domain handler that
+// needs to scope by owner_id (exams, questions, sessions...).
+export function requireTeacherId(db: Db): string {
+  const token = loadActiveToken()
+  if (!token) throw new AuthError('Sessão expirada', 'NOT_AUTHENTICATED')
+  const session = resolveSession(db, token)
+  if (!session) {
+    clearActiveToken()
+    throw new AuthError('Sessão expirada', 'NOT_AUTHENTICATED')
+  }
+  return session.teacherId
 }
 
 export function registerAuthHandlers(ctx: AuthContext): void {
