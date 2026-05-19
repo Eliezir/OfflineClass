@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useState } from 'react'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { Link, useParams } from 'react-router-dom'
-import type { SessionLobbyStudent, WsServerEvent } from '@offlineclass/shared'
+import type { SessionDetail, SessionLobbyStudent, WsServerEvent } from '@offlineclass/shared'
 
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
@@ -112,13 +112,25 @@ export default function LobbyRoute(): React.JSX.Element {
       const url = `ws://127.0.0.1:${port}/api/ws?role=teacher&sessionId=${encodeURIComponent(id)}&token=${encodeURIComponent(token)}`
       conn = connectWs({
         url,
-        onStatus: setWsStatus,
+        onStatus: (status) => {
+          setWsStatus(status)
+          // Recover from any events missed while the socket was down by
+          // forcing a fresh IPC snapshot on (re)connect.
+          if (status === 'open') {
+            qc.invalidateQueries({ queryKey: ['sessions', id] })
+          }
+        },
         onEvent: (event: WsServerEvent) => {
-          if (
-            event.type === 'session.lobby.update' ||
-            event.type === 'session.started' ||
-            event.type === 'session.ended'
-          ) {
+          if (event.type === 'session.lobby.update') {
+            // Patch the cached SessionDetail in place — avoids the IPC
+            // round-trip and reflects the latest students list (with
+            // submittedAt / answeredCount) on the very next render.
+            qc.setQueryData<SessionDetail | undefined>(['sessions', id], (old) =>
+              old ? { ...old, students: event.students } : old
+            )
+            return
+          }
+          if (event.type === 'session.started' || event.type === 'session.ended') {
             qc.invalidateQueries({ queryKey: ['sessions', id] })
             qc.invalidateQueries({ queryKey: ['sessions', 'active'] })
           }
