@@ -164,14 +164,16 @@ export default function HomeRoute(): React.JSX.Element {
             />
             <dl className="space-y-2 text-sm">
               <div>
-                <dt className="text-muted-foreground text-xs uppercase">URL</dt>
+                <dt className="text-muted-foreground text-xs uppercase">URL (IP)</dt>
                 <dd className="font-mono">
                   http://{discovery.data.lanIp}:{discovery.data.port}/
                 </dd>
               </div>
               <div>
-                <dt className="text-muted-foreground text-xs uppercase">mDNS</dt>
-                <dd className="font-mono">{discovery.data.mdnsName}</dd>
+                <dt className="text-muted-foreground text-xs uppercase">URL (mDNS)</dt>
+                <dd className="font-mono">
+                  http://{discovery.data.mdnsName}:{discovery.data.port}/
+                </dd>
               </div>
             </dl>
           </CardContent>

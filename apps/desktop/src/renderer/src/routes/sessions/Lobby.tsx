@@ -309,12 +309,14 @@ export default function LobbyRoute(): React.JSX.Element {
                 height={220}
               />
               <div className="space-y-1 text-xs">
-                <p className="text-muted-foreground">URL</p>
+                <p className="text-muted-foreground">URL (IP)</p>
                 <p className="font-mono">
                   http://{discovery.lanIp}:{discovery.port}/
                 </p>
-                <p className="text-muted-foreground mt-2">mDNS</p>
-                <p className="font-mono">{discovery.mdnsName}</p>
+                <p className="text-muted-foreground mt-2">URL (mDNS)</p>
+                <p className="font-mono">
+                  http://{discovery.mdnsName}:{discovery.port}/
+                </p>
               </div>
             </CardContent>
           </Card>
