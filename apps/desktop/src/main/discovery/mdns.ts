@@ -14,10 +14,16 @@ const SERVICE_TYPE = 'https'
 
 export async function publishMdns(port: number): Promise<MdnsHandle> {
   const bonjour = new Bonjour()
+  // The SRV record's `host` is what gets paired with an A record on the LAN.
+  // Without an explicit host, bonjour falls back to os.hostname() — so the
+  // service is announced but `offlineclass.local` doesn't resolve to anything.
+  // Passing `host: SERVICE_NAME` makes bonjour publish A `offlineclass.local`
+  // → current LAN IP, which is the bit students rely on.
   const service: Service = bonjour.publish({
     name: SERVICE_NAME,
     type: SERVICE_TYPE,
     port,
+    host: SERVICE_NAME,
     txt: { app: 'OfflineClass' }
   })
 
