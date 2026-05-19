@@ -9,11 +9,13 @@ import { publishMdns, type MdnsHandle } from './discovery/mdns'
 import { registerIpcHandlers } from './ipc'
 import { startServer, type ServerHandle } from './server'
 import { Rooms } from './sessions/rooms'
+import { ensureSelfSignedCert } from './tls'
 
 const DEFAULT_PORT = 8000
 
 let serverHandle: ServerHandle | null = null
 let mdnsHandle: MdnsHandle | null = null
+let trustedHostnames: Set<string> = new Set()
 
 function createWindow(): void {
   const mainWindow = new BrowserWindow({
@@ -48,17 +50,22 @@ async function bootstrap(): Promise<void> {
   const db = getDb()
   runMigrations(db)
 
-  // 2. Shared WS subscription registry — populated by /api/ws upgrades and
-  //    consumed by IPC handlers when they need to broadcast.
+  // 2. Shared WS subscription registry.
   const rooms = new Rooms()
 
-  // 3. Start the LAN-facing Hono server (HTTP + WS upgrade).
-  serverHandle = await startServer(port, { db, rooms })
+  // 3. Load (or generate on first run) the self-signed TLS cert. The SAN
+  //    list captures the current LAN IP so the renderer's loopback WS and
+  //    a student device on the LAN both match the cert.
+  const tls = await ensureSelfSignedCert()
+  trustedHostnames = new Set(['127.0.0.1', 'localhost', 'offlineclass.local', tls.lanIp])
 
-  // 4. Announce the service over mDNS so students can hit offlineclass.local.
+  // 4. Start the LAN-facing Hono server with TLS.
+  serverHandle = await startServer(port, { db, rooms, tls })
+
+  // 5. Announce the service over mDNS so students can hit offlineclass.local.
   mdnsHandle = await publishMdns(serverHandle.port)
 
-  // 5. Wire IPC handlers.
+  // 6. Wire IPC handlers.
   registerIpcHandlers({
     auth: { db },
     discovery: { port: serverHandle.port, mdnsName: mdnsHandle.name },
@@ -67,8 +74,27 @@ async function bootstrap(): Promise<void> {
     sessions: { db, rooms }
   })
 
-  // 6. UI.
+  // 7. UI.
   createWindow()
+}
+
+// Electron blocks self-signed certs by default. We trust ours for the
+// hostnames we actually serve — the renderer's loopback WSS and any
+// in-process fetches against the LAN URL go through here.
+function setupCertTrust(): void {
+  app.on('certificate-error', (event, _webContents, url, _error, _certificate, callback) => {
+    try {
+      const hostname = new URL(url).hostname
+      if (trustedHostnames.has(hostname)) {
+        event.preventDefault()
+        callback(true)
+        return
+      }
+    } catch {
+      // fall through
+    }
+    callback(false)
+  })
 }
 
 app.whenReady().then(async () => {
@@ -76,6 +102,7 @@ app.whenReady().then(async () => {
   app.on('browser-window-created', (_, window) => {
     optimizer.watchWindowShortcuts(window)
   })
+  setupCertTrust()
 
   try {
     await bootstrap()

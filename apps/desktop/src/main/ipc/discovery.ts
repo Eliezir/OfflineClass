@@ -12,7 +12,7 @@ export interface DiscoveryContext {
 export function registerDiscoveryHandlers(ctx: DiscoveryContext): void {
   ipcMain.handle('discovery.getStatus', async (): Promise<DiscoveryStatus> => {
     const lanIp = getLanIp()
-    const url = `http://${lanIp}:${ctx.port}/`
+    const url = `https://${lanIp}:${ctx.port}/`
     const qrDataUrl = await makeQrDataUrl(url)
     return {
       lanIp,

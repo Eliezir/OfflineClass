@@ -2,6 +2,10 @@
 // Harness for the lobby + Stage-6 gameplay endpoints. Posts /api/join,
 // keeps a WS open, optionally heartbeats and answers/submits on a timer.
 //
+// Talks to the same self-signed TLS endpoint that the real student SPA
+// uses; NODE_TLS_REJECT_UNAUTHORIZED is disabled so we don't have to ship
+// the cert into the script.
+//
 // Usage:
 //   pnpm mock-student --name "Eliezir" --matricula "2024001"
 // Optional flags:
@@ -10,6 +14,8 @@
 //   --heartbeat-every 10    (seconds; default 10; 0 disables)
 //   --answer-every 5        (seconds; sends a stub answer to a question)
 //   --submit-after 30       (seconds; submits after this many seconds)
+
+process.env.NODE_TLS_REJECT_UNAUTHORIZED = '0'
 
 interface Args {
   name: string
@@ -74,7 +80,7 @@ async function jsonRequest<T>(
 
 async function main(): Promise<void> {
   const args = parseArgs()
-  const base = `http://${args.host}:${args.port}`
+  const base = `https://${args.host}:${args.port}`
 
   console.log(`[mock] joining ${base} as ${args.name} / ${args.matricula}`)
   const join = await jsonRequest<{
@@ -137,7 +143,7 @@ async function main(): Promise<void> {
   }
 
   // WebSocket.
-  const wsUrl = `ws://${args.host}:${args.port}/api/ws?role=student&token=${encodeURIComponent(token)}`
+  const wsUrl = `wss://${args.host}:${args.port}/api/ws?role=student&token=${encodeURIComponent(token)}`
   console.log(`[mock] opening WS ${wsUrl}`)
   const ws = new WebSocket(wsUrl)
   ws.onopen = () => console.log('[mock] ws open')

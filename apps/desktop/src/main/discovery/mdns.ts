@@ -6,7 +6,11 @@ export interface MdnsHandle {
 }
 
 const SERVICE_NAME = 'offlineclass'
-const SERVICE_TYPE = 'http'
+// `_https._tcp` since the server now terminates TLS. Browsers don't actually
+// dispatch on this — they resolve the .local name and let the URL's scheme
+// pick the port — but tools like `dns-sd -B` enumerate by type, so picking
+// the right one keeps the announce honest.
+const SERVICE_TYPE = 'https'
 
 export async function publishMdns(port: number): Promise<MdnsHandle> {
   const bonjour = new Bonjour()

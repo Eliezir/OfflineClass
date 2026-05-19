@@ -1,4 +1,5 @@
 import { existsSync, readFileSync } from 'node:fs'
+import { createServer } from 'node:https'
 import { join, resolve } from 'node:path'
 import { serve, type ServerType } from '@hono/node-server'
 import { serveStatic } from '@hono/node-server/serve-static'
@@ -6,6 +7,8 @@ import { createNodeWebSocket } from '@hono/node-ws'
 import { app as electronApp } from 'electron'
 import { Hono, type Context } from 'hono'
 import { and, eq } from 'drizzle-orm'
+
+import type { TlsBundle } from '../tls'
 import {
   AnswerInput,
   JoinInput,
@@ -40,6 +43,7 @@ export interface ServerHandle {
 export interface ServerDeps {
   db: Db
   rooms: Rooms
+  tls: TlsBundle
 }
 
 function extractBearer(c: Context): string | null {
@@ -286,7 +290,9 @@ export async function startServer(port: number, deps: ServerDeps): Promise<Serve
       {
         fetch: app.fetch,
         port,
-        hostname: '0.0.0.0'
+        hostname: '0.0.0.0',
+        createServer,
+        serverOptions: { key: deps.tls.key, cert: deps.tls.cert }
       },
       () => resolve(s)
     )

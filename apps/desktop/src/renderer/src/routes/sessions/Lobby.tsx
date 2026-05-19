@@ -126,7 +126,7 @@ export default function LobbyRoute(): React.JSX.Element {
       const token = await window.api.auth.getToken()
       if (!token || cancelled) return
       const port = discoveryQuery.data.port
-      const url = `ws://127.0.0.1:${port}/api/ws?role=teacher&sessionId=${encodeURIComponent(id)}&token=${encodeURIComponent(token)}`
+      const url = `wss://127.0.0.1:${port}/api/ws?role=teacher&sessionId=${encodeURIComponent(id)}&token=${encodeURIComponent(token)}`
       conn = connectWs({
         url,
         onStatus: (status) => {
