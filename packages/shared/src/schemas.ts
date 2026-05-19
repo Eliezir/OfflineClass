@@ -117,7 +117,8 @@ export const SessionLobbyStudent = z.object({
   matricula: z.string(),
   joinedAt: z.number().int(),
   lastSeenAt: z.number().int(),
-  submittedAt: z.number().int().nullable()
+  submittedAt: z.number().int().nullable(),
+  answeredCount: z.number().int().nonnegative()
 })
 export type SessionLobbyStudent = z.infer<typeof SessionLobbyStudent>
 
@@ -189,3 +190,67 @@ export const WsServerEvent = z.discriminatedUnion('type', [
   })
 ])
 export type WsServerEvent = z.infer<typeof WsServerEvent>
+
+// -- Student gameplay (Stage 6) -------------------------------------------
+
+// MCQ question as seen by a student — same as McqQuestion but each option
+// strips the `correct` flag so the student can't read it via DevTools.
+export const StudentMcqOption = z.object({
+  id: z.string(),
+  text: z.string()
+})
+export type StudentMcqOption = z.infer<typeof StudentMcqOption>
+
+export const StudentMcqQuestion = z.object({
+  kind: z.literal('mcq'),
+  id: z.string(),
+  position: z.number().int().nonnegative(),
+  prompt: z.string(),
+  options: z.array(StudentMcqOption)
+})
+
+export const StudentEssayQuestion = z.object({
+  kind: z.literal('essay'),
+  id: z.string(),
+  position: z.number().int().nonnegative(),
+  prompt: z.string()
+})
+
+export const StudentQuestion = z.discriminatedUnion('kind', [
+  StudentMcqQuestion,
+  StudentEssayQuestion
+])
+export type StudentQuestion = z.infer<typeof StudentQuestion>
+
+export const StudentExam = z.object({
+  examTitle: z.string(),
+  examDescription: z.string().nullable(),
+  durationMinutes: z.number().int(),
+  startedAt: z.number().int().nullable(),
+  questions: z.array(StudentQuestion)
+})
+export type StudentExam = z.infer<typeof StudentExam>
+
+export const StudentAnswerSnapshot = z.object({
+  questionId: z.string(),
+  value: z.string(),
+  updatedAt: z.number().int()
+})
+export type StudentAnswerSnapshot = z.infer<typeof StudentAnswerSnapshot>
+
+export const StudentSessionState = z.object({
+  sessionId: z.string(),
+  status: SessionStatus,
+  studentId: z.string(),
+  studentName: z.string(),
+  studentMatricula: z.string(),
+  submittedAt: z.number().int().nullable(),
+  answers: z.array(StudentAnswerSnapshot)
+})
+export type StudentSessionState = z.infer<typeof StudentSessionState>
+
+export const AnswerInput = z.object({
+  questionId: z.string(),
+  value: z.string().max(10_000)
+})
+export type AnswerInput = z.infer<typeof AnswerInput>
