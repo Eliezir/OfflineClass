@@ -1,12 +1,15 @@
-import { contextBridge } from 'electron'
+import { contextBridge, ipcRenderer } from 'electron'
 import { electronAPI } from '@electron-toolkit/preload'
+import type { DiscoveryStatus } from '@offlineclass/shared'
 
-// Custom APIs for renderer
-const api = {}
+const api = {
+  discovery: {
+    getStatus: (): Promise<DiscoveryStatus> => ipcRenderer.invoke('discovery.getStatus')
+  }
+}
 
-// Use `contextBridge` APIs to expose Electron APIs to
-// renderer only if context isolation is enabled, otherwise
-// just add to the DOM global.
+export type ApiSurface = typeof api
+
 if (process.contextIsolated) {
   try {
     contextBridge.exposeInMainWorld('electron', electronAPI)
@@ -15,8 +18,8 @@ if (process.contextIsolated) {
     console.error(error)
   }
 } else {
-  // @ts-ignore (define in dts)
+  // @ts-ignore (defined in dts)
   window.electron = electronAPI
-  // @ts-ignore (define in dts)
+  // @ts-ignore (defined in dts)
   window.api = api
 }
