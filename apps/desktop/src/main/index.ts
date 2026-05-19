@@ -55,6 +55,7 @@ async function bootstrap(): Promise<void> {
 
   // 4. Wire IPC handlers — depends on the server (for port) and mDNS (for name).
   registerIpcHandlers({
+    auth: { db },
     discovery: { port: serverHandle.port, mdnsName: mdnsHandle.name }
   })
 

@@ -1,10 +1,16 @@
 import { contextBridge, ipcRenderer } from 'electron'
 import { electronAPI } from '@electron-toolkit/preload'
-import type { DiscoveryStatus } from '@offlineclass/shared'
+import type { DiscoveryStatus, LoginInput, RegisterInput, Teacher } from '@offlineclass/shared'
 
 const api = {
   discovery: {
     getStatus: (): Promise<DiscoveryStatus> => ipcRenderer.invoke('discovery.getStatus')
+  },
+  auth: {
+    register: (input: RegisterInput): Promise<Teacher> => ipcRenderer.invoke('auth.register', input),
+    login: (input: LoginInput): Promise<Teacher> => ipcRenderer.invoke('auth.login', input),
+    me: (): Promise<Teacher | null> => ipcRenderer.invoke('auth.me'),
+    logout: (): Promise<null> => ipcRenderer.invoke('auth.logout')
   }
 }
 
