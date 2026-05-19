@@ -128,6 +128,19 @@ export default function TestRoute(): React.JSX.Element {
     onSuccess: () => navigate('/done', { replace: true })
   })
 
+  // Auto-submit when the countdown hits zero. Guard so the mutation only fires
+  // once even if the timer effect re-evaluates.
+  useEffect(() => {
+    if (
+      remainingSeconds === 0 &&
+      !submitMutation.isPending &&
+      !submitMutation.isSuccess &&
+      !meQuery.data?.submittedAt
+    ) {
+      submitMutation.mutate()
+    }
+  }, [remainingSeconds, meQuery.data?.submittedAt, submitMutation])
+
   if (examQuery.isPending || meQuery.isPending) {
     return (
       <main className="p-8">

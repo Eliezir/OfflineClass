@@ -136,6 +136,7 @@ export const SessionDetail = z.object({
   status: SessionStatus,
   durationMinutes: z.number().int(),
   allowLateJoin: z.boolean(),
+  questionsCount: z.number().int().nonnegative(),
   students: z.array(SessionLobbyStudent),
   createdAt: z.number().int(),
   startedAt: z.number().int().nullable(),

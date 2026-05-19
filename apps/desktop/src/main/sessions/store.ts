@@ -68,6 +68,11 @@ function loadDetailById(db: Db, sessionId: string): SessionDetail | null {
     .where(eq(examSessions.id, sessionId))
     .get()
   if (!row) return null
+  const countRow = db
+    .select({ n: sql<number>`COUNT(*)` })
+    .from(questions)
+    .where(eq(questions.examId, row.examId))
+    .get()
   return {
     id: row.id,
     examId: row.examId,
@@ -75,6 +80,7 @@ function loadDetailById(db: Db, sessionId: string): SessionDetail | null {
     status: row.status as SessionStatus,
     durationMinutes: row.durationMinutes,
     allowLateJoin: row.allowLateJoin,
+    questionsCount: Number(countRow?.n ?? 0),
     students: listLobbyStudents(db, sessionId),
     createdAt: row.createdAt.getTime(),
     startedAt: row.startedAt ? row.startedAt.getTime() : null,

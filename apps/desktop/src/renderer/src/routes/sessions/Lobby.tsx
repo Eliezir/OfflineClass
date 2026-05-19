@@ -1,7 +1,7 @@
-import { useEffect, useState } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { Link, useParams } from 'react-router-dom'
-import type { WsServerEvent } from '@offlineclass/shared'
+import type { SessionLobbyStudent, WsServerEvent } from '@offlineclass/shared'
 
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
@@ -9,10 +9,27 @@ import { cn } from '@/lib/utils'
 import { api } from '../../lib/api'
 import { connectWs, type WsStatus } from '../../lib/ws'
 
-function statusLabel(status: string): string {
-  if (status === 'lobby') return 'No lobby'
-  if (status === 'running') return 'Em andamento'
-  return 'Encerrada'
+const IDLE_THRESHOLD_MS = 15_000
+
+type StudentStatus = 'joined' | 'answering' | 'submitted' | 'idle'
+
+interface Computed {
+  status: StudentStatus
+  secondsSinceLastSeen: number
+}
+
+function computeStudent(student: SessionLobbyStudent, now: number): Computed {
+  if (student.submittedAt) {
+    return { status: 'submitted', secondsSinceLastSeen: 0 }
+  }
+  const sinceLastSeen = now - student.lastSeenAt
+  if (sinceLastSeen > IDLE_THRESHOLD_MS) {
+    return { status: 'idle', secondsSinceLastSeen: Math.floor(sinceLastSeen / 1000) }
+  }
+  if (student.answeredCount > 0) {
+    return { status: 'answering', secondsSinceLastSeen: Math.floor(sinceLastSeen / 1000) }
+  }
+  return { status: 'joined', secondsSinceLastSeen: Math.floor(sinceLastSeen / 1000) }
 }
 
 function statusTone(status: string): string {
@@ -21,10 +38,56 @@ function statusTone(status: string): string {
   return 'bg-amber-500/15 text-amber-700 dark:text-amber-300'
 }
 
+function statusLabel(status: string): string {
+  if (status === 'lobby') return 'No lobby'
+  if (status === 'running') return 'Em andamento'
+  return 'Encerrada'
+}
+
+function studentPillTone(status: StudentStatus): string {
+  switch (status) {
+    case 'submitted':
+      return 'bg-green-500/15 text-green-700 dark:text-green-300'
+    case 'answering':
+      return 'bg-sky-500/15 text-sky-700 dark:text-sky-300'
+    case 'idle':
+      return 'bg-red-500/15 text-red-700 dark:text-red-300'
+    default:
+      return 'bg-muted text-muted-foreground'
+  }
+}
+
+function studentPillLabel(status: StudentStatus): string {
+  switch (status) {
+    case 'submitted':
+      return 'Enviou'
+    case 'answering':
+      return 'Respondendo'
+    case 'idle':
+      return 'Inativo'
+    default:
+      return 'No lobby'
+  }
+}
+
+function formatClock(secs: number): string {
+  const m = Math.floor(secs / 60)
+  const s = secs % 60
+  return `${m.toString().padStart(2, '0')}:${s.toString().padStart(2, '0')}`
+}
+
 export default function LobbyRoute(): React.JSX.Element {
   const { id = '' } = useParams<{ id: string }>()
   const qc = useQueryClient()
   const [wsStatus, setWsStatus] = useState<WsStatus>('connecting')
+  const [now, setNow] = useState(() => Date.now())
+
+  // Tick every second so idle pills and the countdown stay fresh without
+  // hammering the server.
+  useEffect(() => {
+    const interval = setInterval(() => setNow(Date.now()), 1000)
+    return () => clearInterval(interval)
+  }, [])
 
   const sessionQuery = useQuery({
     queryKey: ['sessions', id],
@@ -37,9 +100,6 @@ export default function LobbyRoute(): React.JSX.Element {
     queryFn: api.discovery.getStatus
   })
 
-  // Subscribe to the teacher-side WS using loopback. Bind only when we have
-  // both the session id and a confirmed token from main; tear down on
-  // unmount or when the session id changes.
   useEffect(() => {
     if (!id || !discoveryQuery.data) return
     let cancelled = false
@@ -54,8 +114,6 @@ export default function LobbyRoute(): React.JSX.Element {
         url,
         onStatus: setWsStatus,
         onEvent: (event: WsServerEvent) => {
-          // Whatever the event, the cheapest way to keep the UI honest is
-          // to refetch the session detail — server is the source of truth.
           if (
             event.type === 'session.lobby.update' ||
             event.type === 'session.started' ||
@@ -90,6 +148,30 @@ export default function LobbyRoute(): React.JSX.Element {
     }
   })
 
+  const session = sessionQuery.data
+
+  const remainingSeconds = useMemo<number | null>(() => {
+    if (!session || session.status !== 'running' || session.startedAt === null) return null
+    const endAt = session.startedAt + session.durationMinutes * 60_000
+    return Math.max(0, Math.floor((endAt - now) / 1000))
+  }, [session, now])
+
+  const computed = useMemo(() => {
+    if (!session) return []
+    return session.students.map((s) => ({ student: s, ...computeStudent(s, now) }))
+  }, [session, now])
+
+  const counters = useMemo(() => {
+    const buckets: Record<StudentStatus, number> = {
+      joined: 0,
+      answering: 0,
+      submitted: 0,
+      idle: 0
+    }
+    for (const { status } of computed) buckets[status]++
+    return buckets
+  }, [computed])
+
   if (sessionQuery.error) {
     return (
       <main className="mx-auto max-w-3xl p-10">
@@ -101,7 +183,7 @@ export default function LobbyRoute(): React.JSX.Element {
     )
   }
 
-  if (sessionQuery.isPending || !sessionQuery.data) {
+  if (sessionQuery.isPending || !session) {
     return (
       <main className="mx-auto max-w-3xl p-10">
         <p className="text-muted-foreground text-sm">Carregando…</p>
@@ -109,11 +191,11 @@ export default function LobbyRoute(): React.JSX.Element {
     )
   }
 
-  const session = sessionQuery.data
   const discovery = discoveryQuery.data
+  const showQr = discovery && session.status !== 'ended'
 
   return (
-    <main className="mx-auto flex min-h-screen max-w-5xl flex-col gap-6 p-10">
+    <main className="mx-auto flex min-h-screen max-w-6xl flex-col gap-6 p-8">
       <header className="flex flex-wrap items-start justify-between gap-4">
         <div>
           <p className="text-muted-foreground text-xs tracking-widest uppercase">
@@ -122,7 +204,10 @@ export default function LobbyRoute(): React.JSX.Element {
           <h1 className="text-3xl font-semibold">{session.examTitle}</h1>
           <div className="text-muted-foreground mt-1 flex items-center gap-2 text-sm">
             <span
-              className={cn('rounded-full px-2 py-0.5 text-xs font-medium', statusTone(session.status))}
+              className={cn(
+                'rounded-full px-2 py-0.5 text-xs font-medium',
+                statusTone(session.status)
+              )}
             >
               {statusLabel(session.status)}
             </span>
@@ -131,7 +216,20 @@ export default function LobbyRoute(): React.JSX.Element {
             <span>WS: {wsStatus}</span>
           </div>
         </div>
-        <div className="flex items-center gap-2">
+        <div className="flex items-center gap-3">
+          {session.status === 'running' && remainingSeconds !== null && (
+            <div className="text-right">
+              <p className="text-muted-foreground text-xs uppercase tracking-widest">Tempo</p>
+              <p
+                className={cn(
+                  'font-mono text-2xl',
+                  remainingSeconds === 0 && 'text-destructive animate-pulse'
+                )}
+              >
+                {formatClock(remainingSeconds)}
+              </p>
+            </div>
+          )}
           {session.status === 'lobby' && (
             <Button
               onClick={() => startMutation.mutate()}
@@ -159,12 +257,19 @@ export default function LobbyRoute(): React.JSX.Element {
         </div>
       </header>
 
-      <section className="grid gap-4 md:grid-cols-[260px_1fr]">
-        {discovery && session.status !== 'ended' && (
-          <Card>
+      <section className="grid gap-3 sm:grid-cols-4">
+        <CounterCard label="Conectados" value={session.students.length} />
+        <CounterCard label="Respondendo" value={counters.answering} accent="sky" />
+        <CounterCard label="Enviaram" value={counters.submitted} accent="green" />
+        <CounterCard label="Inativos" value={counters.idle} accent="red" />
+      </section>
+
+      <section className={cn('grid gap-4', showQr && 'md:grid-cols-[260px_1fr]')}>
+        {showQr && (
+          <Card className="self-start">
             <CardHeader>
               <CardTitle className="text-base">Como conectar</CardTitle>
-              <CardDescription>Os alunos escaneiam o QR ou abrem a URL.</CardDescription>
+              <CardDescription>QR ou URL na LAN.</CardDescription>
             </CardHeader>
             <CardContent className="space-y-3">
               <img
@@ -186,38 +291,34 @@ export default function LobbyRoute(): React.JSX.Element {
           </Card>
         )}
 
-        <Card className={discovery && session.status !== 'ended' ? '' : 'md:col-span-2'}>
+        <Card>
           <CardHeader>
             <CardTitle className="text-base">
-              Alunos conectados ({session.students.length})
+              Alunos ({session.students.length})
             </CardTitle>
             <CardDescription>
               {session.status === 'lobby'
-                ? 'A lista atualiza em tempo real conforme os alunos entram.'
+                ? 'A lista atualiza em tempo real conforme entram.'
                 : session.status === 'running'
-                  ? 'Sessão em andamento. Stage 4 trará o status detalhado.'
+                  ? 'Acompanhamento ao vivo.'
                   : 'Sessão encerrada.'}
             </CardDescription>
           </CardHeader>
           <CardContent>
-            {session.students.length === 0 ? (
+            {computed.length === 0 ? (
               <p className="text-muted-foreground py-8 text-center text-sm">
                 Aguardando alunos…
               </p>
             ) : (
-              <ul className="divide-border divide-y">
-                {session.students.map((s) => (
-                  <li key={s.id} className="flex items-center justify-between gap-3 py-2 text-sm">
-                    <div className="min-w-0">
-                      <p className="truncate font-medium">{s.name}</p>
-                      <p className="text-muted-foreground text-xs">{s.matricula}</p>
-                    </div>
-                    {s.submittedAt && (
-                      <span className="rounded-full bg-green-500/15 px-2 py-0.5 text-xs text-green-700 dark:text-green-300">
-                        Enviou
-                      </span>
-                    )}
-                  </li>
+              <ul className="grid gap-2 sm:grid-cols-2">
+                {computed.map(({ student, status, secondsSinceLastSeen }) => (
+                  <StudentRow
+                    key={student.id}
+                    student={student}
+                    status={status}
+                    secondsSinceLastSeen={secondsSinceLastSeen}
+                    questionsCount={session.questionsCount}
+                  />
                 ))}
               </ul>
             )}
@@ -225,5 +326,84 @@ export default function LobbyRoute(): React.JSX.Element {
         </Card>
       </section>
     </main>
+  )
+}
+
+interface CounterCardProps {
+  label: string
+  value: number
+  accent?: 'sky' | 'green' | 'red'
+}
+
+function CounterCard({ label, value, accent }: CounterCardProps): React.JSX.Element {
+  return (
+    <Card>
+      <CardContent className="flex items-center justify-between gap-3 py-4">
+        <div className="space-y-0.5">
+          <p className="text-muted-foreground text-xs uppercase tracking-widest">{label}</p>
+          <p
+            className={cn(
+              'text-2xl font-semibold',
+              accent === 'sky' && 'text-sky-600 dark:text-sky-300',
+              accent === 'green' && 'text-green-600 dark:text-green-300',
+              accent === 'red' && 'text-red-600 dark:text-red-300'
+            )}
+          >
+            {value}
+          </p>
+        </div>
+      </CardContent>
+    </Card>
+  )
+}
+
+interface StudentRowProps {
+  student: SessionLobbyStudent
+  status: StudentStatus
+  secondsSinceLastSeen: number
+  questionsCount: number
+}
+
+function StudentRow({
+  student,
+  status,
+  secondsSinceLastSeen,
+  questionsCount
+}: StudentRowProps): React.JSX.Element {
+  const lastSeenLabel =
+    status === 'submitted'
+      ? 'enviou'
+      : status === 'idle'
+        ? `há ${secondsSinceLastSeen}s`
+        : `há ${secondsSinceLastSeen}s`
+  return (
+    <li
+      className={cn(
+        'border-border bg-card flex items-center justify-between gap-3 rounded-md border p-3 text-sm',
+        status === 'idle' && 'border-red-500/30',
+        status === 'submitted' && 'border-green-500/30'
+      )}
+    >
+      <div className="min-w-0">
+        <p className="truncate font-medium">{student.name}</p>
+        <p className="text-muted-foreground text-xs">{student.matricula}</p>
+      </div>
+      <div className="flex items-center gap-3">
+        <div className="text-right text-xs">
+          <p className="text-muted-foreground">
+            {student.answeredCount}/{questionsCount}
+          </p>
+          <p className="text-muted-foreground">{lastSeenLabel}</p>
+        </div>
+        <span
+          className={cn(
+            'rounded-full px-2 py-0.5 text-xs font-medium',
+            studentPillTone(status)
+          )}
+        >
+          {studentPillLabel(status)}
+        </span>
+      </div>
+    </li>
   )
 }
