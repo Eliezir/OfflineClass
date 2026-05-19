@@ -1,5 +1,6 @@
 import { ipcMain } from 'electron'
 import {
+  GradeAnswerInput,
   SessionCreateInput,
   type SessionAnswersReview,
   type SessionDetail,
@@ -14,6 +15,7 @@ import {
   endSession,
   findActiveSessionForOwner,
   getSession,
+  gradeAnswer,
   listLobbyStudents,
   listSessionsForOwner,
   loadStudentAnswers,
@@ -93,6 +95,17 @@ export function registerSessionsHandlers(ctx: SessionsContext): void {
       const sessionId = typeof rawSessionId === 'string' ? rawSessionId : ''
       const studentId = typeof rawStudentId === 'string' ? rawStudentId : ''
       return loadStudentAnswers(db, sessionId, studentId, ownerId)
+    }
+  )
+
+  ipcMain.handle(
+    'sessions.gradeAnswer',
+    async (_event, rawSessionId, raw): Promise<SessionAnswersReview> => {
+      const ownerId = requireTeacherId(db)
+      const sessionId = typeof rawSessionId === 'string' ? rawSessionId : ''
+      const input = GradeAnswerInput.parse(raw)
+      gradeAnswer(db, sessionId, input.studentId, input.questionId, input.score, ownerId)
+      return loadStudentAnswers(db, sessionId, input.studentId, ownerId)
     }
   )
 }

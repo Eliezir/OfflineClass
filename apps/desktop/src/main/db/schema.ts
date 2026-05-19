@@ -1,5 +1,5 @@
 import { sql } from 'drizzle-orm'
-import { integer, sqliteTable, text, unique } from 'drizzle-orm/sqlite-core'
+import { integer, real, sqliteTable, text, unique } from 'drizzle-orm/sqlite-core'
 
 const timestamp = (column: string) => integer(column, { mode: 'timestamp_ms' })
 
@@ -112,6 +112,9 @@ export const answers = sqliteTable(
       .notNull()
       .references(() => questions.id, { onDelete: 'cascade' }),
     value: text('value').notNull(),
+    // Auto-set to 1.0/0.0 on MCQ saves; remains null for essays until the
+    // teacher grades them via sessions.gradeAnswer.
+    score: real('score'),
     updatedAt: timestamp('updated_at')
       .notNull()
       .default(sql`(unixepoch() * 1000)`)

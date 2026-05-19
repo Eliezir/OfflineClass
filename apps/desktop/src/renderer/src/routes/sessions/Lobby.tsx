@@ -2,7 +2,13 @@ import { useEffect, useMemo, useState } from 'react'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { Link, useParams } from 'react-router-dom'
 import { Check, X } from 'lucide-react'
-import type { SessionDetail, SessionLobbyStudent, WsServerEvent } from '@offlineclass/shared'
+import type {
+  SessionAnswersReview,
+  SessionDetail,
+  SessionLobbyStudent,
+  StudentAnswerReview,
+  WsServerEvent
+} from '@offlineclass/shared'
 
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
@@ -13,6 +19,8 @@ import {
   DialogHeader,
   DialogTitle
 } from '@/components/ui/dialog'
+import { Input } from '@/components/ui/input'
+import { Label } from '@/components/ui/label'
 import { cn } from '@/lib/utils'
 import { api } from '../../lib/api'
 import { connectWs, type WsStatus } from '../../lib/ws'
@@ -468,16 +476,18 @@ function AnswersReviewDialog({
   studentId,
   onClose
 }: AnswersReviewDialogProps): React.JSX.Element {
+  const qc = useQueryClient()
+  const queryKey = ['sessions', sessionId, 'answers', studentId] as const
+
   const reviewQuery = useQuery({
-    queryKey: ['sessions', sessionId, 'answers', studentId],
+    queryKey,
     queryFn: () => api.sessions.studentAnswers(sessionId, studentId ?? ''),
     enabled: !!studentId
   })
 
   const review = reviewQuery.data
-  const mcqCorrect =
-    review?.answers.filter((a) => a.question.kind === 'mcq' && a.correct === true).length ?? 0
-  const mcqTotal = review?.answers.filter((a) => a.question.kind === 'mcq').length ?? 0
+  const pendingEssays =
+    review?.answers.filter((a) => a.question.kind === 'essay' && a.score === null).length ?? 0
 
   return (
     <Dialog open={!!studentId} onOpenChange={(open) => !open && onClose()}>
@@ -487,9 +497,23 @@ function AnswersReviewDialog({
             {review ? `${review.studentName} · ${review.studentMatricula}` : 'Respostas'}
           </DialogTitle>
           <DialogDescription>
-            {review
-              ? `${review.examTitle} · ${mcqTotal > 0 ? `${mcqCorrect}/${mcqTotal} acertos (MCQ)` : 'sem MCQ'}`
-              : 'Carregando…'}
+            {review ? (
+              <span className="flex flex-wrap items-center gap-2">
+                <span>{review.examTitle}</span>
+                <span>·</span>
+                <span className="text-foreground font-medium">
+                  Nota: {review.totalScore.toFixed(1)} / {review.maxScore}
+                </span>
+                {pendingEssays > 0 && (
+                  <span className="text-amber-700 dark:text-amber-300">
+                    · {pendingEssays} dissertativa{pendingEssays > 1 ? 's' : ''} pendente
+                    {pendingEssays > 1 ? 's' : ''}
+                  </span>
+                )}
+              </span>
+            ) : (
+              'Carregando…'
+            )}
           </DialogDescription>
         </DialogHeader>
         {reviewQuery.isPending && (
@@ -503,64 +527,169 @@ function AnswersReviewDialog({
         {review && (
           <ol className="space-y-4">
             {review.answers.map((ans, idx) => (
-              <li
+              <AnswerReviewItem
                 key={ans.question.id}
-                className="border-border bg-muted/30 space-y-2 rounded-md border p-3"
-              >
-                <p className="text-sm font-medium">
-                  {idx + 1}. {ans.question.prompt}
-                </p>
-                {ans.question.kind === 'mcq' ? (
-                  <ul className="space-y-1 text-sm">
-                    {ans.question.options.map((opt) => {
-                      const selected = ans.value === opt.id
-                      return (
-                        <li
-                          key={opt.id}
-                          className={cn(
-                            'flex items-center gap-2 rounded-sm px-2 py-1',
-                            opt.correct && 'bg-green-500/10',
-                            selected &&
-                              !opt.correct &&
-                              'bg-red-500/10 text-red-700 dark:text-red-300'
-                          )}
-                        >
-                          <span className="text-muted-foreground w-5 text-xs">
-                            {selected ? '●' : '○'}
-                          </span>
-                          <span className="flex-1">{opt.text}</span>
-                          {opt.correct && (
-                            <Check className="size-4 text-green-600 dark:text-green-400" />
-                          )}
-                          {selected && !opt.correct && (
-                            <X className="size-4 text-red-600 dark:text-red-400" />
-                          )}
-                        </li>
-                      )
-                    })}
-                    {ans.value === null && (
-                      <li className="text-muted-foreground italic text-xs">
-                        Aluno não respondeu.
-                      </li>
-                    )}
-                  </ul>
-                ) : (
-                  <p
-                    className={cn(
-                      'whitespace-pre-wrap rounded-sm border-l-2 pl-3 text-sm',
-                      ans.value
-                        ? 'border-sky-500/60 bg-sky-500/5'
-                        : 'border-muted-foreground/40 text-muted-foreground italic'
-                    )}
-                  >
-                    {ans.value ?? 'Aluno não respondeu.'}
-                  </p>
-                )}
-              </li>
+                index={idx}
+                review={ans}
+                sessionId={sessionId}
+                studentId={review.studentId}
+                onGraded={(fresh) => qc.setQueryData(queryKey, fresh)}
+              />
             ))}
           </ol>
         )}
       </DialogContent>
     </Dialog>
+  )
+}
+
+interface AnswerReviewItemProps {
+  index: number
+  review: StudentAnswerReview
+  sessionId: string
+  studentId: string
+  onGraded: (fresh: SessionAnswersReview) => void
+}
+
+function AnswerReviewItem({
+  index,
+  review,
+  sessionId,
+  studentId,
+  onGraded
+}: AnswerReviewItemProps): React.JSX.Element {
+  const isEssay = review.question.kind === 'essay'
+  const [draft, setDraft] = useState<string>(
+    review.score !== null ? String(review.score) : ''
+  )
+  const [error, setError] = useState<string | null>(null)
+
+  useEffect(() => {
+    setDraft(review.score !== null ? String(review.score) : '')
+    setError(null)
+  }, [review.score, review.question.id])
+
+  const gradeMutation = useMutation({
+    mutationFn: () => {
+      const parsed = Number(draft.replace(',', '.'))
+      if (Number.isNaN(parsed)) {
+        throw new Error('Informe um número')
+      }
+      if (parsed < 0 || parsed > 10) {
+        throw new Error('Nota entre 0 e 10')
+      }
+      return api.sessions.gradeAnswer(sessionId, {
+        studentId,
+        questionId: review.question.id,
+        score: parsed
+      })
+    },
+    onSuccess: (fresh) => onGraded(fresh),
+    onError: (err: Error) => setError(err.message)
+  })
+
+  const scoreBadge =
+    review.score === null ? (
+      <span className="rounded-full bg-amber-500/15 px-2 py-0.5 text-xs text-amber-700 dark:text-amber-300">
+        Sem nota
+      </span>
+    ) : (
+      <span
+        className={cn(
+          'rounded-full px-2 py-0.5 text-xs font-medium',
+          review.score >= 0.5
+            ? 'bg-green-500/15 text-green-700 dark:text-green-300'
+            : 'bg-red-500/15 text-red-700 dark:text-red-300'
+        )}
+      >
+        {review.score.toFixed(1)} / 1
+      </span>
+    )
+
+  return (
+    <li className="border-border bg-muted/30 space-y-2 rounded-md border p-3">
+      <div className="flex items-start justify-between gap-3">
+        <p className="text-sm font-medium">
+          {index + 1}. {review.question.prompt}
+        </p>
+        {!isEssay && scoreBadge}
+      </div>
+      {!isEssay ? (
+        <ul className="space-y-1 text-sm">
+          {review.question.kind === 'mcq' &&
+            review.question.options.map((opt) => {
+              const selected = review.value === opt.id
+              return (
+                <li
+                  key={opt.id}
+                  className={cn(
+                    'flex items-center gap-2 rounded-sm px-2 py-1',
+                    opt.correct && 'bg-green-500/10',
+                    selected &&
+                      !opt.correct &&
+                      'bg-red-500/10 text-red-700 dark:text-red-300'
+                  )}
+                >
+                  <span className="text-muted-foreground w-5 text-xs">
+                    {selected ? '●' : '○'}
+                  </span>
+                  <span className="flex-1">{opt.text}</span>
+                  {opt.correct && (
+                    <Check className="size-4 text-green-600 dark:text-green-400" />
+                  )}
+                  {selected && !opt.correct && (
+                    <X className="size-4 text-red-600 dark:text-red-400" />
+                  )}
+                </li>
+              )
+            })}
+          {review.value === null && (
+            <li className="text-muted-foreground italic text-xs">Aluno não respondeu.</li>
+          )}
+        </ul>
+      ) : (
+        <>
+          <p
+            className={cn(
+              'whitespace-pre-wrap rounded-sm border-l-2 pl-3 text-sm',
+              review.value
+                ? 'border-sky-500/60 bg-sky-500/5'
+                : 'border-muted-foreground/40 text-muted-foreground italic'
+            )}
+          >
+            {review.value ?? 'Aluno não respondeu.'}
+          </p>
+          <form
+            className="flex flex-wrap items-end gap-2 pt-2"
+            onSubmit={(e) => {
+              e.preventDefault()
+              setError(null)
+              gradeMutation.mutate()
+            }}
+          >
+            <div className="flex items-end gap-2">
+              <div className="space-y-1">
+                <Label htmlFor={`grade-${review.question.id}`} className="text-xs">
+                  Nota (0–10)
+                </Label>
+                <Input
+                  id={`grade-${review.question.id}`}
+                  value={draft}
+                  onChange={(e) => setDraft(e.target.value)}
+                  inputMode="decimal"
+                  placeholder="0.0"
+                  className="w-24"
+                />
+              </div>
+              <Button type="submit" size="sm" disabled={gradeMutation.isPending}>
+                {gradeMutation.isPending ? 'Salvando…' : 'Salvar nota'}
+              </Button>
+            </div>
+            {scoreBadge}
+            {error && <p className="text-destructive text-xs w-full">{error}</p>}
+          </form>
+        </>
+      )}
+    </li>
   )
 }

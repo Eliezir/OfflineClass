@@ -13,6 +13,7 @@ import {
   type LoginInput,
   type QuestionInput,
   type RegisterInput,
+  type GradeAnswerInput,
   type SessionCreateInput
 } from '@offlineclass/shared'
 
@@ -68,6 +69,8 @@ export const api = {
       await window.api.sessions.broadcastLobby(id)
     },
     studentAnswers: async (sessionId: string, studentId: string) =>
-      SessionAnswersReview.parse(await window.api.sessions.studentAnswers(sessionId, studentId))
+      SessionAnswersReview.parse(await window.api.sessions.studentAnswers(sessionId, studentId)),
+    gradeAnswer: async (sessionId: string, input: GradeAnswerInput) =>
+      SessionAnswersReview.parse(await window.api.sessions.gradeAnswer(sessionId, input))
   }
 }

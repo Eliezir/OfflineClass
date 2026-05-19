@@ -261,7 +261,10 @@ export type AnswerInput = z.infer<typeof AnswerInput>
 export const StudentAnswerReview = z.object({
   question: Question,
   value: z.string().nullable(),
-  correct: z.boolean().nullable()
+  correct: z.boolean().nullable(),
+  // 1.0 / 0.0 derived for MCQ. For essay: null until the teacher grades it,
+  // then whatever score they entered.
+  score: z.number().nullable()
 })
 export type StudentAnswerReview = z.infer<typeof StudentAnswerReview>
 
@@ -272,9 +275,18 @@ export const SessionAnswersReview = z.object({
   studentMatricula: z.string(),
   examTitle: z.string(),
   submittedAt: z.number().int().nullable(),
-  answers: z.array(StudentAnswerReview)
+  answers: z.array(StudentAnswerReview),
+  totalScore: z.number(),
+  maxScore: z.number().int().nonnegative()
 })
 export type SessionAnswersReview = z.infer<typeof SessionAnswersReview>
+
+export const GradeAnswerInput = z.object({
+  studentId: z.string(),
+  questionId: z.string(),
+  score: z.number().min(0).max(10)
+})
+export type GradeAnswerInput = z.infer<typeof GradeAnswerInput>
 
 // Compact row for the "activities applied" list on the teacher Home.
 export const SessionSummary = z.object({

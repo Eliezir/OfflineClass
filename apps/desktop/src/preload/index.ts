@@ -6,6 +6,7 @@ import type {
   ExamInput,
   ExamSummary,
   ExamUpdate,
+  GradeAnswerInput,
   LoginInput,
   Question,
   QuestionInput,
@@ -58,7 +59,9 @@ const api = {
     broadcastLobby: (id: string): Promise<null> =>
       ipcRenderer.invoke('sessions.broadcastLobby', id),
     studentAnswers: (sessionId: string, studentId: string): Promise<SessionAnswersReview> =>
-      ipcRenderer.invoke('sessions.studentAnswers', sessionId, studentId)
+      ipcRenderer.invoke('sessions.studentAnswers', sessionId, studentId),
+    gradeAnswer: (sessionId: string, input: GradeAnswerInput): Promise<SessionAnswersReview> =>
+      ipcRenderer.invoke('sessions.gradeAnswer', sessionId, input)
   }
 }
 

@@ -581,18 +581,32 @@ export function loadStudentAnswers(
     .from(answers)
     .where(eq(answers.studentId, studentId))
     .all()
-  const answerByQ = new Map(answerRows.map((a) => [a.questionId, a.value]))
+  const answerByQId = new Map(answerRows.map((a) => [a.questionId, a]))
 
   const reviews: StudentAnswerReview[] = questionRows.map((row) => {
     const question = rowToFullQuestion(row)
-    const value = answerByQ.get(row.id) ?? null
+    const ans = answerByQId.get(row.id) ?? null
+    const value = ans?.value ?? null
     let correct: boolean | null = null
-    if (question.kind === 'mcq' && value !== null) {
-      const opt = question.options.find((o) => o.id === value)
-      correct = opt?.correct === true
+    let score: number | null = null
+    if (question.kind === 'mcq') {
+      if (value !== null) {
+        const opt = question.options.find((o) => o.id === value)
+        correct = opt?.correct === true
+        // MCQ is auto-graded — ignore any stored override and compute fresh
+        // so changing the correct flag in the form builder re-grades on
+        // the next read.
+        score = correct ? 1 : 0
+      }
+    } else {
+      // Essay: whatever the teacher saved (or null = not graded yet).
+      score = ans?.score ?? null
     }
-    return { question, value, correct }
+    return { question, value, correct, score }
   })
+
+  const totalScore = reviews.reduce((acc, r) => acc + (r.score ?? 0), 0)
+  const maxScore = reviews.length
 
   return {
     sessionId,
@@ -601,6 +615,69 @@ export function loadStudentAnswers(
     studentMatricula: studentRow.matricula,
     examTitle: sessionRow.examTitle,
     submittedAt: studentRow.submittedAt ? studentRow.submittedAt.getTime() : null,
-    answers: reviews
+    answers: reviews,
+    totalScore,
+    maxScore
+  }
+}
+
+export function gradeAnswer(
+  db: Db,
+  sessionId: string,
+  studentId: string,
+  questionId: string,
+  score: number,
+  ownerId: string
+): void {
+  // Re-verify the chain teacher → session → student → question to keep this
+  // owner-scoped.
+  const sessionRow = db
+    .select({ examId: examSessions.examId, ownerId: examSessions.ownerId })
+    .from(examSessions)
+    .where(eq(examSessions.id, sessionId))
+    .get()
+  if (!sessionRow || sessionRow.ownerId !== ownerId) {
+    throw new SessionError('Sessão não encontrada', 'NOT_FOUND')
+  }
+  const studentRow = db
+    .select({ id: students.id })
+    .from(students)
+    .where(and(eq(students.id, studentId), eq(students.sessionId, sessionId)))
+    .get()
+  if (!studentRow) throw new SessionError('Aluno não encontrado', 'NOT_FOUND')
+  const questionRow = db
+    .select()
+    .from(questions)
+    .where(and(eq(questions.id, questionId), eq(questions.examId, sessionRow.examId)))
+    .get()
+  if (!questionRow) throw new SessionError('Questão inválida', 'NOT_FOUND')
+  if (questionRow.kind !== 'essay') {
+    throw new SessionError('Apenas dissertativas podem ser corrigidas manualmente', 'BAD_STATE')
+  }
+
+  const existing = db
+    .select({ id: answers.id })
+    .from(answers)
+    .where(and(eq(answers.studentId, studentId), eq(answers.questionId, questionId)))
+    .get()
+  const now = new Date()
+  if (existing) {
+    db.update(answers)
+      .set({ score, updatedAt: now })
+      .where(eq(answers.id, existing.id))
+      .run()
+  } else {
+    // Allow grading even when the student left the field blank — insert a
+    // zero-value answer row so the score sticks.
+    db.insert(answers)
+      .values({
+        id: randomUUID(),
+        studentId,
+        questionId,
+        value: '',
+        score,
+        updatedAt: now
+      })
+      .run()
   }
 }
