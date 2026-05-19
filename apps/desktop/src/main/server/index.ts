@@ -1,8 +1,15 @@
 import { serve, type ServerType } from '@hono/node-server'
 import { createNodeWebSocket } from '@hono/node-ws'
-import { Hono } from 'hono'
+import { Hono, type Context } from 'hono'
 import { and, eq } from 'drizzle-orm'
-import { JoinInput, type SessionPublic, type WsServerEvent } from '@offlineclass/shared'
+import {
+  AnswerInput,
+  JoinInput,
+  type SessionPublic,
+  type StudentExam,
+  type StudentSessionState,
+  type WsServerEvent
+} from '@offlineclass/shared'
 
 import type { Db } from '../db/client'
 import { resolveSession } from '../auth/sessions'
@@ -11,9 +18,14 @@ import type { Rooms } from '../sessions/rooms'
 import {
   findActiveSessionPublic,
   findStudentByToken,
+  getStudentExam,
+  getStudentSessionState,
   joinSession,
   listLobbyStudents,
-  SessionError
+  recordHeartbeat,
+  saveAnswer,
+  SessionError,
+  submitStudent
 } from '../sessions/store'
 
 export interface ServerHandle {
@@ -24,6 +36,35 @@ export interface ServerHandle {
 export interface ServerDeps {
   db: Db
   rooms: Rooms
+}
+
+function extractBearer(c: Context): string | null {
+  const header = c.req.header('authorization')
+  if (!header) return null
+  const m = /^Bearer\s+(.+)$/i.exec(header)
+  return m ? m[1].trim() : null
+}
+
+function broadcastLobbyUpdate(db: Db, rooms: Rooms, sessionId: string): void {
+  rooms.toTeachers(sessionId, {
+    type: 'session.lobby.update',
+    students: listLobbyStudents(db, sessionId)
+  })
+}
+
+function mapSessionError(c: Context, err: unknown): Response {
+  if (err instanceof SessionError) {
+    const status =
+      err.code === 'NO_ACTIVE_SESSION' || err.code === 'NOT_FOUND'
+        ? 404
+        : err.code === 'JOIN_CLOSED' || err.code === 'BAD_STATE'
+          ? 409
+          : err.code === 'ALREADY_ACTIVE'
+            ? 409
+            : 400
+    return c.json({ error: err.code, message: err.message }, status)
+  }
+  throw err
 }
 
 export async function startServer(port: number, deps: ServerDeps): Promise<ServerHandle> {
@@ -55,19 +96,95 @@ export async function startServer(port: number, deps: ServerDeps): Promise<Serve
     }
     try {
       const result = joinSession(db, parsed.data)
-      rooms.toTeachers(result.sessionId, {
-        type: 'session.lobby.update',
-        students: listLobbyStudents(db, result.sessionId)
-      })
+      broadcastLobbyUpdate(db, rooms, result.sessionId)
       return c.json(result)
     } catch (err) {
-      if (err instanceof SessionError) {
-        const status = err.code === 'NO_ACTIVE_SESSION' ? 404 : 409
-        return c.json({ error: err.code, message: err.message }, status)
-      }
-      throw err
+      return mapSessionError(c, err)
     }
   })
+
+  // ---- Student-authenticated routes -------------------------------------
+
+  app.get('/api/exam/current', (c) => {
+    const token = extractBearer(c)
+    if (!token) return c.json({ error: 'unauthorized' }, 401)
+    const student = findStudentByToken(db, token)
+    if (!student) return c.json({ error: 'unauthorized' }, 401)
+    try {
+      const exam: StudentExam = getStudentExam(db, student.id)
+      return c.json(exam)
+    } catch (err) {
+      return mapSessionError(c, err)
+    }
+  })
+
+  app.get('/api/session/me', (c) => {
+    const token = extractBearer(c)
+    if (!token) return c.json({ error: 'unauthorized' }, 401)
+    const student = findStudentByToken(db, token)
+    if (!student) return c.json({ error: 'unauthorized' }, 401)
+    try {
+      const state: StudentSessionState = getStudentSessionState(db, student.id)
+      return c.json(state)
+    } catch (err) {
+      return mapSessionError(c, err)
+    }
+  })
+
+  app.post('/api/heartbeat', (c) => {
+    const token = extractBearer(c)
+    if (!token) return c.json({ error: 'unauthorized' }, 401)
+    const student = findStudentByToken(db, token)
+    if (!student) return c.json({ error: 'unauthorized' }, 401)
+    recordHeartbeat(db, student.id)
+    // Lobby update is cheap-ish; emit so the teacher sees the lastSeenAt
+    // tick. Per-student server-side debounce is left for a later pass.
+    broadcastLobbyUpdate(db, rooms, student.sessionId)
+    return c.json({ ok: true })
+  })
+
+  app.post('/api/answers', async (c) => {
+    const token = extractBearer(c)
+    if (!token) return c.json({ error: 'unauthorized' }, 401)
+    const student = findStudentByToken(db, token)
+    if (!student) return c.json({ error: 'unauthorized' }, 401)
+    let body: unknown
+    try {
+      body = await c.req.json()
+    } catch {
+      return c.json({ error: 'invalid-json' }, 400)
+    }
+    const parsed = AnswerInput.safeParse(body)
+    if (!parsed.success) {
+      return c.json(
+        { error: 'invalid-input', message: parsed.error.issues[0]?.message ?? 'Dados inválidos' },
+        400
+      )
+    }
+    try {
+      saveAnswer(db, student.id, parsed.data.questionId, parsed.data.value)
+      broadcastLobbyUpdate(db, rooms, student.sessionId)
+      return c.json({ ok: true })
+    } catch (err) {
+      return mapSessionError(c, err)
+    }
+  })
+
+  app.post('/api/submit', (c) => {
+    const token = extractBearer(c)
+    if (!token) return c.json({ error: 'unauthorized' }, 401)
+    const student = findStudentByToken(db, token)
+    if (!student) return c.json({ error: 'unauthorized' }, 401)
+    try {
+      submitStudent(db, student.id)
+      broadcastLobbyUpdate(db, rooms, student.sessionId)
+      return c.json({ ok: true })
+    } catch (err) {
+      return mapSessionError(c, err)
+    }
+  })
+
+  // ---- WebSocket --------------------------------------------------------
 
   app.get(
     '/api/ws',
