@@ -21,12 +21,17 @@ const buttonVariants = cva(
         /* Secondary — neutral surface with hairline border */
         secondary:
           'rounded-[10px] bg-card text-foreground border border-border hover:bg-muted',
+        /* AI — violet → pink → amber gradient. Reserved for actions that trigger AI. */
+        ai: 'rounded-[10px] bg-gradient-ai text-white hover:opacity-95',
         /* Destructive — solid red, flat */
         destructive:
           'rounded-[10px] bg-destructive text-destructive-foreground hover:bg-destructive/90',
-        /* Outline — same as secondary, kept for shadcn parity */
+        /* Outline — neutral border, used for cancel/dismiss actions */
         outline:
           'rounded-[10px] bg-card text-foreground border border-border hover:bg-muted',
+        /* Outline primary — violet border + text, used for CTAs that need to read as actionable without dominating */
+        'outline-primary':
+          'rounded-[10px] bg-card text-primary border border-primary hover:bg-primary/5',
         /* Ghost — no chrome until hover */
         ghost: 'rounded-[10px] hover:bg-muted hover:text-foreground',
         /* Link */

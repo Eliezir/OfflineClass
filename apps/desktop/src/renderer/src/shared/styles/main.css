@@ -100,6 +100,10 @@
   /* Inset top-edge sheen on translucent / dark surfaces (cards, popovers) */
   --edge-soft: inset 0 1px 0 oklch(1 0 0 / 0.10);
 
+  /* Splash starfield colors — pale brand tints in light, bright in dark */
+  --star-color: oklch(0.78 0.13 295);    /* mid lavender */
+  --star-accent: oklch(0.82 0.12 65);    /* soft peach/amber */
+
   /* ─── Soft layered shadows (workshop / canvas feel) ────────────────── */
   --shadow-2xs: 0 1px 1px hsl(280 30% 15% / 0.04);
   --shadow-xs:
@@ -236,6 +240,10 @@
     0 1px 2px hsl(0 0% 0% / 0.40),
     0 24px 56px -8px oklch(0.68 0.22 295 / 0.50),
     0 24px 56px -8px oklch(0.78 0.17 0 / 0.30);
+
+  /* Dark starfield — bright neutral + amber */
+  --star-color: oklch(0.97 0.008 90);
+  --star-accent: oklch(0.83 0.15 65);
 }
 
 @theme inline {
@@ -375,5 +383,24 @@
       );
     filter: blur(40px);
     pointer-events: none;
+  }
+
+  /* AI gradient as a background-image utility (Tailwind can't bind gradients
+     through @theme inline like solid colors, so we expose it here). */
+  .bg-gradient-ai {
+    background-image: var(--gradient-ai);
+  }
+
+  /* Twinkle for the splash starfield — opacity + gentle scale */
+  @keyframes twinkle {
+    0%,
+    100% {
+      opacity: var(--twinkle-low, 0.15);
+      transform: scale(1);
+    }
+    50% {
+      opacity: var(--twinkle-high, 0.7);
+      transform: scale(1.3);
+    }
   }
 }

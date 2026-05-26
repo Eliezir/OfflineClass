@@ -69,9 +69,7 @@ function PopoverItem({
       type="button"
       data-slot="popover-item"
       className={cn(
-        'flex w-full items-center gap-3 rounded-xl px-2.5 py-2 text-left',
-        'transition-colors duration-150 hover:bg-muted focus-visible:bg-muted',
-        'outline-none',
+        'group flex w-full cursor-pointer items-center gap-3 rounded-xl px-2.5 py-2 text-left outline-none',
         className
       )}
       {...props}
@@ -80,7 +78,10 @@ function PopoverItem({
         <span
           className={cn(
             'grid size-8 shrink-0 place-items-center rounded-lg bg-muted text-foreground',
-            'shadow-[var(--edge-soft)]',
+            'shadow-(--edge-soft)',
+            'transition-[background-color,color] duration-300 ease-out',
+            'group-hover:bg-primary-soft group-hover:text-primary-soft-foreground',
+            'group-focus-visible:bg-primary-soft group-focus-visible:text-primary-soft-foreground',
             iconClassName
           )}
         >
