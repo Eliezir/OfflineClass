@@ -47,9 +47,9 @@ graph TD
     Email["Transactional Email<br/>(SendGrid / Mailgun / Resend — TBD)"]
   end
 
-  StudentA -- "HTTPS + WSS (Yjs)" --> Desktop
-  StudentB -- "HTTPS + WSS (Yjs)" --> Desktop
-  StudentN -- "HTTPS + WSS (Yjs)" --> Desktop
+  StudentA -- "HTTPS + Socket.IO" --> Desktop
+  StudentB -- "HTTPS + Socket.IO" --> Desktop
+  StudentN -- "HTTPS + Socket.IO" --> Desktop
 
   Desktop -. "HTTPS (manual sync only)" .-> Cloud
   Cloud -- "SMTP / API" --> Email
@@ -93,7 +93,7 @@ OfflineClass/
 
 The teacher's machine. Three logical surfaces in one binary.
 
-1. **Electron main process** — owns the SQLite database, mDNS broadcast, HTTPS LAN server (Hono + `@hono/node-ws` + `y-websocket`), the cloud sync worker, and the self-signed TLS cert. Spawns and manages two `BrowserWindow`s (main + projector).
+1. **Electron main process** — owns the SQLite database, mDNS broadcast, HTTPS LAN server (Hono + `socket.io`), the cloud sync worker, and the self-signed TLS cert. Spawns and manages two `BrowserWindow`s (main + projector).
 2. **Electron renderer (teacher UI)** — React 19 + Tailwind v4 + shadcn (radix-nova preset) + TanStack Query + react-router-dom (HashRouter). Talks to main exclusively via the **IPC bridge** (`ipcMain.handle` / `contextBridge`). Has no network access of its own.
 3. **Projector window (renderer)** — separate `BrowserWindow` reading the same in-memory session state from main via IPC. Always read-only — never sends commands.
 
@@ -109,18 +109,24 @@ apps/desktop/
 │   │   ├── auth/
 │   │   │   ├── teachers.ts           # bcrypt + session tokens (local)
 │   │   │   └── cloud-link.ts         # long-lived token for cloud
-│   │   ├── server/                   # Hono LAN server
-│   │   │   ├── index.ts              # startServer(port, deps)
+│   │   ├── server/                   # Hono LAN server + Socket.IO
+│   │   │   ├── index.ts              # startServer(port, deps) — attaches Socket.IO to Node httpServer
 │   │   │   ├── routes/               # /api/health, /api/join, /api/answers, …
-│   │   │   └── upgrade-router.ts     # master 'upgrade' handler routing
-│   │   │                             # /api/ws → Hono WS, /yjs/:id → y-websocket
-│   │   ├── yjs/
+│   │   │   └── socket/
+│   │   │       ├── index.ts          # io = new Server(httpServer, cors/auth opts)
+│   │   │       ├── auth.ts           # handshake middleware (token → student + session)
+│   │   │       ├── rooms.ts          # room name helpers: session:<id>, group:<id>, teacher:<id>
+│   │   │       ├── events.ts         # typed event map (ServerToClient / ClientToServer)
+│   │   │       └── handlers/
+│   │   │           ├── session.ts    # lobby/start/end lifecycle pushes
+│   │   │           ├── group.ts      # group-join/leave, submit flow
+│   │   │           └── awareness.ts  # cursor/presence forwarding inside group room
+│   │   ├── crdt/
 │   │   │   ├── docs.ts               # in-memory Y.Doc registry per group
 │   │   │   ├── snapshots.ts          # periodic SQLite BLOB persistence
 │   │   │   └── extract.ts            # Y.Doc → group_answers at submit time
 │   │   ├── sessions/
 │   │   │   ├── store.ts              # session CRUD + state machine
-│   │   │   ├── rooms.ts              # legacy WS subscriptions (non-collab pushes)
 │   │   │   └── groups.ts             # group lifecycle
 │   │   ├── sync/                     # cloud sync worker
 │   │   │   ├── client.ts             # HTTP client w/ token
@@ -150,7 +156,8 @@ apps/desktop/
 Pure SPA. Served by the desktop's Hono server over LAN (HTTPS). Loads in a PC browser when the student types the URL or scans the QR.
 
 - React 19 + Tailwind v4 + shadcn (radix-nova preset) + react-router-dom (HashRouter)
-- Yjs client (`yjs` + `y-websocket` + `y-protocols/awareness`)
+- Yjs client (`yjs` + `y-protocols/awareness`) with **`y-socket.io`** as the transport provider (replaces `y-websocket`)
+- `socket.io-client` for the unified Socket.IO connection (collab + event push on the same socket, different rooms/events)
 - Tiptap for the essay/code editor with `@tiptap/extension-collaboration` and `@tiptap/extension-collaboration-cursor` bound to the shared `Y.Doc`
 - `react-nice-avatar` (or equivalent SVG generative avatar) for the lobby
 - TanStack Query for HTTP calls (`/api/join`, `/api/heartbeat`, `/api/answers`)
@@ -199,7 +206,7 @@ packages/shared/
 │   │   ├── join.ts                   # JoinInput, JoinResult
 │   │   ├── answer.ts                 # AnswerInput, AnswerValue (discriminated union)
 │   │   └── sync.ts                   # SyncPushBody, SyncPullResponse, ResultsBatch
-│   ├── ws-events.ts                  # WsServerEvent (non-collab pushes only)
+│   ├── socket-events.ts              # typed Socket.IO event maps (ServerToClient / ClientToServer)
 │   └── awareness.ts                  # Awareness state shape (cursor, avatar config, etc.)
 └── package.json
 ```
@@ -214,8 +221,7 @@ Three protocols, three audiences, three threat zones.
 |---|---|---|---|---|
 | **Electron IPC** | `ipcMain.handle('teacher.*', …)` | Teacher renderer ← → main process | Implicit (same OS process; preload uses `contextBridge`) | Local teacher actions only |
 | **HTTPS (LAN)** | `https://<lan-ip>:8000/api/*` | Student PC → desktop server | Bearer token from `/api/join` | Student-scoped operations |
-| **WSS (LAN, push)** | `wss://<lan-ip>:8000/api/ws` | Both directions | Bearer (query string, validated on upgrade) | Non-collab events (lobby, session lifecycle, presence) |
-| **WSS (LAN, collab)** | `wss://<lan-ip>:8000/yjs/:groupId` | Student PCs ↔ desktop (Yjs relay) | Bearer (validated on upgrade against group membership) | One Y.Doc per group |
+| **Socket.IO (LAN)** | `https://<lan-ip>:8000` (Socket.IO path) | Student PCs ↔ desktop server | Bearer token in handshake `auth` object — validated in `io.use()` middleware | Single authenticated socket per student; joined to `session:<id>` room on connect, `group:<id>` room on group assignment |
 | **HTTPS (cloud)** | `https://cloud.example/api/*` | Desktop → VPS | Long-lived Bearer (linked teacher) | Per-teacher cloud account |
 
 The split is enforced **by topology**, not by middleware:
@@ -224,20 +230,29 @@ The split is enforced **by topology**, not by middleware:
 - The cloud backend never speaks Yjs and never serves the student SPA. Its only consumers are linked teacher desktops.
 - The student SPA never directly contacts the cloud — only the desktop does.
 
-### Master upgrade router (the same Hono server hosts both WS channels)
+### Socket.IO rooms topology
 
-Both `@hono/node-ws` (for `/api/ws`) and `y-websocket` (for `/yjs/:groupId`) want to attach `httpServer.on('upgrade', …)`. They are reconciled by a single router that filters by URL path:
+All real-time communication — session lifecycle events, group collaboration, and awareness — flows through a single Socket.IO server attached to the Node `https` server that Hono also uses. There is no separate WebSocket upgrade router.
 
-```ts
-httpServer.on('upgrade', (req, socket, head) => {
-  const url = new URL(req.url ?? '', 'http://localhost')
-  if (url.pathname === '/api/ws') return honoWsHandler(req, socket, head)
-  if (url.pathname.startsWith('/yjs/')) return yjsHandler(req, socket, head)
-  socket.destroy() // no listener owns this path
-})
+```
+Room name          Who joins                           What flows through it
+─────────────────────────────────────────────────────────────────────────────
+session:<sessionId>  Every student after /api/join       lobby.student_joined
+                     Teacher's IPC bridge (internal)     session.started
+                                                         session.ended
+                                                         group.submit_requested
+                                                         group.submitted
+
+group:<groupId>      Members of that group after         yjs:update  (CRDT binary)
+                     group assignment                    yjs:awareness (presence binary)
+                                                         submit.confirm / submit.cancel
+                                                         submit.progress
+
+teacher:<teacherId>  Desktop main-process internal       Private dashboard pushes
+                     listener (never a student socket)   (live progress, idle alerts)
 ```
 
-Auth is enforced **before the upgrade response is sent** — a failed token closes the socket with a 4001 code.
+Authentication happens once in the Socket.IO handshake middleware (`io.use()`): the client passes `{ auth: { token } }` in `socket.io-client`'s connect options; the middleware validates the Bearer token, attaches `socket.data.student` and `socket.data.sessionId`, and rejects the handshake with a 4001 error if validation fails. Room joins happen server-side in the `connection` handler — the client never calls `socket.join()` directly.
 
 ---
 
@@ -356,7 +371,7 @@ A "group" in OfflineClass is a small set of students working together on the sam
 - Reconnection without losing in-progress edits
 - Conflict resolution when two members edit at the same time
 
-These are exactly the primitives Yjs was built for. Socket.IO would have required reinventing the awareness layer; raw WS would have required reinventing both. Yjs over `y-websocket` plugs into the existing Hono LAN server with zero protocol drift.
+These are exactly the primitives Yjs was built for. The Yjs CRDT layer is transport-agnostic; `y-socket.io` replaces the former `y-websocket` provider and runs on the same Socket.IO connection the student already holds — no second WebSocket handshake, no separate URL, no upgrade router. Non-collab events (session lifecycle, submit flow, heartbeat) travel on the same socket through dedicated event names rather than a parallel `/api/ws` channel.
 
 ### Y.Doc shape per group
 
@@ -376,14 +391,13 @@ group:<groupId>           (the Y.Doc)
 
 ### Server role: relay only
 
-The desktop server **does not run Yjs logic on the main process**. It uses the standard `y-websocket` server which:
+The desktop server **does not run Yjs logic on the main process**. It uses `y-socket.io` in server mode, which:
 
-1. Authenticates the connection (token + group membership check) before accepting the upgrade.
-2. Joins the socket to the room named for the group ID.
-3. Broadcasts incoming CRDT updates to every other socket in the room.
-4. Maintains an in-memory `Y.Doc` per active group **only** to be able to serialize a snapshot.
-5. Periodically writes the snapshot to `group_yjs_snapshots` (BLOB) — every N seconds while the group has at least one active connection.
-6. On `session.ended`, extracts the structured answer state from the Y.Doc and writes it to `group_answers` (the grading-time source of truth).
+1. Authenticates the connection via the Socket.IO handshake middleware (token + group membership check) before admitting the socket to the `group:<groupId>` room.
+2. Relays incoming `yjs:update` events to every other socket in the same group room.
+3. Maintains an in-memory `Y.Doc` per active group **only** to be able to serialize a snapshot.
+4. Periodically writes the snapshot to `group_yjs_snapshots` (BLOB) — every N seconds while the group has at least one connected socket.
+5. On `session.ended`, extracts the structured answer state from the Y.Doc and writes it to `group_answers` (the grading-time source of truth).
 
 The server **never rejects or transforms** Yjs updates. All validation happens at the connection boundary; once you're in the room, you can edit anything in the doc.
 
@@ -393,50 +407,52 @@ The server **never rejects or transforms** Yjs updates. All validation happens a
 sequenceDiagram
   participant SA as Student A (browser)
   participant SB as Student B (browser)
-  participant WS as y-websocket server
+  participant IO as Socket.IO server
   participant Doc as In-memory Y.Doc
   participant SQL as SQLite snapshots
 
-  SA->>WS: upgrade /yjs/group_42?token=…
-  WS->>WS: verify token + group membership
-  WS-->>SA: 101 Switching Protocols
-  SA<<->>WS: sync step (handshake)
-  SA->>WS: update (set q3 = "C")
-  WS->>Doc: applyUpdate(...)
-  WS->>SB: broadcast update
+  SA->>IO: connect { auth: { token } }
+  IO->>IO: handshake middleware — verify token + group membership
+  IO-->>SA: connected, joined rooms: session:<id>, group:<id>
+  SA->>IO: yjs:sync_step1 (state vector)
+  IO->>Doc: compute diff
+  IO-->>SA: yjs:sync_step2 (missing updates)
+  SA->>IO: yjs:update (set q3 = "C")
+  IO->>Doc: applyUpdate(...)
+  IO->>SB: yjs:update (broadcast to group room)
   SB-->>SB: render new answer
-  Note over WS,SQL: every N seconds<br/>(while connected)
-  WS->>SQL: write snapshot BLOB
+  Note over IO,SQL: every N seconds<br/>(while group room non-empty)
+  IO->>SQL: write snapshot BLOB
 ```
 
 ### Awareness
 
-Separate from the persisted CRDT state. The `awareness` instance carries each member's transient presence: which question they're focused on, where their cursor is in an essay, their avatar config (so peers can render the avatar without a DB lookup), and their display name. Lost on disconnect, recreated on reconnect.
+Separate from the persisted CRDT state. The `awareness` instance carries each member's transient presence: which question they're focused on, where their cursor is in an essay, their avatar config (so peers can render the avatar without a DB lookup), and their display name. Awareness updates travel as `yjs:awareness` events inside the `group:<groupId>` room. Lost on disconnect, recreated on reconnect — Socket.IO's built-in disconnect detection triggers server-side awareness cleanup so peers see the member disappear promptly.
 
 ### Submission (multi-member confirmation)
 
-Submission is a coordinated operation across all currently-online members of the group. It is **not** a Yjs operation — it's a server-mediated state transition with broadcast checkpoints. The flow:
+Submission is a coordinated operation across all currently-online members of the group. It is **not** a Yjs operation — it's a server-mediated state transition using Socket.IO room events. The flow:
 
-1. Any group member calls `POST /api/submit/initiate`. The server:
-   - Reads the set of currently-online members from the `/yjs/:groupId` presence list.
+1. Any group member emits `submit:initiate` on their socket. The server:
+   - Reads the set of currently-online members from the `group:<groupId>` room via `io.in('group:<groupId>').fetchSockets()`.
    - Holds an in-memory `submit_pending` record: `{ groupId, initiatorId, awaitingFrom: [otherOnline], confirmedBy: [initiatorId] }`.
-   - Broadcasts `group.submit.requested` over `/api/ws` to every group member.
-   - Returns to the initiator: `{ state: 'awaiting_confirmations', awaitingFrom }`.
+   - Emits `group.submit.requested` to the `group:<groupId>` room.
+   - Acknowledges the initiator with `{ state: 'awaiting_confirmations', awaitingFrom }`.
 
 2. Each other online member's SPA shows a modal: *"X requested submit — confirm?"* Two outcomes:
-   - **Confirm** → `POST /api/submit/confirm` → server moves the member from `awaitingFrom` to `confirmedBy`, broadcasts `group.submit.progress { confirmedBy }`.
-   - **Cancel** → `POST /api/submit/cancel` → server clears `submit_pending` entirely, broadcasts `group.submit.cancelled`. Editing continues; awareness/cursors come back.
+   - **Confirm** → emits `submit:confirm` → server moves the member from `awaitingFrom` to `confirmedBy`, emits `group.submit.progress { confirmedBy }` to the room.
+   - **Cancel** → emits `submit:cancel` → server clears `submit_pending` entirely, emits `group.submit.cancelled` to the room. Editing continues; awareness/cursors come back.
 
 3. When `awaitingFrom` is empty (all online members confirmed), the server:
    - Reads the current Y.Doc.
    - Extracts each `answers[qId].value` and writes one `group_answers` row per question.
    - Marks the group as submitted in SQLite.
-   - Disconnects all sockets from `/yjs/:groupId` (no more edits).
-   - Broadcasts `group.submitted` on `/api/ws` for the teacher's dashboard.
+   - Calls `io.in('group:<groupId>').disconnectSockets()` (no more edits).
+   - Emits `group.submitted` to the `session:<sessionId>` room for the teacher's dashboard.
 
-4. **Members who go offline during confirmation** are dropped from `awaitingFrom` on their disconnect — they don't block. If everyone except the initiator goes offline, the initiator's own confirmation is enough.
+4. **Members who go offline during confirmation** are automatically removed from the room; the server's `disconnect` handler drops them from `awaitingFrom` — they don't block. If everyone except the initiator disconnects, the initiator's own confirmation is enough.
 
-5. **Members offline at initiation time** are excluded from the start — they don't block submission.
+5. **Members offline at initiation time** are simply not in the room at step 1 — they don't block submission.
 
 Submitted state is irreversible. The Y.Doc is kept (for audit / projector replay) but no new updates are accepted.
 
@@ -538,7 +554,7 @@ graph TD
   Teacher --> Lock
   Shuffle --> Lock
 
-  Lock --> Collab[Y.Doc created per group<br/>members connect to /yjs/:id]
+  Lock --> Collab[Y.Doc created per group<br/>members join Socket.IO group:&lt;id&gt; room]
 ```
 
 If `group_mode = free` and a student remains without a group when the teacher starts the session, that student is **blocked from entering `running`** until they either create or join a group (a solo group of 1 is valid). The teacher can see who's still ungrouped on the private dashboard. The session as a whole can still transition to `running` for everyone else; the blocked student stays in a "fora da sessão" state until they pick a group.
@@ -637,7 +653,8 @@ The architecture is built around **trust by topology**, not middleware.
 ### Untrusted boundaries
 
 - Every incoming HTTP body validated by a Zod schema before touching the DB.
-- Every Yjs upgrade authenticated against group membership *and* the current session state before accepting the socket.
+- Every Socket.IO connection authenticated in the `io.use()` handshake middleware (token → student + session). The socket is rejected before entering any room if validation fails.
+- Group room access enforced server-side: the server calls `socket.join('group:<id>')` only after confirming the student belongs to that group. Clients never join rooms themselves.
 - Every cloud-bound payload validated server-side with the same schemas the desktop validates client-side (shared via `packages/shared`).
 
 ---
@@ -654,7 +671,7 @@ Each phase ends with a buildable commit. Cloud and desktop can be developed in p
 | **3** | Desktop domain core | Schema (`provas`, `questions`, `materials`) with ULID + soft delete, IPC CRUD, form builder UI shell, mDNS + QR + TLS |
 | **4** | `apps/student-web` | create-vite + shadcn radix-nova, join flow (name/matrícula/email), avatar customizer, lobby |
 | **5** | Groups + lobby | `groups` + `group_members`, three formation modes, UI on both sides |
-| **6** | Yjs collaboration | y-websocket on master upgrade router, Y.Doc per group, awareness/cursors, snapshot persistence |
+| **6** | Socket.IO + Yjs collaboration | `socket.io` attached to Hono's Node server, rooms topology, `y-socket.io` provider, Y.Doc per group, awareness/cursors, snapshot persistence |
 | **7** | Session lifecycle | start/end transitions, Y.Doc → `group_answers` extraction on submit, dashboard live view |
 | **8** | Cloud sync (definitions) | Sync UI in header, link cloud, push/pull with LWW, soft-delete propagation |
 | **9** | Cloud sync (results + email) | Push results after `ended`, email-results flow via cloud's email module |
@@ -675,12 +692,12 @@ Each phase maps to a milestone in the GitHub backlog. Issues are labeled by `are
 | Styling | Tailwind v4 + shadcn (radix-nova) | POC-validated; per-app shadcn (no shared `packages/ui`) |
 | Routing | react-router-dom (HashRouter) | Works inside Electron without server-side routing; POC-validated |
 | Server (desktop + cloud) | Hono | Tiny, web-standards-based, runs on Node and Bun if needed |
-| Real-time push (non-collab) | `@hono/node-ws` | Upgrades on the same Hono server |
-| Real-time collab | Yjs + `y-websocket` + `y-protocols/awareness` | CRDT + presence in one stack; LAN-only by design |
+| Real-time transport | `socket.io` (server) + `socket.io-client` (SPA) | Unified channel for session events, awareness, and Yjs updates; rooms-based fan-out; built-in reconnect + backoff |
+| Real-time collab | Yjs + `y-socket.io` + `y-protocols/awareness` | CRDT + presence over the Socket.IO transport; no separate WS upgrade router |
 | Rich editor | Tiptap + `extension-collaboration` + `extension-collaboration-cursor` | Plugs into the shared Y.Doc; collab cursors for free |
 | Local DB | better-sqlite3 + Drizzle | Synchronous SQLite on the main process; Drizzle for typed migrations |
 | Cloud DB | Postgres + Drizzle | Mirrors desktop's ORM; same migration tooling |
-| Schemas | Zod (in `packages/shared`) | Validates wire format on both ends of every boundary |
+| Schemas | Zod (in `packages/shared`) + typed Socket.IO event maps (`socket-events.ts`) | Validates wire format on both ends of every boundary; Socket.IO generics enforce event shape at compile time |
 | IDs | ULID via `packages/shared/ids.ts` | Offline-generable, time-ordered, URL-safe |
 | Avatars | `react-nice-avatar`-style generative SVG | No image storage, customizable, renderable everywhere |
 | Discovery | `bonjour-service` (mDNS) + `qrcode` | POC-validated |
