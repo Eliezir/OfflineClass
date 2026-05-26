@@ -157,8 +157,8 @@ Form builder é **extensível por design** — tipos adicionais (matemática/LaT
 - **[CORE]** Filosofia anti-cheat: LAN-only + PC-only é a garantia principal. **Sem** fullscreen lock ou detecção de tab switch no MVP — fácil de burlar e dá falsa sensação de segurança. (Reabrir se feedback pedagógico exigir.)
 
 ### 2.4 Reconexão
-- **[CORE]** Reconexão transparente do WS (retry com backoff)
-- **[FEATURE]** Awareness do Yjs restaura presença na reconexão; updates CRDT perdidos são sincronizados via protocolo de delta do Yjs
+- **[CORE]** Reconexão transparente do Socket.IO (retry com backoff exponencial automático do `socket.io-client`)
+- **[FEATURE]** Awareness do Yjs restaura presença na reconexão; updates CRDT perdidos são sincronizados via protocolo de delta do Yjs; Socket.IO reconecta automaticamente e o server reintegra o socket ao room do grupo
 - **[CORE]** Indicador visível pro usuário: "reconectando…" depois "online novamente"
 
 ---
@@ -179,8 +179,8 @@ Form builder é **extensível por design** — tipos adicionais (matemática/LaT
 - **[FEATURE]** `Y.Map<questionId, answer>` pra slots de MCQ (um valor por questão)
 - **[FEATURE]** `Y.Text` pra dissertativas (edição colaborativa estilo Tiptap)
 - **[FEATURE]** `Awareness` pra cursores, seleção, presença
-- **[FEATURE]** Transporte: `y-websocket` sobre o WSS do desktop, num path tipo `/yjs/:groupId`
-- **[FEATURE]** Coexiste com o canal de push WS existente (`/api/ws`) via master upgrade router
+- **[FEATURE]** Transporte: `y-socket.io` sobre a conexão Socket.IO do aluno — Yjs e eventos de sessão compartilham o mesmo socket, sem segundo handshake ou URL separada
+- **[FEATURE]** Eventos de sessão e controle de submit trafegam no mesmo socket por event names dedicados (`session.*`, `submit:*`), eliminando o canal paralelo `/api/ws`
 - **[FEATURE]** Server é só relay (snapshots + autenticação na conexão; não autoritativo sobre conteúdo do doc)
 
 ### 3.3 Persistência
@@ -317,7 +317,7 @@ Form builder é **extensível por design** — tipos adicionais (matemática/LaT
 ## 9. Qualidade / não-funcional
 
 ### 9.1 Confiabilidade
-- **[CORE]** Lógica de reconnect do WS (backoff)
+- **[CORE]** Lógica de reconnect do Socket.IO (backoff automático do cliente; servidor reintegra o socket ao room correto na reconexão via `socket.data`)
 - **[FEATURE]** SQLite em modo WAL (leituras concorrentes durante escritas)
 - **[FEATURE]** Snapshots periódicos do Y.Doc (recuperação de crash do desktop no meio da sessão)
 - **[EXTRA]** Backup do SQLite local (export do arquivo do DB pra USB / cloud)
