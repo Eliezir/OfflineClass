@@ -1,0 +1,285 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+  <head>
+    <meta charset="UTF-8" />
+    <title>OfflineClass</title>
+    <script>
+      // Theme: read the app's saved preference (set by the React app on every
+      // toggle), fall back to OS preference only if nothing is saved yet.
+      // Runs in <head> before CSS applies to avoid a flash of the wrong theme.
+      (function () {
+        var KEY = 'offlineclass:theme'
+        var mq = window.matchMedia('(prefers-color-scheme: dark)')
+
+        function resolve() {
+          var saved = null
+          try {
+            saved = window.localStorage.getItem(KEY)
+          } catch (e) {
+            /* localStorage unavailable */
+          }
+          if (saved === 'dark') return true
+          if (saved === 'light') return false
+          return mq.matches
+        }
+
+        function apply() {
+          document.documentElement.classList.toggle('dark', resolve())
+        }
+
+        apply()
+
+        // Live updates when the user toggles in the main app (different window,
+        // same origin → fires the storage event here).
+        window.addEventListener('storage', function (e) {
+          if (e.key === KEY) apply()
+        })
+        // OS change only matters when no app preference is saved yet.
+        if (mq.addEventListener) mq.addEventListener('change', apply)
+        else if (mq.addListener) mq.addListener(apply)
+      })()
+    </script>
+    <style>
+      *,
+      *::before,
+      *::after {
+        box-sizing: border-box;
+        margin: 0;
+        padding: 0;
+      }
+      html,
+      body {
+        width: 100%;
+        height: 100%;
+        overflow: hidden;
+        -webkit-user-select: none;
+        user-select: none;
+        -webkit-app-region: drag;
+      }
+      body {
+        position: relative;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        background: oklch(0.95 0.008 280);
+        color: oklch(0.20 0.04 280);
+        font-family:
+          -apple-system, BlinkMacSystemFont, 'Segoe UI', system-ui, sans-serif;
+        letter-spacing: -0.011em;
+        /* Light starfield — soft pastel tints so they read as stars, not specks */
+        --star-color: oklch(0.78 0.13 295);
+        --star-accent: oklch(0.82 0.12 65);
+      }
+      html.dark body {
+        /* Dark starfield — bright neutral + amber, matches the React side */
+        --star-color: oklch(0.97 0.008 90);
+        --star-accent: oklch(0.83 0.15 65);
+      }
+      .backlight {
+        position: absolute;
+        inset: 0;
+        background:
+          radial-gradient(
+            ellipse 50% 50% at 30% 38%,
+            oklch(0.46 0.26 295 / 0.42),
+            transparent 70%
+          ),
+          radial-gradient(
+            ellipse 45% 45% at 72% 55%,
+            oklch(0.62 0.26 300 / 0.32),
+            transparent 70%
+          ),
+          radial-gradient(
+            ellipse 55% 45% at 50% 92%,
+            oklch(0.80 0.16 290 / 0.30),
+            transparent 70%
+          );
+        filter: blur(50px);
+        pointer-events: none;
+      }
+      .stars {
+        position: absolute;
+        inset: 0;
+        pointer-events: none;
+      }
+      .star {
+        position: absolute;
+        border-radius: 50%;
+        background: var(--star-color);
+        animation-name: twinkle;
+        animation-iteration-count: infinite;
+        animation-timing-function: ease-in-out;
+        opacity: 0;
+      }
+      .star.accent {
+        background: var(--star-accent);
+      }
+      @keyframes twinkle {
+        0%,
+        100% {
+          opacity: var(--tlow, 0.15);
+          transform: scale(1);
+        }
+        50% {
+          opacity: var(--thigh, 0.65);
+          transform: scale(1.3);
+        }
+      }
+      .content {
+        position: relative;
+        text-align: center;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        gap: 18px;
+      }
+      .logo {
+        width: 84px;
+        height: 84px;
+        filter: drop-shadow(0 1px 2px rgba(0, 0, 0, 0.06));
+        animation: scaleIn 500ms cubic-bezier(0.2, 0.8, 0.2, 1) backwards;
+      }
+      /* Logo visibility is driven by the .dark class on <html> below. */
+      .wordmark {
+        font-size: 28px;
+        font-weight: 700;
+        letter-spacing: -0.022em;
+        animation: fadeUp 400ms 120ms cubic-bezier(0.2, 0.8, 0.2, 1) backwards;
+      }
+      .wordmark .ai {
+        background: linear-gradient(
+          135deg,
+          oklch(0.55 0.24 295),
+          oklch(0.74 0.18 0),
+          oklch(0.78 0.16 65)
+        );
+        -webkit-background-clip: text;
+        background-clip: text;
+        -webkit-text-fill-color: transparent;
+      }
+      .status {
+        font-size: 13px;
+        color: oklch(0.52 0.025 280);
+        animation: fadeIn 300ms 400ms ease-out backwards;
+      }
+      .continue-btn {
+        margin-top: 8px;
+        padding: 8px 14px;
+        border-radius: 10px;
+        background: oklch(1 0 0);
+        color: oklch(0.20 0.04 280);
+        border: 1px solid oklch(0.92 0.012 280);
+        font: inherit;
+        font-size: 13px;
+        font-weight: 500;
+        line-height: 1;
+        cursor: pointer;
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+        -webkit-app-region: no-drag;
+        transition: background-color 150ms cubic-bezier(0.2, 0.8, 0.2, 1);
+        animation: fadeIn 300ms 700ms ease-out backwards;
+      }
+      .continue-btn:hover {
+        background: oklch(0.965 0.006 280);
+      }
+      .continue-btn svg {
+        width: 12px;
+        height: 12px;
+      }
+
+      html:not(.dark) .logo-dark {
+        display: none;
+      }
+      html.dark .logo-light {
+        display: none;
+      }
+      html.dark body {
+        background: oklch(0.10 0.022 285);
+        color: oklch(0.97 0.008 90);
+      }
+      html.dark .status {
+        color: oklch(0.72 0.025 280);
+      }
+      html.dark .continue-btn {
+        background: oklch(0.22 0.03 285);
+        color: oklch(0.97 0.008 90);
+        border-color: oklch(0.30 0.035 285);
+      }
+      html.dark .continue-btn:hover {
+        background: oklch(0.26 0.035 285);
+      }
+
+      @keyframes fadeIn {
+        from {
+          opacity: 0;
+        }
+        to {
+          opacity: 1;
+        }
+      }
+      @keyframes fadeUp {
+        from {
+          opacity: 0;
+          transform: translateY(4px);
+        }
+        to {
+          opacity: 1;
+          transform: translateY(0);
+        }
+      }
+      @keyframes scaleIn {
+        from {
+          opacity: 0;
+          transform: scale(0.96);
+        }
+        to {
+          opacity: 1;
+          transform: scale(1);
+        }
+      }
+    </style>
+  </head>
+  <body>
+    <div class="backlight"></div>
+    <div class="stars" id="stars"></div>
+    <div class="content">
+      <img class="logo logo-light" src="./splash-logo-light.png" alt="" />
+      <img class="logo logo-dark" src="./splash-logo-dark.png" alt="" />
+      <div class="wordmark">Offline<span class="ai">Class</span></div>
+      <div class="status">Iniciando…</div>
+      <button class="continue-btn" type="button" onclick="window.close()">
+        Continuar
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M5 12h14" />
+          <path d="m12 5 7 7-7 7" />
+        </svg>
+      </button>
+    </div>
+    <script>
+      (function () {
+        var stars = document.getElementById('stars')
+        var count = 42
+        for (var i = 0; i < count; i++) {
+          var d = document.createElement('span')
+          d.className = 'star' + (Math.random() < 0.25 ? ' accent' : '')
+          var size = 1 + Math.random() * 1.8
+          var dur = 3 + Math.random() * 4
+          var delay = -Math.random() * 5
+          var low = (0.05 + Math.random() * 0.15).toFixed(3)
+          var high = (0.4 + Math.random() * 0.4).toFixed(3)
+          d.style.top = Math.random() * 100 + '%'
+          d.style.left = Math.random() * 100 + '%'
+          d.style.width = size + 'px'
+          d.style.height = size + 'px'
+          d.style.animationDuration = dur + 's'
+          d.style.animationDelay = delay + 's'
+          d.style.setProperty('--tlow', low)
+          d.style.setProperty('--thigh', high)
+          stars.appendChild(d)
+        }
+      })()
+    </script>
+  </body>
+</html>

@@ -1,0 +1,20 @@
+{
+  "name": "offlineclass",
+  "version": "0.0.0",
+  "private": true,
+  "packageManager": "pnpm@10.26.0",
+  "scripts": {
+    "dev": "pnpm --filter @offlineclass/desktop dev",
+    "build": "pnpm --filter @offlineclass/desktop build",
+    "lint": "pnpm -r lint",
+    "typecheck": "pnpm -r typecheck",
+    "format": "pnpm -r format"
+  },
+  "pnpm": {
+    "onlyBuiltDependencies": [
+      "electron",
+      "esbuild",
+      "better-sqlite3"
+    ]
+  }
+}
