@@ -25,7 +25,7 @@ export type NotificationSettingsController = NotificationSettings & {
   setSound: (sound: boolean) => void
 }
 
-const STORAGE_KEY = 'apresenta:notifications'
+const STORAGE_KEY = 'offlineclass:notifications'
 
 const DEFAULTS: NotificationSettings = {
   position: 'bottom-right',

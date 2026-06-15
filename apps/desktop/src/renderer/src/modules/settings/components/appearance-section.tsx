@@ -1,11 +1,9 @@
-import { useState } from 'react'
 import { Moon, Palette, Sun } from 'lucide-react'
 import { msg } from '@lingui/core/macro'
 import type { MessageDescriptor } from '@lingui/core'
 import { Trans, useLingui } from '@lingui/react/macro'
 import { useThemeContext } from '@renderer/shared/hooks/theme-context'
 import { Segmented, type SegmentedOption } from '@renderer/shared/ui/segmented'
-import { Switch } from '@renderer/shared/ui/switch'
 import { SettingRow, SettingsSection } from './settings-section'
 
 type ThemeValue = 'light' | 'dark'
@@ -20,8 +18,6 @@ const THEME_OPTIONS: (Omit<SegmentedOption<ThemeValue>, 'label'> & {
 export function AppearanceSection(): React.JSX.Element {
   const { i18n, t } = useLingui()
   const { isDark, setIsDark } = useThemeContext()
-  // UI-only for now (the app already honors prefers-reduced-motion at the OS level).
-  const [reduceMotion, setReduceMotion] = useState(false)
 
   return (
     <SettingsSection
@@ -38,17 +34,6 @@ export function AppearanceSection(): React.JSX.Element {
             options={THEME_OPTIONS.map((o) => ({ ...o, label: i18n._(o.label) }))}
             value={isDark ? 'dark' : 'light'}
             onChange={(v) => setIsDark(v === 'dark')}
-          />
-        }
-      />
-      <SettingRow
-        title={<Trans>Reduzir movimento</Trans>}
-        description={<Trans>Diminui animações e transições da interface.</Trans>}
-        control={
-          <Switch
-            checked={reduceMotion}
-            onCheckedChange={setReduceMotion}
-            aria-label={t`Reduzir movimento`}
           />
         }
       />

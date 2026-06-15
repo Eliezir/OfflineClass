@@ -18,11 +18,11 @@ export function GeneralSection(): React.JSX.Element {
     <SettingsSection
       icon={GraduationCap}
       title={t`Tutorial`}
-      description={t`Primeiros passos no Apresenta.AI.`}
+      description={t`Primeiros passos no OfflineClass.`}
     >
       <SettingRow
         title={<Trans>Introdução</Trans>}
-        description={<Trans>Reveja o tour de boas-vindas do Apresenta.AI.</Trans>}
+        description={<Trans>Reveja o tour de boas-vindas do OfflineClass.</Trans>}
         control={
           <Button variant="secondary" size="sm" onClick={replayIntro}>
             <RotateCcw />
