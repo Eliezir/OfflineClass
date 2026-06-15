@@ -1,0 +1,301 @@
+<!doctype html>
+<html lang="pt-BR">
+  <head>
+    <meta charset="UTF-8" />
+    <title>OfflineClass</title>
+    <script>
+      // Theme: read the app's saved preference (set by the React app on every
+      // toggle), fall back to OS preference only if nothing is saved yet.
+      // Runs in <head> before CSS applies to avoid a flash of the wrong theme.
+      ;(function () {
+        var KEY = 'offlineclass:theme'
+        var mq = window.matchMedia('(prefers-color-scheme: dark)')
+
+        function resolve() {
+          var saved = null
+          try {
+            saved = window.localStorage.getItem(KEY)
+          } catch (e) {
+            /* localStorage unavailable */
+          }
+          if (saved === 'dark') return true
+          if (saved === 'light') return false
+          return mq.matches
+        }
+
+        function apply() {
+          document.documentElement.classList.toggle('dark', resolve())
+        }
+
+        apply()
+
+        // Live updates when the user toggles in the main app (different window,
+        // same origin → fires the storage event here).
+        window.addEventListener('storage', function (e) {
+          if (e.key === KEY) apply()
+        })
+        // OS change only matters when no app preference is saved yet.
+        if (mq.addEventListener) mq.addEventListener('change', apply)
+        else if (mq.addListener) mq.addListener(apply)
+      })()
+    </script>
+    <style>
+      *,
+      *::before,
+      *::after {
+        box-sizing: border-box;
+        margin: 0;
+        padding: 0;
+      }
+      html,
+      body {
+        width: 100%;
+        height: 100%;
+        overflow: hidden;
+        -webkit-user-select: none;
+        user-select: none;
+        -webkit-app-region: drag;
+      }
+      body {
+        position: relative;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        background: oklch(0.975 0.004 255);
+        color: oklch(0.32 0.02 262);
+        font-family:
+          'Nunito', -apple-system, BlinkMacSystemFont, 'Segoe UI', system-ui, sans-serif;
+        letter-spacing: -0.01em;
+      }
+      html.dark body {
+        background: oklch(0.17 0.02 262);
+        color: oklch(0.96 0.006 250);
+      }
+
+      /* Soft indigo glow behind the logo — the brand backlight. */
+      .backlight {
+        position: absolute;
+        left: 50%;
+        top: 40%;
+        width: 320px;
+        height: 320px;
+        transform: translate(-50%, -50%);
+        background: radial-gradient(circle, oklch(0.58 0.19 270 / 0.26), transparent 64%);
+        filter: blur(42px);
+        pointer-events: none;
+      }
+      html.dark .backlight {
+        background: radial-gradient(circle, oklch(0.7 0.17 270 / 0.34), transparent 64%);
+      }
+
+      .content {
+        position: relative;
+        text-align: center;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        gap: 16px;
+      }
+      .logo {
+        width: 88px;
+        height: 88px;
+        filter: drop-shadow(0 6px 16px oklch(0.32 0.04 262 / 0.18));
+        animation: scaleIn 500ms cubic-bezier(0.2, 0.8, 0.2, 1) backwards;
+      }
+      .wordmark {
+        font-size: 28px;
+        font-weight: 800;
+        letter-spacing: -0.022em;
+        animation: fadeUp 400ms 120ms cubic-bezier(0.2, 0.8, 0.2, 1) backwards;
+      }
+      .wordmark .brand {
+        color: oklch(0.58 0.19 270);
+      }
+      html.dark .wordmark .brand {
+        color: oklch(0.7 0.17 270);
+      }
+
+      .status {
+        display: flex;
+        align-items: center;
+        gap: 9px;
+        font-size: 13px;
+        font-weight: 700;
+        color: oklch(0.52 0.018 262);
+        animation: fadeIn 300ms 400ms ease-out backwards;
+      }
+      html.dark .status {
+        color: oklch(0.74 0.02 258);
+      }
+      .spinner {
+        width: 14px;
+        height: 14px;
+        border-radius: 50%;
+        border: 2px solid color-mix(in oklab, oklch(0.58 0.19 270) 28%, transparent);
+        border-top-color: oklch(0.58 0.19 270);
+        animation: spin 0.8s linear infinite;
+      }
+      html.dark .spinner {
+        border-color: color-mix(in oklab, oklch(0.7 0.17 270) 30%, transparent);
+        border-top-color: oklch(0.7 0.17 270);
+      }
+
+      /* Backend-failed state — hidden until main reports phase: 'error'. */
+      .error {
+        display: none;
+        flex-direction: column;
+        align-items: center;
+        gap: 14px;
+        max-width: 320px;
+        animation: fadeIn 240ms ease-out backwards;
+      }
+      body.has-error .status {
+        display: none;
+      }
+      body.has-error .error {
+        display: flex;
+      }
+      .error-message {
+        font-size: 13px;
+        line-height: 1.45;
+        font-weight: 600;
+        color: oklch(0.52 0.018 262);
+      }
+      html.dark .error-message {
+        color: oklch(0.74 0.02 258);
+      }
+      .error-actions {
+        display: flex;
+        gap: 10px;
+        /* Buttons must be clickable inside the draggable splash body. */
+        -webkit-app-region: no-drag;
+      }
+      .btn {
+        font: inherit;
+        font-size: 13px;
+        font-weight: 700;
+        letter-spacing: -0.01em;
+        padding: 8px 16px;
+        border-radius: 12px;
+        border: 1px solid transparent;
+        cursor: pointer;
+        transition:
+          background 120ms ease,
+          border-color 120ms ease,
+          filter 120ms ease;
+      }
+      .btn-primary {
+        background: oklch(0.58 0.19 270);
+        color: oklch(0.99 0 0);
+        box-shadow: 0 3px 0 oklch(0.47 0.17 270);
+      }
+      .btn-primary:hover {
+        filter: brightness(1.05);
+      }
+      .btn-primary:active {
+        transform: translateY(2px);
+        box-shadow: 0 1px 0 oklch(0.47 0.17 270);
+      }
+      .btn-ghost {
+        background: transparent;
+        border-color: oklch(0.87 0.01 255);
+        color: oklch(0.4 0.02 262);
+      }
+      .btn-ghost:hover {
+        background: oklch(0.95 0.006 255);
+      }
+      html.dark .btn-ghost {
+        border-color: oklch(0.34 0.025 262);
+        color: oklch(0.82 0.02 258);
+      }
+      html.dark .btn-ghost:hover {
+        background: oklch(0.24 0.022 262);
+      }
+
+      @keyframes spin {
+        to {
+          transform: rotate(360deg);
+        }
+      }
+      @keyframes fadeIn {
+        from {
+          opacity: 0;
+        }
+        to {
+          opacity: 1;
+        }
+      }
+      @keyframes fadeUp {
+        from {
+          opacity: 0;
+          transform: translateY(4px);
+        }
+        to {
+          opacity: 1;
+          transform: translateY(0);
+        }
+      }
+      @keyframes scaleIn {
+        from {
+          opacity: 0;
+          transform: scale(0.96);
+        }
+        to {
+          opacity: 1;
+          transform: scale(1);
+        }
+      }
+      @media (prefers-reduced-motion: reduce) {
+        .logo,
+        .wordmark,
+        .status,
+        .spinner {
+          animation: none;
+        }
+      }
+    </style>
+  </head>
+  <body>
+    <div class="backlight"></div>
+    <div class="content">
+      <img class="logo" src="./splash-logo.png" alt="" />
+      <div class="wordmark">Offline<span class="brand">Class</span></div>
+      <div class="status" id="status"><span class="spinner"></span> Iniciando o servidor…</div>
+      <div class="error" id="error">
+        <div class="error-message" id="error-message">Não foi possível iniciar o servidor.</div>
+        <div class="error-actions">
+          <button class="btn btn-primary" id="retry" type="button">Tentar novamente</button>
+          <button class="btn btn-ghost" id="quit" type="button">Sair</button>
+        </div>
+      </div>
+    </div>
+    <script>
+      // Backend boot status bridge (exposed by preload/splash.ts).
+      ;(function () {
+        var splash = window.splash
+        if (!splash) return
+
+        var body = document.body
+        var messageEl = document.getElementById('error-message')
+
+        splash.onStatus(function (status) {
+          if (status && status.phase === 'error') {
+            if (status.message) messageEl.textContent = status.message
+            body.classList.add('has-error')
+          } else {
+            // 'starting' / 'ready' — back to the calm loading state.
+            body.classList.remove('has-error')
+          }
+        })
+
+        document.getElementById('retry').addEventListener('click', function () {
+          body.classList.remove('has-error')
+          splash.retry()
+        })
+        document.getElementById('quit').addEventListener('click', function () {
+          splash.quit()
+        })
+      })()
+    </script>
+  </body>
+</html>
