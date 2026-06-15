@@ -1,0 +1,498 @@
+@import 'tailwindcss';
+@import 'tw-animate-css';
+@import '@fontsource-variable/nunito';
+@import '@fontsource-variable/jetbrains-mono';
+
+@custom-variant dark (&:is(.dark *));
+
+/* `tall:` opts in to height-dependent layout — used by the Home dashboard to
+   only fill the viewport (vs. scroll the page) when there's vertical room. */
+@custom-variant tall (@media (min-height: 760px));
+
+:root {
+  /* ─── Canvas surfaces — three levels of depth ─────────────────────────
+     canvas:     the page itself (recessed, holds the floating panel)
+     background: the elevated floating panel surface
+     card:       inner cards inside the panel (most elevated, pure white)  */
+  --canvas: oklch(0.975 0.004 255);
+  --background: oklch(0.995 0.002 255);
+  --foreground: oklch(0.32 0.02 262);
+  --card: oklch(1 0 0);
+  --card-foreground: oklch(0.32 0.02 262);
+  --popover: oklch(1 0 0);
+  --popover-foreground: oklch(0.32 0.02 262);
+  --muted: oklch(0.96 0.004 255);
+  --muted-foreground: oklch(0.52 0.018 262);
+  --border: oklch(0.905 0.008 255);
+  --input: oklch(1 0 0);
+  --input-border: oklch(0.87 0.01 255);
+
+  /* ─── The Four — used confidently, color-coded ─────────────────────── */
+  --primary: oklch(0.58 0.19 270); /* indigo — the logo "Class" blue */
+  --primary-foreground: oklch(0.99 0 0);
+  --primary-dark: oklch(0.47 0.17 270); /* solid bottom edge for 3D buttons */
+  --secondary: oklch(0.72 0.17 140); /* lime green — "rede local" */
+  --secondary-foreground: oklch(0.99 0 0);
+  --secondary-dark: oklch(0.6 0.14 140);
+  --tertiary: oklch(0.83 0.16 80); /* amber */
+  --tertiary-foreground: oklch(0.28 0.03 262);
+  --quaternary: oklch(0.68 0.18 10); /* coral */
+  --quaternary-foreground: oklch(0.99 0 0);
+
+  /* Soft-tinted surfaces — used for color-coded sections */
+  --primary-soft: oklch(0.96 0.045 270);
+  --primary-soft-foreground: oklch(0.42 0.17 270);
+  --secondary-soft: oklch(0.955 0.05 140);
+  --secondary-soft-foreground: oklch(0.42 0.14 145);
+  --tertiary-soft: oklch(0.96 0.05 80);
+  --tertiary-soft-foreground: oklch(0.45 0.12 75);
+  --quaternary-soft: oklch(0.96 0.045 10);
+  --quaternary-soft-foreground: oklch(0.45 0.17 12);
+
+  --accent: oklch(0.96 0.045 270);
+  --accent-foreground: oklch(0.42 0.17 270);
+
+  --ring: oklch(0.58 0.19 270);
+
+  /* ─── Brand gradient — indigo → amber → lime ───────────────────────── */
+  --ai-gradient-from: oklch(0.58 0.19 270);
+  --ai-gradient-via: oklch(0.83 0.16 80);
+  --ai-gradient-to: oklch(0.72 0.17 140);
+  --gradient-ai: linear-gradient(
+    135deg,
+    var(--ai-gradient-from),
+    var(--ai-gradient-via),
+    var(--ai-gradient-to)
+  );
+
+  /* ─── Semantic ─────────────────────────────────────────────────────── */
+  --destructive: oklch(0.62 0.22 25);
+  --destructive-foreground: oklch(1 0 0);
+  --success: oklch(0.66 0.16 145);
+  --success-foreground: oklch(1 0 0);
+  --warning: oklch(0.83 0.16 80);
+  --warning-foreground: oklch(0.28 0.03 262);
+
+  --chart-1: oklch(0.58 0.19 270);
+  --chart-2: oklch(0.72 0.17 140);
+  --chart-3: oklch(0.83 0.16 80);
+  --chart-4: oklch(0.68 0.18 10);
+  --chart-5: oklch(0.55 0.04 262);
+
+  /* ─── Sidebar ──────────────────────────────────────────────────────── */
+  --sidebar: oklch(0.975 0.005 255);
+  --sidebar-foreground: oklch(0.4 0.02 262);
+  --sidebar-primary: oklch(0.58 0.19 270);
+  --sidebar-primary-foreground: oklch(0.99 0 0);
+  --sidebar-accent: oklch(0.95 0.05 270);
+  --sidebar-accent-foreground: oklch(0.42 0.17 270);
+  --sidebar-border: oklch(0.905 0.008 255);
+  --sidebar-ring: oklch(0.58 0.19 270);
+
+  /* ─── Typography — Nunito, rounded & friendly ──────────────────────── */
+  --font-sans: 'Nunito Variable', 'Nunito', system-ui, sans-serif;
+  --font-display: 'Nunito Variable', 'Nunito', system-ui, sans-serif;
+  --font-serif: 'Georgia', serif;
+  --font-mono: 'JetBrains Mono Variable', 'JetBrains Mono', monospace;
+
+  /* ─── Shape — rounder, school/playful. Controls 14px, cards 18px ───── */
+  --radius-sm: 0.875rem; /* 14px — buttons, inputs, badges that aren't pills */
+  --radius-md: 1.125rem; /* 18px — cards, popovers */
+  --radius-lg: 1.5rem; /* 24px — large surfaces */
+  --radius-xl: 2rem; /* 32px — the floating panel */
+  --radius-full: 9999px;
+  --radius: var(--radius-md);
+
+  /* Inset top-edge sheen on translucent / dark surfaces (cards, popovers) */
+  --edge-soft: inset 0 1px 0 oklch(1 0 0 / 0.1);
+
+  /* Splash starfield colors — pale brand tints in light, bright in dark */
+  --star-color: oklch(0.78 0.13 270); /* indigo */
+  --star-accent: oklch(0.8 0.15 140); /* lime */
+
+  /* ─── Soft layered shadows (slate-tinted) ──────────────────────────── */
+  --shadow-2xs: 0 1px 1px hsl(256 28% 16% / 0.04);
+  --shadow-xs: 0 1px 1px hsl(256 28% 16% / 0.04), 0 2px 4px -1px hsl(256 28% 16% / 0.04);
+  --shadow-sm: 0 1px 2px hsl(256 28% 16% / 0.05), 0 4px 8px -2px hsl(256 28% 16% / 0.06);
+  --shadow: 0 1px 2px hsl(256 28% 16% / 0.05), 0 8px 16px -4px hsl(256 28% 16% / 0.08);
+  --shadow-md:
+    0 1px 2px hsl(256 28% 16% / 0.05), 0 12px 24px -6px hsl(256 28% 16% / 0.1),
+    0 4px 8px -2px hsl(256 28% 16% / 0.06);
+  --shadow-lg:
+    0 2px 4px hsl(256 28% 16% / 0.06), 0 24px 48px -12px hsl(256 28% 16% / 0.14),
+    0 8px 16px -4px hsl(256 28% 16% / 0.08);
+  --shadow-xl:
+    0 2px 4px hsl(256 28% 16% / 0.06), 0 40px 64px -16px hsl(256 28% 16% / 0.18),
+    0 16px 32px -8px hsl(256 28% 16% / 0.1);
+  --shadow-2xl: 0 60px 100px -20px hsl(256 28% 16% / 0.28);
+
+  --shadow-glow-primary:
+    0 1px 2px hsl(256 28% 16% / 0.08), 0 8px 24px -4px oklch(0.58 0.19 270 / 0.4);
+  --shadow-glow-ai:
+    0 1px 2px hsl(256 28% 16% / 0.08), 0 16px 40px -8px oklch(0.58 0.19 270 / 0.3),
+    0 16px 40px -8px oklch(0.72 0.17 140 / 0.2);
+
+  /* ─── Motion — smooth, no overshoot ────────────────────────────────── */
+  --ease-out: cubic-bezier(0.2, 0.8, 0.2, 1);
+  --ease-snap: cubic-bezier(0.16, 1, 0.3, 1);
+  --ease-bounce: cubic-bezier(0.2, 0.8, 0.2, 1); /* alias for legacy */
+
+  /* ─── Misc ─────────────────────────────────────────────────────────── */
+  --tracking-normal: -0.01em;
+  --spacing: 0.25rem;
+}
+
+.dark {
+  --canvas: oklch(0.17 0.02 262);
+  --background: oklch(0.205 0.022 262);
+  --foreground: oklch(0.96 0.006 250);
+  --card: oklch(0.255 0.024 262);
+  --card-foreground: oklch(0.96 0.006 250);
+  --popover: oklch(0.255 0.024 262);
+  --popover-foreground: oklch(0.96 0.006 250);
+  --muted: oklch(0.24 0.022 262);
+  --muted-foreground: oklch(0.74 0.02 258);
+  --border: oklch(0.32 0.025 262);
+  --input: oklch(0.24 0.022 262);
+  --input-border: oklch(0.36 0.03 262);
+
+  --primary: oklch(0.7 0.17 270);
+  --primary-foreground: oklch(0.18 0.02 270);
+  --primary-dark: oklch(0.5 0.15 270);
+  --secondary: oklch(0.76 0.16 140);
+  --secondary-foreground: oklch(0.18 0.02 140);
+  --secondary-dark: oklch(0.55 0.13 140);
+  --tertiary: oklch(0.84 0.15 80);
+  --tertiary-foreground: oklch(0.2 0.03 262);
+  --quaternary: oklch(0.74 0.16 10);
+  --quaternary-foreground: oklch(0.18 0.02 10);
+
+  --primary-soft: oklch(0.28 0.08 270);
+  --primary-soft-foreground: oklch(0.86 0.1 270);
+  --secondary-soft: oklch(0.27 0.07 140);
+  --secondary-soft-foreground: oklch(0.86 0.1 140);
+  --tertiary-soft: oklch(0.28 0.06 80);
+  --tertiary-soft-foreground: oklch(0.86 0.1 80);
+  --quaternary-soft: oklch(0.28 0.07 10);
+  --quaternary-soft-foreground: oklch(0.86 0.1 10);
+
+  --accent: oklch(0.28 0.08 270);
+  --accent-foreground: oklch(0.86 0.1 270);
+  --ring: oklch(0.7 0.17 270);
+
+  --ai-gradient-from: oklch(0.7 0.17 270);
+  --ai-gradient-via: oklch(0.84 0.15 80);
+  --ai-gradient-to: oklch(0.76 0.16 140);
+
+  --destructive: oklch(0.66 0.22 25);
+  --destructive-foreground: oklch(1 0 0);
+  --success: oklch(0.74 0.14 145);
+  --success-foreground: oklch(0.18 0.02 145);
+  --warning: oklch(0.84 0.15 80);
+  --warning-foreground: oklch(0.2 0.03 262);
+
+  --chart-1: oklch(0.7 0.17 270);
+  --chart-2: oklch(0.76 0.16 140);
+  --chart-3: oklch(0.84 0.15 80);
+  --chart-4: oklch(0.74 0.16 10);
+  --chart-5: oklch(0.72 0.025 262);
+
+  --sidebar: oklch(0.19 0.02 262);
+  --sidebar-foreground: oklch(0.78 0.025 258);
+  --sidebar-primary: oklch(0.7 0.17 270);
+  --sidebar-primary-foreground: oklch(0.18 0.02 270);
+  --sidebar-accent: oklch(0.28 0.08 270);
+  --sidebar-accent-foreground: oklch(0.86 0.1 270);
+  --sidebar-border: oklch(0.3 0.025 262);
+  --sidebar-ring: oklch(0.7 0.17 270);
+
+  --shadow-2xs: 0 1px 1px hsl(0 0% 0% / 0.4);
+  --shadow-xs: 0 1px 1px hsl(0 0% 0% / 0.3), 0 2px 4px -1px hsl(0 0% 0% / 0.3);
+  --shadow-sm: 0 1px 2px hsl(0 0% 0% / 0.3), 0 4px 8px -2px hsl(0 0% 0% / 0.4);
+  --shadow: 0 1px 2px hsl(0 0% 0% / 0.3), 0 8px 16px -4px hsl(0 0% 0% / 0.5);
+  --shadow-md:
+    0 1px 2px hsl(0 0% 0% / 0.3), 0 12px 24px -6px hsl(0 0% 0% / 0.6),
+    0 4px 8px -2px hsl(0 0% 0% / 0.4);
+  --shadow-lg:
+    0 2px 4px hsl(0 0% 0% / 0.4), 0 24px 48px -12px hsl(0 0% 0% / 0.65),
+    0 8px 16px -4px hsl(0 0% 0% / 0.45);
+  --shadow-xl:
+    0 2px 4px hsl(0 0% 0% / 0.4), 0 40px 64px -16px hsl(0 0% 0% / 0.7),
+    0 16px 32px -8px hsl(0 0% 0% / 0.5);
+  --shadow-2xl: 0 60px 100px -20px hsl(0 0% 0% / 0.8);
+
+  --shadow-glow-primary: 0 1px 2px hsl(0 0% 0% / 0.4), 0 12px 32px -4px oklch(0.7 0.17 270 / 0.6);
+  --shadow-glow-ai:
+    0 1px 2px hsl(0 0% 0% / 0.4), 0 24px 56px -8px oklch(0.7 0.17 270 / 0.5),
+    0 24px 56px -8px oklch(0.76 0.16 140 / 0.3);
+
+  /* Dark starfield — bright neutral + indigo */
+  --star-color: oklch(0.97 0.008 250);
+  --star-accent: oklch(0.74 0.14 270);
+}
+
+@theme inline {
+  --color-canvas: var(--canvas);
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+  --color-card: var(--card);
+  --color-card-foreground: var(--card-foreground);
+  --color-popover: var(--popover);
+  --color-popover-foreground: var(--popover-foreground);
+  --color-primary: var(--primary);
+  --color-primary-foreground: var(--primary-foreground);
+  --color-secondary: var(--secondary);
+  --color-secondary-foreground: var(--secondary-foreground);
+  --color-tertiary: var(--tertiary);
+  --color-tertiary-foreground: var(--tertiary-foreground);
+  --color-quaternary: var(--quaternary);
+  --color-quaternary-foreground: var(--quaternary-foreground);
+  --color-primary-soft: var(--primary-soft);
+  --color-primary-soft-foreground: var(--primary-soft-foreground);
+  --color-secondary-soft: var(--secondary-soft);
+  --color-secondary-soft-foreground: var(--secondary-soft-foreground);
+  --color-tertiary-soft: var(--tertiary-soft);
+  --color-tertiary-soft-foreground: var(--tertiary-soft-foreground);
+  --color-quaternary-soft: var(--quaternary-soft);
+  --color-quaternary-soft-foreground: var(--quaternary-soft-foreground);
+  --color-muted: var(--muted);
+  --color-muted-foreground: var(--muted-foreground);
+  --color-accent: var(--accent);
+  --color-accent-foreground: var(--accent-foreground);
+  --color-destructive: var(--destructive);
+  --color-destructive-foreground: var(--destructive-foreground);
+  --color-success: var(--success);
+  --color-success-foreground: var(--success-foreground);
+  --color-warning: var(--warning);
+  --color-warning-foreground: var(--warning-foreground);
+  --color-border: var(--border);
+  --color-input: var(--input);
+  --color-input-border: var(--input-border);
+  --color-ring: var(--ring);
+  --color-chart-1: var(--chart-1);
+  --color-chart-2: var(--chart-2);
+  --color-chart-3: var(--chart-3);
+  --color-chart-4: var(--chart-4);
+  --color-chart-5: var(--chart-5);
+  --color-sidebar: var(--sidebar);
+  --color-sidebar-foreground: var(--sidebar-foreground);
+  --color-sidebar-primary: var(--sidebar-primary);
+  --color-sidebar-primary-foreground: var(--sidebar-primary-foreground);
+  --color-sidebar-accent: var(--sidebar-accent);
+  --color-sidebar-accent-foreground: var(--sidebar-accent-foreground);
+  --color-sidebar-border: var(--sidebar-border);
+  --color-sidebar-ring: var(--sidebar-ring);
+
+  --font-sans: var(--font-sans);
+  --font-display: var(--font-display);
+  --font-mono: var(--font-mono);
+  --font-serif: var(--font-serif);
+
+  --radius-sm: var(--radius-sm);
+  --radius-md: var(--radius-md);
+  --radius-lg: var(--radius-lg);
+  --radius-xl: var(--radius-xl);
+  --radius-full: var(--radius-full);
+
+  --shadow-2xs: var(--shadow-2xs);
+  --shadow-xs: var(--shadow-xs);
+  --shadow-sm: var(--shadow-sm);
+  --shadow: var(--shadow);
+  --shadow-md: var(--shadow-md);
+  --shadow-lg: var(--shadow-lg);
+  --shadow-xl: var(--shadow-xl);
+  --shadow-2xl: var(--shadow-2xl);
+  --shadow-glow-primary: var(--shadow-glow-primary);
+  --shadow-glow-ai: var(--shadow-glow-ai);
+
+  --tracking-tighter: calc(var(--tracking-normal) - 0.05em);
+  --tracking-tight: calc(var(--tracking-normal) - 0.025em);
+  --tracking-normal: var(--tracking-normal);
+  --tracking-wide: calc(var(--tracking-normal) + 0.025em);
+  --tracking-wider: calc(var(--tracking-normal) + 0.05em);
+  --tracking-widest: calc(var(--tracking-normal) + 0.1em);
+}
+
+@layer base {
+  * {
+    @apply border-border outline-ring/50;
+  }
+  body {
+    @apply bg-background text-foreground font-sans antialiased;
+    letter-spacing: var(--tracking-normal);
+  }
+  h1,
+  h2,
+  h3,
+  h4,
+  h5,
+  h6 {
+    font-family: var(--font-display);
+    font-weight: 800;
+    letter-spacing: -0.022em;
+  }
+  code,
+  kbd,
+  pre,
+  samp {
+    @apply font-mono;
+  }
+}
+
+@layer utilities {
+  /* Thin, inset scrollbar so scroll areas don't show the chunky OS bar hugging
+     a panel edge. The thumb is padded via a transparent border + content-box. */
+  .scrollbar-subtle {
+    scrollbar-width: thin;
+    scrollbar-color: color-mix(in oklab, var(--muted-foreground), transparent 65%) transparent;
+  }
+  .scrollbar-subtle::-webkit-scrollbar {
+    width: 12px;
+    height: 12px;
+  }
+  .scrollbar-subtle::-webkit-scrollbar-track {
+    background: transparent;
+  }
+  .scrollbar-subtle::-webkit-scrollbar-thumb {
+    background-color: color-mix(in oklab, var(--muted-foreground), transparent 70%);
+    background-clip: content-box;
+    border: 3px solid transparent;
+    border-radius: 9999px;
+  }
+  .scrollbar-subtle::-webkit-scrollbar-thumb:hover {
+    background-color: color-mix(in oklab, var(--muted-foreground), transparent 50%);
+  }
+
+  /* Soft radial backlight behind featured surfaces.
+     The element it's applied to must establish a stacking context. */
+  .ai-backlight {
+    position: relative;
+    isolation: isolate;
+  }
+  .ai-backlight::before {
+    content: '';
+    position: absolute;
+    inset: -20% -10%;
+    z-index: -1;
+    background:
+      radial-gradient(ellipse 60% 60% at 30% 40%, oklch(0.58 0.19 270 / 0.45), transparent 70%),
+      radial-gradient(ellipse 50% 50% at 75% 60%, oklch(0.72 0.17 140 / 0.3), transparent 70%),
+      radial-gradient(ellipse 50% 50% at 50% 100%, oklch(0.83 0.16 80 / 0.2), transparent 70%);
+    filter: blur(40px);
+    pointer-events: none;
+  }
+
+  /* Brand gradient as a background-image utility (Tailwind can't bind gradients
+     through @theme inline like solid colors, so we expose it here). */
+  .bg-gradient-ai {
+    background-image: var(--gradient-ai);
+  }
+
+  .scrollbar-minimal {
+    scrollbar-width: thin;
+    scrollbar-color: color-mix(in oklch, var(--muted-foreground) 28%, transparent) transparent;
+  }
+  .scrollbar-minimal::-webkit-scrollbar {
+    width: 6px;
+    height: 6px;
+  }
+  .scrollbar-minimal::-webkit-scrollbar-track {
+    background: transparent;
+  }
+  .scrollbar-minimal::-webkit-scrollbar-thumb {
+    border-radius: var(--radius-full);
+    background-color: color-mix(in oklch, var(--muted-foreground) 28%, transparent);
+  }
+  .scrollbar-minimal::-webkit-scrollbar-thumb:hover {
+    background-color: color-mix(in oklch, var(--muted-foreground) 50%, transparent);
+  }
+  .scrollbar-minimal::-webkit-scrollbar-corner {
+    background: transparent;
+  }
+
+  /* Twinkle for the splash starfield — opacity + gentle scale */
+  @keyframes twinkle {
+    0%,
+    100% {
+      opacity: var(--twinkle-low, 0.15);
+      transform: scale(1);
+    }
+    50% {
+      opacity: var(--twinkle-high, 0.7);
+      transform: scale(1.3);
+    }
+  }
+
+  /* Hero — soft pulsing glow behind the logo */
+  @keyframes onb-glow {
+    0%,
+    100% {
+      opacity: 0.55;
+      transform: scale(1.7);
+    }
+    50% {
+      opacity: 1;
+      transform: scale(1.95);
+    }
+  }
+  .animate-onb-glow {
+    animation: onb-glow 3.5s var(--ease-out) infinite;
+  }
+
+  /* Hero — brand gradient flowing across the wordmark (light sweep) */
+  @keyframes onb-shimmer {
+    to {
+      background-position: 200% center;
+    }
+  }
+  .onb-shimmer {
+    background-size: 200% auto;
+    animation: onb-shimmer 3s linear infinite;
+  }
+
+  /* Empty-state sleeping bell — the floating z's layered over the matted video */
+  @keyframes nb-zfloat {
+    0% {
+      opacity: 0;
+      transform: translateY(3px) scale(0.7);
+    }
+    25% {
+      opacity: 1;
+    }
+    100% {
+      opacity: 0;
+      transform: translateY(-9px) scale(1.1);
+    }
+  }
+  .nb-z {
+    transform-box: fill-box;
+    transform-origin: center;
+    animation: nb-zfloat 2.4s ease-in-out infinite;
+  }
+  .nb-z2 {
+    animation-delay: 0.5s;
+  }
+  .nb-z3 {
+    animation-delay: 1s;
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .animate-onb-glow,
+    .onb-shimmer,
+    .nb-z {
+      animation: none;
+    }
+  }
+}
+
+/* --- Toast notifications (Sonner) ---------------------------------------
+   Surface colors are handled by Sonner's CSS variables, set on <AppToaster>
+   via the style prop (the shadcn/ui setup). The only thing Sonner can't express
+   itself is our two vertical-centre positions: we anchor it to the matching top
+   corner and pull the fixed container to the middle. Unlayered + !important to
+   sit above Sonner's own injected positioning rule. */
+[data-sonner-toaster].apresenta-toaster--vcenter {
+  top: 50% !important;
+  bottom: auto !important;
+  transform: translateY(-50%);
+}
