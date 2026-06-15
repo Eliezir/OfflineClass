@@ -21,7 +21,7 @@ function createSplashWindow(): void {
     show: false,
     skipTaskbar: true,
     alwaysOnTop: false,
-    title: 'Apresenta.AI',
+    title: 'OfflineClass',
     webPreferences: {
       preload: join(__dirname, '../preload/splash.js'),
       sandbox: true,
@@ -111,7 +111,7 @@ async function boot(restart = false): Promise<void> {
 // Some APIs can only be used after this event occurs.
 app.whenReady().then(() => {
   // Set app user model id for windows
-  electronApp.setAppUserModelId('com.apresenta.ai')
+  electronApp.setAppUserModelId('com.offlineclass.app')
 
   // Override Electron's default dock icon during dev (macOS).
   // Em produção o ícone vem do app bundle (.icns); essa chamada só afeta

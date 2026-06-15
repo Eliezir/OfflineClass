@@ -12,12 +12,6 @@ import {
   WindowMinimizeInputSchema,
   WindowMinimizeOutputSchema
 } from './window'
-import {
-  ProviderCheckInputSchema,
-  ProviderCheckOutputSchema,
-  ProviderSaveInputSchema,
-  ProviderSaveOutputSchema
-} from './provider'
 
 export const IpcSchemas = {
   [IPC.APP.GET_VERSION]: {
@@ -39,14 +33,6 @@ export const IpcSchemas = {
   [IPC.WINDOW.IS_MAXIMIZED]: {
     input: WindowIsMaximizedInputSchema,
     output: WindowIsMaximizedOutputSchema
-  },
-  [IPC.PROVIDER.CHECK]: {
-    input: ProviderCheckInputSchema,
-    output: ProviderCheckOutputSchema
-  },
-  [IPC.PROVIDER.SAVE]: {
-    input: ProviderSaveInputSchema,
-    output: ProviderSaveOutputSchema
   }
 } as const
 

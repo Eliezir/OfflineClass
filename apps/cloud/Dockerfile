@@ -31,7 +31,7 @@ WORKDIR /app
 
 ENV NODE_ENV=production \
     PORT=8080 \
-    DATABASE_URL="file:/app/database/apresenta-ia.db"
+    DATABASE_URL="file:/app/database/offlineclass.db"
 
 # Usuário não-root
 RUN groupadd --system app && useradd --system --gid app --home /app app

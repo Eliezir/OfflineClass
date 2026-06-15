@@ -20,7 +20,7 @@ const toneIcons = Object.fromEntries(
 ) as ToasterProps['icons']
 
 /** Sonner has no vertical-centre position, so map our two to the matching top
-    corner and let `apresenta-toaster--vcenter` (main.css) centre the container. */
+    corner and let `offlineclass-toaster--vcenter` (main.css) centre the container. */
 function toSonnerPosition(position: ToastPosition): { position: Position; vcenter: boolean } {
   switch (position) {
     case 'center-left':
@@ -45,7 +45,7 @@ export function AppToaster(): React.JSX.Element {
       closeButton
       gap={10}
       offset={16}
-      className={cn('toaster group', vcenter && 'apresenta-toaster--vcenter')}
+      className={cn('toaster group', vcenter && 'offlineclass-toaster--vcenter')}
       icons={toneIcons}
       style={
         {

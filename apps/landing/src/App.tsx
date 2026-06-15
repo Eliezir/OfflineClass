@@ -5,7 +5,7 @@ import { DownloadPage } from '@/pages/download-page'
 import { ReleasesPage } from '@/pages/releases-page'
 import { DocsPage } from '@/pages/docs-page'
 
-// import.meta.env.BASE_URL is '/' in dev and '/apresenta.ai/' on Pages.
+// import.meta.env.BASE_URL is '/' in dev and '/OfflineClass/' on Pages.
 const basename = import.meta.env.BASE_URL.replace(/\/$/, '')
 
 export default function App() {

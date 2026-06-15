@@ -2,14 +2,14 @@ services:
   backend:
     build:
       context: ./apps/cloud
-    image: apresenta-ia-backend
-    container_name: apresenta-ia-backend
+    image: offlineclass-backend
+    container_name: offlineclass-backend
     ports:
       - '8080:8080'
     environment:
       NODE_ENV: ${NODE_ENV:-production}
       # Caminho absoluto dentro do container (o volume é montado em /app/database).
-      DATABASE_URL: 'file:/app/database/apresenta-ia.db'
+      DATABASE_URL: 'file:/app/database/offlineclass.db'
       API_KEY_ENCRYPTION_KEY_BASE64: ${API_KEY_ENCRYPTION_KEY_BASE64:?Defina API_KEY_ENCRYPTION_KEY_BASE64 no ambiente}
     volumes:
       - backend-db:/app/database

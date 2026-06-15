@@ -17,11 +17,13 @@ required at runtime. Offline-first is the core constraint.
 College project for the **Operating Systems & Networks** courses.
 
 > **Origin note.** The frontend shell was cloned from the maintainer's other project,
-> `apresenta.ai` (an Electron + React app), and is being adapted section by section. Expect
-> leftover `apresenta.ai` branding, copy, and AI-provider domain code until each refactor
-> lands. Active refactor roadmap: **theme → splash → onboarding → home → settings →
-> landing → backend.** Anything still mentioning "apresenta", "provedores" (AI providers),
-> Claude/Anthropic generation, or presentations is clone residue, not the target product.
+> `apresenta.ai` (an Electron + React app) and adapted section by section. Refactor roadmap
+> **theme → splash → onboarding → home → settings → landing** is **done** — those are now
+> OfflineClass (Indigo Pop theme, Nunito, rebranded copy/assets) with the apresenta
+> AI-provider screens, provider IPC, and presentation copy removed. The **one remaining
+> clone** is **`apps/cloud`** — still the apresenta OOP Hono+Prisma+SQLite backend (provedor
+> domain) — pending the **backend** refactor. Anything mentioning "apresenta", "provedores",
+> Claude/Anthropic, or presentations now lives only under `apps/cloud` and is the next target.
 
 ---
 

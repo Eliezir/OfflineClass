@@ -13,7 +13,7 @@ export interface SafariProps extends SVGProps<SVGSVGElement> {
  */
 export function Safari({
   imageSrc,
-  url = 'apresenta.ai',
+  url = 'offlineclass.app',
   width = 1203,
   height = 753,
   ...props

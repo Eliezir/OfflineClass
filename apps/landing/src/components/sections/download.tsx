@@ -79,7 +79,7 @@ export function Download() {
                     </p>
                     <h3 className="text-lg font-semibold">Ainda não temos app para celular</h3>
                     <p className="mt-1 text-sm text-muted-foreground">
-                      O Apresenta.AI roda no computador — macOS, Windows e Linux. Abra
+                      O OfflineClass roda no computador — macOS, Windows e Linux. Abra
                       esta página no desktop para baixar.
                     </p>
                   </div>

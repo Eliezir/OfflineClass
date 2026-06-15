@@ -3,7 +3,7 @@ import { messages as ptBR } from '@renderer/locales/pt-BR.po'
 import { messages as en } from '@renderer/locales/en.po'
 import { DEFAULT_LOCALE, LOCALES, isAppLocale, type AppLocale } from './locales'
 
-const LOCALE_STORAGE_KEY = 'apresenta-ai:locale'
+const LOCALE_STORAGE_KEY = 'offlineclass:locale'
 
 // Todos os catálogos são carregados de forma síncrona no boot (não há lazy loading):
 // são poucos idiomas e mantém a ativação de locale instantânea.

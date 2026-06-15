@@ -1,4 +1,4 @@
-# Landing page — Apresenta.AI
+# Landing page — OfflineClass
 
 Marketing site do produto. App **React 19 + Vite + Tailwind v4 + shadcn/ui**, com
 componentes do **[Magic UI](https://magicui.design/docs/components)** para animação
@@ -7,9 +7,9 @@ neutras profundas, um único acento violeta (a marca), sem gradientes “arco-í
 Dark-first com toggle (respeita `prefers-color-scheme`).
 
 ```bash
-pnpm --filter @apresenta-ai/landing dev        # http://localhost:5173
-pnpm --filter @apresenta-ai/landing build      # build de produção → landing/dist
-pnpm --filter @apresenta-ai/landing typecheck  # tsc --noEmit
+pnpm --filter @offlineclass/landing dev        # http://localhost:5173
+pnpm --filter @offlineclass/landing build      # build de produção → landing/dist
+pnpm --filter @offlineclass/landing typecheck  # tsc --noEmit
 ```
 
 ## Estrutura

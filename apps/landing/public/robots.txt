@@ -1,4 +1,4 @@
 User-agent: *
 Allow: /
 
-Sitemap: https://eliezir.github.io/apresenta.ai/sitemap.xml
+Sitemap: https://eliezir.github.io/OfflineClass/sitemap.xml

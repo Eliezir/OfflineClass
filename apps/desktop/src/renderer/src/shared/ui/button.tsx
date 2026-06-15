@@ -23,8 +23,8 @@ const buttonVariants = cva(
         /* Secondary — neutral surface, pressable edge so it matches the primary's height */
         secondary:
           'rounded-[14px] bg-card text-foreground border border-border shadow-[0_4px_0_var(--input-border)] hover:bg-muted active:translate-y-[2px] active:shadow-[0_1px_0_var(--input-border)]',
-        /* AI — brand gradient (indigo → amber → lime). Reserved for hero/brand actions. */
-        ai: 'rounded-[14px] bg-gradient-ai text-white hover:opacity-95',
+        /* Brand — indigo → amber → lime gradient. Reserved for hero/brand actions. */
+        brand: 'rounded-[14px] bg-gradient-brand text-white hover:opacity-95',
         /* Destructive — solid red, flat */
         destructive:
           'rounded-[14px] bg-destructive text-destructive-foreground hover:bg-destructive/90',

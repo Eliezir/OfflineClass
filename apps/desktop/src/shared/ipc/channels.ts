@@ -17,11 +17,5 @@ export const IPC = {
     RETRY: 'backend:retry',
     /* splash → main: give up and quit the app */
     QUIT: 'backend:quit'
-  },
-  PROVIDER: {
-    /* renderer → main: probe a provider for local availability */
-    CHECK: 'provider:check',
-    /* renderer → main: persist which provider is the default */
-    SAVE: 'provider:save'
   }
 } as const

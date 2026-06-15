@@ -13,25 +13,34 @@ msgstr ""
 "Language-Team: \n"
 "Plural-Forms: \n"
 
-msgid " e "
-msgstr " and "
+#~ msgid " e "
+#~ msgstr " and "
 
-msgid "“Apollo 11” foi gerada com sucesso."
-msgstr "“Apollo 11” was generated successfully."
+#~ msgid "“Apollo 11” foi gerada com sucesso."
+#~ msgstr "“Apollo 11” was generated successfully."
 
-msgid "“rascunho.md” foi salvo na sua biblioteca."
-msgstr "“rascunho.md” was saved to your library."
+msgid "“Prova de SO” foi salva no seu computador."
+msgstr ""
+
+#~ msgid "“rascunho.md” foi salvo na sua biblioteca."
+#~ msgstr "“rascunho.md” was saved to your library."
 
 #. placeholder {0}: model.assets
 #~ msgid "{0, plural, one {# asset} other {# assets}}"
 #~ msgstr "{0, plural, one {# asset} other {# assets}}"
 
 #. placeholder {0}: m.slides
-msgid "{0, plural, one {# slide} other {# slides}}"
-msgstr "{0, plural, one {# slide} other {# slides}}"
+#~ msgid "{0, plural, one {# slide} other {# slides}}"
+#~ msgstr "{0, plural, one {# slide} other {# slides}}"
 
-msgid "{total, plural, one {# asset} other {# assets}}"
-msgstr "{total, plural, one {# asset} other {# assets}}"
+#. placeholder {0}: session.groups
+#. placeholder {1}: session.students
+#. placeholder {2}: session.minutesLeft
+msgid "{0} grupos · {1} alunos · {2} min restantes"
+msgstr ""
+
+#~ msgid "{total, plural, one {# asset} other {# assets}}"
+#~ msgstr "{total, plural, one {# asset} other {# assets}}"
 
 #~ msgid "{totalAssets, plural, one {# recurso} other {# recursos}}"
 #~ msgstr "{totalAssets, plural, one {# resource} other {# resources}}"
@@ -39,71 +48,86 @@ msgstr "{total, plural, one {# asset} other {# assets}}"
 msgid "{unread, plural, one {# nova} other {# novas}}"
 msgstr "{unread, plural, one {# new} other {# new}}"
 
-msgid "≈ 2h de caminhada e coleta de amostras"
-msgstr "≈ 2h of walking and sample collection"
+msgid "+18 esta semana"
+msgstr ""
+
+msgid "+3 esta semana"
+msgstr ""
+
+#~ msgid "≈ 2h de caminhada e coleta de amostras"
+#~ msgstr "≈ 2h of walking and sample collection"
 
 msgid "10 s"
 msgstr "10 s"
 
-msgid "1957 sputnik / 1961 gagarin"
-msgstr "1957 sputnik / 1961 gagarin"
+#~ msgid "1957 sputnik / 1961 gagarin"
+#~ msgstr "1957 sputnik / 1961 gagarin"
 
-msgid "1957: a URSS lança o Sputnik"
-msgstr "1957: the USSR launches Sputnik"
+#~ msgid "1957: a URSS lança o Sputnik"
+#~ msgstr "1957: the USSR launches Sputnik"
 
-msgid "1961: Gagarin, o primeiro humano em órbita"
-msgstr "1961: Gagarin, the first human in orbit"
+#~ msgid "1961: Gagarin, o primeiro humano em órbita"
+#~ msgstr "1961: Gagarin, the first human in orbit"
 
-msgid "1969 · Missão à Lua"
-msgstr "1969 · Mission to the Moon"
+#~ msgid "1969 · Missão à Lua"
+#~ msgstr "1969 · Mission to the Moon"
 
-msgid "1969 · Missão tripulada à Lua"
-msgstr "1969 · Crewed mission to the Moon"
+#~ msgid "1969 · Missão tripulada à Lua"
+#~ msgstr "1969 · Crewed mission to the Moon"
 
 msgid "2 dias"
 msgstr "2 days"
 
-msgid "20 jul: módulo eagle pousa"
-msgstr "jul 20: eagle module lands"
+#~ msgid "20 jul: módulo eagle pousa"
+#~ msgstr "jul 20: eagle module lands"
 
-msgid "21,5 kg de amostras lunares trazidas à Terra"
-msgstr "21.5 kg of lunar samples brought back to Earth"
+#~ msgid "21,5 kg de amostras lunares trazidas à Terra"
+#~ msgstr "21.5 kg of lunar samples brought back to Earth"
 
-msgid "3 dias até a órbita lunar"
-msgstr "3 days to lunar orbit"
+#~ msgid "3 dias até a órbita lunar"
+#~ msgstr "3 days to lunar orbit"
 
 msgid "3 s"
 msgstr "3 s"
 
+msgid "5 este mês"
+msgstr ""
+
 msgid "5 s"
 msgstr "5 s"
 
-msgid "8 slides · interativo"
-msgstr "8 slides · interactive"
+#~ msgid "8 slides · interativo"
+#~ msgstr "8 slides · interactive"
 
-msgid "A apresentação <0>“{label}”</0> será removida permanentemente. Slides e histórico associados serão perdidos."
-msgstr "The presentation <0>“{label}”</0> will be permanently removed. Its slides and history will be lost."
+#~ msgid "A apresentação <0>“{label}”</0> será removida permanentemente. Slides e histórico associados serão perdidos."
+#~ msgstr "The presentation <0>“{label}”</0> will be permanently removed. Its slides and history will be lost."
 
-msgid "A IA vira roteiro"
-msgstr "AI turns it into a script"
+#~ msgid "A IA vira roteiro"
+#~ msgstr "AI turns it into a script"
 
 msgid "A interface será exibida no idioma selecionado."
 msgstr "The interface will be shown in the selected language."
 
-msgid "A Terra vista do espaço · NASA"
-msgstr "Earth seen from space · NASA"
+msgid "A sessão da “Prova de Redes” foi encerrada."
+msgstr ""
 
-msgid "A tripulação"
-msgstr "The crew"
+#~ msgid "A Terra vista do espaço · NASA"
+#~ msgstr "Earth seen from space · NASA"
 
-msgid "A viagem"
-msgstr "The journey"
+#~ msgid "A tripulação"
+#~ msgstr "The crew"
 
-msgid "Adicionar modelo"
-msgstr "Add a model"
+#~ msgid "A viagem"
+#~ msgstr "The journey"
 
-msgid "Adicione assets"
-msgstr "Add assets"
+msgid "Abrir painel"
+msgstr ""
+
+#~ msgid "Adicionar modelo"
+#~ msgstr "Add a model"
+
+#~ msgid "Adicione assets"
+#~ msgstr "Add assets"
 
 msgid "agora"
 msgstr "now"
@@ -111,83 +135,113 @@ msgstr "now"
 #~ msgid "Ajuste a tipografia"
 #~ msgstr "Adjust the typography"
 
-msgid "Aldrin o acompanha minutos depois"
-msgstr "Aldrin joins him minutes later"
+msgid "Ajuste o OfflineClass do seu jeito."
+msgstr ""
 
-msgid "Alternar estado de exemplo (dev)"
-msgstr "Toggle example state (dev)"
+#~ msgid "Aldrin o acompanha minutos depois"
+#~ msgstr "Aldrin joins him minutes later"
 
-msgid "Alternar tema"
-msgstr "Theme toggle"
+#~ msgid "Alternar estado de exemplo (dev)"
+#~ msgstr "Toggle example state (dev)"
 
-msgid "Animações"
-msgstr "Animations"
+#~ msgid "Alternar tema"
+#~ msgstr "Theme toggle"
+
+msgid "Aluno desconectado"
+msgstr ""
+
+msgid "alunos"
+msgstr ""
+
+msgid "Alunos avaliados"
+msgstr ""
+
+#~ msgid "Animações"
+#~ msgstr "Animations"
 
 msgid "Aparência"
 msgstr "Appearance"
 
+msgid "Aplicar ao vivo"
+msgstr ""
+
 #~ msgid "Aplique aos slides"
 #~ msgstr "Apply to slides"
 
-msgid "apollo 11 — chegada à lua"
-msgstr "apollo 11 — moon landing"
+msgid "Aplique em grupo, ao vivo"
+msgstr ""
 
-msgid "Apollo 11 · A Chegada à Lua"
-msgstr "Apollo 11 · The Moon Landing"
+#~ msgid "apollo 11 — chegada à lua"
+#~ msgstr "apollo 11 — moon landing"
 
-msgid "Apollo 11: A Chegada à Lua"
-msgstr "Apollo 11: The Moon Landing"
+#~ msgid "Apollo 11 · A Chegada à Lua"
+#~ msgstr "Apollo 11 · The Moon Landing"
 
-msgid "Apollo 11<0/>A Chegada à Lua"
-msgstr "Apollo 11<0/>The Moon Landing"
+#~ msgid "Apollo 11: A Chegada à Lua"
+#~ msgstr "Apollo 11: The Moon Landing"
 
-msgid "Apresenta.AI — <0>{file}</0>"
-msgstr "Apresenta.AI — <0>{file}</0>"
+#~ msgid "Apollo 11<0/>A Chegada à Lua"
+#~ msgstr "Apollo 11<0/>The Moon Landing"
+
+#~ msgid "Apresenta.AI — <0>{file}</0>"
+#~ msgstr "Apresenta.AI — <0>{file}</0>"
 
 #~ msgid "Apresentação"
 #~ msgstr "Presentation"
 
-msgid "Apresentação gerada"
-msgstr "Presentation generated"
+#~ msgid "Apresentação gerada"
+#~ msgstr "Presentation generated"
 
-msgid "Apresentações"
-msgstr "Presentations"
+#~ msgid "Apresentações"
+#~ msgstr "Presentations"
 
-msgid "aprox 2h na superfície"
-msgstr "approx 2h on the surface"
+#~ msgid "aprox 2h na superfície"
+#~ msgstr "approx 2h on the surface"
 
-msgid "Armstrong, o primeiro a pisar na Lua"
-msgstr "Armstrong, the first to set foot on the Moon"
+#~ msgid "Armstrong, o primeiro a pisar na Lua"
+#~ msgstr "Armstrong, the first to set foot on the Moon"
 
-msgid "armstrong: \"um pequeno passo...\""
-msgstr "armstrong: \"one small step...\""
+#~ msgid "armstrong: \"um pequeno passo...\""
+#~ msgstr "armstrong: \"one small step...\""
 
-msgid "Assets do tema"
-msgstr "Theme assets"
+msgid "As notas da Turma A já estão disponíveis."
+msgstr ""
+
+#~ msgid "Assets do tema"
+#~ msgstr "Theme assets"
 
 msgid "Atualize para a 1.2.0 para as últimas melhorias."
 msgstr "Update to 1.2.0 for the latest improvements."
 
+msgid "Avaliações sem internet, sincronizadas na sua rede local."
+msgstr ""
+
 msgid "Aviso"
 msgstr "Warning"
 
-msgid "Bandeira e placa comemorativa"
-msgstr "Flag and commemorative plaque"
+#~ msgid "Bandeira e placa comemorativa"
+#~ msgstr "Flag and commemorative plaque"
 
-msgid "Buscar projetos, templates…"
-msgstr "Search projects, templates…"
+msgid "Bem-vindo de volta. Pronto para aplicar uma avaliação?"
+msgstr ""
 
-msgid "Buzz Aldrin — piloto do módulo lunar"
-msgstr "Buzz Aldrin — lunar module pilot"
+#~ msgid "Buscar projetos, templates…"
+#~ msgstr "Search projects, templates…"
 
-msgid "Buzz Aldrin na Lua · NASA, 1969"
-msgstr "Buzz Aldrin on the Moon · NASA, 1969"
+msgid "Buscar…"
+msgstr ""
 
-msgid "cabo kennedy, flórida"
-msgstr "cape kennedy, florida"
+#~ msgid "Buzz Aldrin — piloto do módulo lunar"
+#~ msgstr "Buzz Aldrin — lunar module pilot"
 
-msgid "Cancelar"
-msgstr "Cancel"
+#~ msgid "Buzz Aldrin na Lua · NASA, 1969"
+#~ msgstr "Buzz Aldrin on the Moon · NASA, 1969"
+
+#~ msgid "cabo kennedy, flórida"
+#~ msgstr "cape kennedy, florida"
+
+#~ msgid "Cancelar"
+#~ msgstr "Cancel"
 
 msgid "Carregando"
 msgstr "Loading"
@@ -198,26 +252,26 @@ msgstr "Center right"
 msgid "Centro esquerda"
 msgstr "Center left"
 
-msgid "Cerca de 600 milhões assistiram ao vivo"
-msgstr "About 600 million watched live"
+#~ msgid "Cerca de 600 milhões assistiram ao vivo"
+#~ msgstr "About 600 million watched live"
 
-msgid "Chat com a IA"
-msgstr "Chat with the AI"
+#~ msgid "Chat com a IA"
+#~ msgstr "Chat with the AI"
 
-msgid "claro"
-msgstr "light"
+#~ msgid "claro"
+#~ msgstr "light"
 
 msgid "Claro"
 msgstr "Light"
 
-msgid "Claude Code conectado."
-msgstr "Claude Code connected."
+#~ msgid "Claude Code conectado."
+#~ msgstr "Claude Code connected."
 
-msgid "Cole anotações, um texto corrido ou tópicos soltos — a IA entende e organiza em um roteiro."
-msgstr "Paste notes, free-flowing text, or loose bullet points — the AI understands and organizes them into a script."
+#~ msgid "Cole anotações, um texto corrido ou tópicos soltos — a IA entende e organiza em um roteiro."
+#~ msgstr "Paste notes, free-flowing text, or loose bullet points — the AI understands and organizes them into a script."
 
-msgid "Cole qualquer conteúdo — a IA estrutura em Markdown e gera uma apresentação interativa."
-msgstr "Paste any content — the AI structures it in Markdown and generates an interactive presentation."
+#~ msgid "Cole qualquer conteúdo — a IA estrutura em Markdown e gera uma apresentação interativa."
+#~ msgstr "Paste any content — the AI structures it in Markdown and generates an interactive presentation."
 
 #~ msgid "Cole seu material e veja a IA estruturar tudo em Markdown."
 #~ msgstr "Paste your material and watch the AI structure everything in Markdown."
@@ -228,11 +282,11 @@ msgstr "With data"
 msgid "Começar"
 msgstr "Get started"
 
-msgid "Comece agora"
-msgstr "Start now"
+#~ msgid "Comece agora"
+#~ msgstr "Start now"
 
-msgid "Como funciona"
-msgstr "How it works"
+#~ msgid "Como funciona"
+#~ msgstr "How it works"
 
 msgid "Como os avisos (toasts) aparecem no aplicativo."
 msgstr "How notifications (toasts) appear in the app."
@@ -240,29 +294,32 @@ msgstr "How notifications (toasts) appear in the app."
 #~ msgid "Como os avisos (toasts) aparecem. Ainda não conectado — apenas a interface."
 #~ msgstr "How notifications (toasts) appear. Not connected yet — interface only."
 
-msgid "Conexões de IA"
-msgstr "AI connections"
+#~ msgid "Conexões de IA"
+#~ msgstr "AI connections"
 
 msgid "Configurações"
 msgstr "Settings"
 
-msgid "Contexto"
-msgstr "Context"
+#~ msgid "Contexto"
+#~ msgstr "Context"
 
 msgid "Continuar"
 msgstr "Continue"
 
-msgid "Cores, fontes e tom"
-msgstr "Colors, fonts and tone"
+#~ msgid "Cores, fontes e tom"
+#~ msgstr "Colors, fonts and tone"
 
-msgid "corrida espacial: eua x urss"
-msgstr "space race: usa vs ussr"
+#~ msgid "corrida espacial: eua x urss"
+#~ msgstr "space race: usa vs ussr"
 
-msgid "Cosmos"
-msgstr "Cosmos"
+#~ msgid "Cosmos"
+#~ msgstr "Cosmos"
 
-msgid "Criar apresentação"
-msgstr "Create presentation"
+#~ msgid "Criar apresentação"
+#~ msgstr "Create presentation"
+
+msgid "Crie provas com vários tipos de questão e materiais de apoio. Tudo fica salvo no seu computador."
+msgstr ""
 
 #~ msgid "Crie seu primeiro modelo de slides"
 #~ msgstr "Create your first slide model"
@@ -270,20 +327,26 @@ msgstr "Create presentation"
 #~ msgid "Crie seu primeiro modelo visual"
 #~ msgstr "Create your first visual model"
 
-msgid "Crie seu primeiro tema"
-msgstr "Create your first theme"
+#~ msgid "Crie seu primeiro tema"
+#~ msgstr "Create your first theme"
 
-msgid "Crie sua primeira apresentação"
-msgstr "Create your first presentation"
+msgid "Crie sua conta de professor e comece a aplicar avaliações."
+msgstr ""
 
-msgid "Dark"
-msgstr "Dark"
+#~ msgid "Crie sua primeira apresentação"
+#~ msgstr "Create your first presentation"
+
+msgid "Crie sua primeira prova para começar a aplicar avaliações."
+msgstr ""
+
+#~ msgid "Dark"
+#~ msgstr "Dark"
 
 #~ msgid "Dashboard em construção."
 #~ msgstr "Dashboard under construction."
 
-msgid "Defina as cores"
-msgstr "Set the colors"
+#~ msgid "Defina as cores"
+#~ msgstr "Set the colors"
 
 #~ msgid "Defina cores, tipografia e tom — a IA aplica o estilo em todas as apresentações."
 #~ msgstr "Set colors, typography and tone — the AI applies the style across every presentation."
@@ -291,14 +354,14 @@ msgstr "Set the colors"
 #~ msgid "Defina cores, tipografia e tom — a IA usa isso para montar seus slides."
 #~ msgstr "Define colors, typography and tone — the AI uses this to build your slides."
 
-msgid "deixa a seção do pouso em tópicos"
-msgstr "break the landing section into bullet points"
+#~ msgid "deixa a seção do pouso em tópicos"
+#~ msgstr "break the landing section into bullet points"
 
-msgid "Detectando o Claude Code…"
-msgstr "Detecting Claude Code…"
+#~ msgid "Detectando o Claude Code…"
+#~ msgstr "Detecting Claude Code…"
 
-msgid "Diminui animações e transições da interface."
-msgstr "Reduces interface animations and transitions."
+#~ msgid "Diminui animações e transições da interface."
+#~ msgstr "Reduces interface animations and transitions."
 
 msgid "Dispare um toast de exemplo para conferir suas preferências."
 msgstr "Trigger a sample toast to check your preferences."
@@ -309,8 +372,8 @@ msgstr "Dismiss automatically"
 msgid "Dispensar notificação"
 msgstr "Dismiss notification"
 
-msgid "Do texto à apresentação interativa em HTML, gerada por IA."
-msgstr "From text to an interactive HTML presentation, generated by AI."
+#~ msgid "Do texto à apresentação interativa em HTML, gerada por IA."
+#~ msgstr "From text to an interactive HTML presentation, generated by AI."
 
 msgid "Duração"
 msgstr "Duration"
@@ -318,11 +381,23 @@ msgstr "Duration"
 msgid "Duração do toast"
 msgstr "Toast duration"
 
-msgid "Eagle pousa no Mar da Tranquilidade"
-msgstr "Eagle lands in the Sea of Tranquility"
+#~ msgid "Eagle pousa no Mar da Tranquilidade"
+#~ msgstr "Eagle lands in the Sea of Tranquility"
 
-msgid "Em 20 de julho de 1969 o módulo lunar Eagle pousou no Mar da Tranquilidade. Horas depois, Armstrong desceu e tornou-se o primeiro humano a pisar na Lua."
-msgstr "On July 20, 1969, the lunar module Eagle landed in the Sea of Tranquility. Hours later, Armstrong stepped down and became the first human to set foot on the Moon."
+#~ msgid "Em 20 de julho de 1969 o módulo lunar Eagle pousou no Mar da Tranquilidade. Horas depois, Armstrong desceu e tornou-se o primeiro humano a pisar na Lua."
+#~ msgstr "On July 20, 1969, the lunar module Eagle landed in the Sea of Tranquility. Hours later, Armstrong stepped down and became the first human to set foot on the Moon."
+
+msgid "Em breve"
+msgstr ""
+
+msgid "Em breve você poderá aplicar provas ao vivo e acompanhar os grupos aqui."
+msgstr ""
+
+msgid "Em breve você poderá criar e organizar suas provas aqui."
+msgstr ""
+
+msgid "Em breve você verá notas, correções e relatórios das sessões encerradas aqui."
+msgstr ""
 
 #~ msgid "Em construção."
 #~ msgstr "Under construction."
@@ -333,62 +408,62 @@ msgstr "Enter the app"
 msgid "Erro"
 msgstr "Error"
 
-msgid "Escolha as fontes"
-msgstr "Choose the fonts"
+#~ msgid "Escolha as fontes"
+#~ msgstr "Choose the fonts"
 
 msgid "Escolha entre o tema claro e escuro do app."
 msgstr "Choose between the app's light and dark theme."
 
-msgid "Escolha o motor de IA"
-msgstr "Choose the AI engine"
+#~ msgid "Escolha o motor de IA"
+#~ msgstr "Choose the AI engine"
 
-msgid "Escolha um modelo visual"
-msgstr "Choose a visual model"
+#~ msgid "Escolha um modelo visual"
+#~ msgstr "Choose a visual model"
 
-msgid "Escolha um modelo visual e gere uma apresentação em HTML real, com transições e interação."
-msgstr "Choose a visual model and generate a real HTML presentation, with transitions and interaction."
+#~ msgid "Escolha um modelo visual e gere uma apresentação em HTML real, com transições e interação."
+#~ msgstr "Choose a visual model and generate a real HTML presentation, with transitions and interaction."
 
-msgid "Escolha um tema"
-msgstr "Choose a theme"
+#~ msgid "Escolha um tema"
+#~ msgstr "Choose a theme"
 
-msgid "Escolher de uma apresentação"
-msgstr "Pick from a presentation"
+#~ msgid "Escolher de uma apresentação"
+#~ msgstr "Pick from a presentation"
 
-msgid "Escreva do seu jeito"
-msgstr "Write your way"
+#~ msgid "Escreva do seu jeito"
+#~ msgstr "Write your way"
 
-msgid "Escreva ou cole"
-msgstr "Write or paste"
+#~ msgid "Escreva ou cole"
+#~ msgstr "Write or paste"
 
-msgid "escuro"
-msgstr "dark"
+#~ msgid "escuro"
+#~ msgstr "dark"
 
 msgid "Escuro"
 msgstr "Dark"
 
-msgid "Escuro técnico · ciano"
-msgstr "Technical dark · cyan"
+#~ msgid "Escuro técnico · ciano"
+#~ msgstr "Technical dark · cyan"
 
 #~ msgid "Estrutura reutilizável"
 #~ msgstr "Reusable structure"
 
-msgid "Estruturas de slides"
-msgstr "Slide structures"
+#~ msgid "Estruturas de slides"
+#~ msgstr "Slide structures"
 
 #~ msgid "Estruture seus slides uma vez e reaproveite — a IA preenche o conteúdo."
 #~ msgstr "Structure your slides once and reuse them — the AI fills in the content."
 
-msgid "Excluir"
-msgstr "Delete"
+#~ msgid "Excluir"
+#~ msgstr "Delete"
 
-msgid "Excluir esta apresentação?"
-msgstr "Delete this presentation?"
+#~ msgid "Excluir esta apresentação?"
+#~ msgstr "Delete this presentation?"
 
-msgid "Excluir este modelo visual?"
-msgstr "Delete this visual model?"
+#~ msgid "Excluir este modelo visual?"
+#~ msgstr "Delete this visual model?"
 
-msgid "Excluir este slide?"
-msgstr "Delete this slide?"
+#~ msgid "Excluir este slide?"
+#~ msgstr "Delete this slide?"
 
 msgid "Exemplo de como um aviso de atenção aparece."
 msgstr "Example of how a warning notification appears."
@@ -402,8 +477,8 @@ msgstr "Example of how a success notification appears."
 msgid "Exemplo de como um aviso informativo aparece."
 msgstr "Example of how an info notification appears."
 
-msgid "EXPLORAÇÃO ESPACIAL"
-msgstr "SPACE EXPLORATION"
+#~ msgid "EXPLORAÇÃO ESPACIAL"
+#~ msgstr "SPACE EXPLORATION"
 
 msgid "Falha ao exportar"
 msgstr "Export failed"
@@ -414,23 +489,23 @@ msgstr "Closes the toast on its own after the duration."
 msgid "Fechar"
 msgstr "Close"
 
-msgid "Funcionalidades"
-msgstr "Features"
+#~ msgid "Funcionalidades"
+#~ msgstr "Features"
 
-msgid "Fundo claro · âmbar"
-msgstr "Light background · amber"
+#~ msgid "Fundo claro · âmbar"
+#~ msgstr "Light background · amber"
 
-msgid "Fundo estelar · dourado"
-msgstr "Starry background · gold"
+#~ msgid "Fundo estelar · dourado"
+#~ msgstr "Starry background · gold"
 
 #~ msgid "Geração rápida"
 #~ msgstr "Fast generation"
 
-msgid "Gerando HTML…"
-msgstr "Generating HTML…"
+#~ msgid "Gerando HTML…"
+#~ msgstr "Generating HTML…"
 
-msgid "Gere em HTML"
-msgstr "Generate in HTML"
+#~ msgid "Gere em HTML"
+#~ msgstr "Generate in HTML"
 
 msgid "há 2 h"
 msgstr "2h ago"
@@ -438,14 +513,14 @@ msgstr "2h ago"
 msgid "há 3 h"
 msgstr "3h ago"
 
-msgid "Home"
-msgstr "Home"
+#~ msgid "Home"
+#~ msgstr "Home"
 
-msgid "HTML interativo"
-msgstr "Interactive HTML"
+#~ msgid "HTML interativo"
+#~ msgstr "Interactive HTML"
 
-msgid "Identidade visual"
-msgstr "Visual identity"
+#~ msgid "Identidade visual"
+#~ msgstr "Visual identity"
 
 msgid "Idioma"
 msgstr "Language"
@@ -453,17 +528,17 @@ msgstr "Language"
 msgid "Idioma do app"
 msgstr "App language"
 
-msgid "Importar"
-msgstr "Import"
+#~ msgid "Importar"
+#~ msgstr "Import"
 
-msgid "Importe ou gere slides"
-msgstr "Import or generate slides"
+#~ msgid "Importe ou gere slides"
+#~ msgstr "Import or generate slides"
 
-msgid "Importe um modelo ou salve a estrutura de uma apresentação que você já gerou."
-msgstr "Import a model or save the structure from a presentation you've already generated."
+#~ msgid "Importe um modelo ou salve a estrutura de uma apresentação que você já gerou."
+#~ msgstr "Import a model or save the structure from a presentation you've already generated."
 
-msgid "Importe um modelo ou salve a partir de uma apresentação."
-msgstr "Import a model or save one from a presentation."
+#~ msgid "Importe um modelo ou salve a partir de uma apresentação."
+#~ msgstr "Import a model or save one from a presentation."
 
 msgid "Inferior centro"
 msgstr "Bottom center"
@@ -477,65 +552,71 @@ msgstr "Bottom left"
 msgid "Informação"
 msgstr "Information"
 
+msgid "Iniciar sessão"
+msgstr ""
+
 msgid "Início"
 msgstr "Home"
 
-msgid "Instalação de experimentos científicos"
-msgstr "Setting up scientific experiments"
+#~ msgid "Instalação de experimentos científicos"
+#~ msgstr "Setting up scientific experiments"
 
-msgid "Instalar Claude Code"
-msgstr "Install Claude Code"
+#~ msgid "Instalar Claude Code"
+#~ msgstr "Install Claude Code"
 
 msgid "Introdução"
 msgstr "Introduction"
 
-msgid "Kennedy promete levar o homem à Lua até 1970"
-msgstr "Kennedy promises to put a man on the Moon by 1970"
+#~ msgid "Kennedy promete levar o homem à Lua até 1970"
+#~ msgstr "Kennedy promises to put a man on the Moon by 1970"
 
-msgid "kennedy prometeu ir à lua"
-msgstr "kennedy promised to go to the moon"
+#~ msgid "kennedy prometeu ir à lua"
+#~ msgstr "kennedy promised to go to the moon"
 
-msgid "Lançada em 16 de julho de 1969, do Cabo Kennedy"
-msgstr "Launched on July 16, 1969, from Cape Kennedy"
+#~ msgid "Lançada em 16 de julho de 1969, do Cabo Kennedy"
+#~ msgstr "Launched on July 16, 1969, from Cape Kennedy"
 
-msgid "Legado"
-msgstr "Legacy"
+#~ msgid "Legado"
+#~ msgstr "Legacy"
 
-msgid "Light"
-msgstr "Light"
+#~ msgid "Light"
+#~ msgstr "Light"
 
-msgid "Limite de uso próximo"
-msgstr "Usage limit approaching"
+#~ msgid "Limite de uso próximo"
+#~ msgstr "Usage limit approaching"
 
 msgid "Limpar tudo"
 msgstr "Clear all"
 
-msgid "mar da tranquilidade"
-msgstr "sea of tranquility"
+#~ msgid "mar da tranquilidade"
+#~ msgstr "sea of tranquility"
 
-msgid "Mar da Tranquilidade · Lua"
-msgstr "Sea of Tranquility · Moon"
+#~ msgid "Mar da Tranquilidade · Lua"
+#~ msgstr "Sea of Tranquility · Moon"
 
-msgid "Marco da corrida espacial"
-msgstr "Milestone of the space race"
+#~ msgid "Marco da corrida espacial"
+#~ msgstr "Milestone of the space race"
+
+msgid "Maria saiu da sessão e pode ter perdido a conexão."
+msgstr ""
 
 msgid "Maximizar"
 msgstr "Maximize"
 
-msgid "Michael Collins — piloto do módulo de comando"
-msgstr "Michael Collins — command module pilot"
+#~ msgid "Michael Collins — piloto do módulo de comando"
+#~ msgstr "Michael Collins — command module pilot"
 
 msgid "Minimizar"
 msgstr "Minimize"
 
-msgid "Modelo visual atualizado"
-msgstr "Visual model updated"
+#~ msgid "Modelo visual atualizado"
+#~ msgstr "Visual model updated"
 
 #~ msgid "Modelos de roteiro"
 #~ msgstr "Script templates"
 
-msgid "Modelos de Slides"
-msgstr "Slides Models"
+#~ msgid "Modelos de Slides"
+#~ msgstr "Slides Models"
 
 #~ msgid "Modelos visuais"
 #~ msgstr "Visual models"
@@ -549,29 +630,35 @@ msgstr "Slides Models"
 #~ msgid "Monte a sequência de slides uma vez e reaproveite — a IA preenche o conteúdo."
 #~ msgstr "Build the slide sequence once and reuse it — the AI fills in the content."
 
-msgid "Motor de IA"
-msgstr "AI engine"
+msgid "Monte suas provas"
+msgstr ""
 
-msgid "Na superfície"
-msgstr "On the surface"
+#~ msgid "Motor de IA"
+#~ msgstr "AI engine"
 
-msgid "Não encontramos o Claude Code na sua máquina."
-msgstr "We couldn't find Claude Code on your machine."
+#~ msgid "Na superfície"
+#~ msgstr "On the surface"
 
-msgid "Não foi possível exportar o PDF. Tente novamente."
-msgstr "Couldn't export the PDF. Please try again."
+#~ msgid "Não encontramos o Claude Code na sua máquina."
+#~ msgstr "We couldn't find Claude Code on your machine."
 
-msgid "Neil Armstrong — comandante"
-msgstr "Neil Armstrong — commander"
+msgid "Não foi possível exportar o CSV. Tente novamente."
+msgstr ""
 
-msgid "Nenhum modelo de slides"
-msgstr "No slide models yet"
+#~ msgid "Não foi possível exportar o PDF. Tente novamente."
+#~ msgstr "Couldn't export the PDF. Please try again."
+
+#~ msgid "Neil Armstrong — comandante"
+#~ msgstr "Neil Armstrong — commander"
+
+#~ msgid "Nenhum modelo de slides"
+#~ msgstr "No slide models yet"
 
 #~ msgid "Nenhum modelo visual"
 #~ msgstr "No visual models"
 
-msgid "Nenhum tema ainda"
-msgstr "No themes yet"
+#~ msgid "Nenhum tema ainda"
+#~ msgstr "No themes yet"
 
 #~ msgid "Nenhum template ainda"
 #~ msgstr "No templates yet"
@@ -579,11 +666,17 @@ msgstr "No themes yet"
 msgid "Nenhuma notificação"
 msgstr "No notifications"
 
-msgid "No auge da Guerra Fria, EUA e URSS disputavam cada marco da exploração espacial."
-msgstr "At the height of the Cold War, the USA and USSR competed for every milestone in space exploration."
+msgid "Nenhuma prova ainda"
+msgstr ""
 
-msgid "Notas do apresentador"
-msgstr "Presenter notes"
+#~ msgid "No auge da Guerra Fria, EUA e URSS disputavam cada marco da exploração espacial."
+#~ msgstr "At the height of the Cold War, the USA and USSR competed for every milestone in space exploration."
+
+#~ msgid "Notas do apresentador"
+#~ msgstr "Presenter notes"
+
+msgid "Notas e relatórios"
+msgstr ""
 
 msgid "Notificações"
 msgstr "Notifications"
@@ -591,8 +684,11 @@ msgstr "Notifications"
 msgid "Notificações ({unread, plural, one {# não lida} other {# não lidas}})"
 msgstr "Notifications ({unread, plural, one {# unread} other {# unread}})"
 
-msgid "Nova apresentação"
-msgstr "New presentation"
+#~ msgid "Nova apresentação"
+#~ msgstr "New presentation"
+
+msgid "Nova prova"
+msgstr ""
 
 msgid "Nova versão disponível"
 msgstr "New version available"
@@ -603,50 +699,59 @@ msgstr "New version available"
 #~ msgid "Novo modelo de slides"
 #~ msgstr "New slide model"
 
-msgid "Novo tema"
-msgstr "New theme"
+#~ msgid "Novo tema"
+#~ msgstr "New theme"
 
 #~ msgid "Novo template"
 #~ msgstr "New template"
 
-msgid "O Claude Code usa o login local da sua máquina; o Mock gera exemplos."
-msgstr "Claude Code uses your machine's local login; Mock generates examples."
+#~ msgid "O Claude Code usa o login local da sua máquina; o Mock gera exemplos."
+#~ msgstr "Claude Code uses your machine's local login; Mock generates examples."
 
-msgid "O foguete Saturn V impulsionou a nave rumo à Lua"
-msgstr "The Saturn V rocket propelled the spacecraft toward the Moon"
+#~ msgid "O foguete Saturn V impulsionou a nave rumo à Lua"
+#~ msgstr "The Saturn V rocket propelled the spacecraft toward the Moon"
 
-msgid "O modelo <0>“{label}”</0> será excluído da sua biblioteca. Apresentações que já o utilizam mantêm o visual atual."
-msgstr "The model <0>“{label}”</0> will be deleted from your library. Presentations already using it keep their current look."
+#~ msgid "O modelo <0>“{label}”</0> será excluído da sua biblioteca. Apresentações que já o utilizam mantêm o visual atual."
+#~ msgstr "The model <0>“{label}”</0> will be deleted from your library. Presentations already using it keep their current look."
 
-msgid "O pouso na Lua"
-msgstr "The Moon landing"
+#~ msgid "O pouso na Lua"
+#~ msgstr "The Moon landing"
 
-msgid "O slide <0>{label}</0> será removido da apresentação."
-msgstr "Slide <0>{label}</0> will be removed from the presentation."
+#~ msgid "O slide <0>{label}</0> será removido da apresentação."
+#~ msgstr "Slide <0>{label}</0> will be removed from the presentation."
 
-msgid "O tema “Aurora” ganhou novos presets."
-msgstr "The “Aurora” theme got new presets."
+#~ msgid "O tema “Aurora” ganhou novos presets."
+#~ msgstr "The “Aurora” theme got new presets."
 
 msgid "ontem"
 msgstr "yesterday"
 
-msgid "Órbita"
-msgstr "Orbit"
+#~ msgid "Órbita"
+#~ msgstr "Orbit"
 
-msgid "Organizado pela IA"
-msgstr "Organized by AI"
+#~ msgid "Organizado pela IA"
+#~ msgstr "Organized by AI"
 
 #~ msgid "Organize os blocos"
 #~ msgstr "Organize the blocks"
 
+msgid "Os alunos entram por QR code e respondem em grupo, com tudo sincronizado em tempo real."
+msgstr ""
+
+msgid "Os resultados aparecem aqui depois que você encerra uma sessão."
+msgstr ""
+
 msgid "Painel inicial"
 msgstr "Home dashboard"
 
-msgid "Pausar"
-msgstr "Pause"
+msgid "Passo {index} de {total}"
+msgstr ""
 
-msgid "Peça uma alteração…"
-msgstr "Ask for a change…"
+#~ msgid "Pausar"
+#~ msgstr "Pause"
+
+#~ msgid "Peça uma alteração…"
+#~ msgstr "Ask for a change…"
 
 msgid "Personalize a aparência do app."
 msgstr "Customize the app's appearance."
@@ -660,86 +765,134 @@ msgstr "Toast position"
 msgid "Preferências do app"
 msgstr "App preferences"
 
-msgid "Preferências do Apresenta.AI."
-msgstr "Apresenta.AI preferences."
+#~ msgid "Preferências do Apresenta.AI."
+#~ msgstr "Apresenta.AI preferences."
 
-msgid "Primeiros passos no Apresenta.AI."
-msgstr "First steps in Apresenta.AI."
+#~ msgid "Primeiros passos no Apresenta.AI."
+#~ msgstr "First steps in Apresenta.AI."
 
-msgid "Projetos"
-msgstr "Projects"
+msgid "Primeiros passos no OfflineClass."
+msgstr ""
 
-msgid "Pronto"
-msgstr "Done"
+#~ msgid "Projetos"
+#~ msgstr "Projects"
 
-msgid "Pronto — gera conteúdo de exemplo, sem credencial."
-msgstr "Ready — generates sample content, no credentials needed."
+#~ msgid "Pronto"
+#~ msgstr "Done"
 
-msgid "Pronto — virou tópicos"
-msgstr "Done — turned into bullet points"
+#~ msgid "Pronto — gera conteúdo de exemplo, sem credencial."
+#~ msgstr "Ready — generates sample content, no credentials needed."
 
-msgid "Provedor"
-msgstr "Provider"
+#~ msgid "Pronto — virou tópicos"
+#~ msgstr "Done — turned into bullet points"
 
-msgid "Provedor de IA"
-msgstr "AI provider"
+msgid "Prova salva"
+msgstr ""
 
-msgid "Provedores"
-msgstr "Providers"
+msgid "Provas"
+msgstr ""
 
-msgid "Qual IA gera o conteúdo das apresentações."
-msgstr "Which AI generates the presentation content."
+#~ msgid "Provedor"
+#~ msgstr "Provider"
 
-msgid "Quizzes"
-msgstr "Quizzes"
+#~ msgid "Provedor de IA"
+#~ msgstr "AI provider"
 
-msgid "Reaproveite"
-msgstr "Reuse it"
+#~ msgid "Provedores"
+#~ msgstr "Providers"
+
+#~ msgid "Qual IA gera o conteúdo das apresentações."
+#~ msgstr "Which AI generates the presentation content."
+
+msgid "questões"
+msgstr ""
+
+#~ msgid "Quizzes"
+#~ msgstr "Quizzes"
+
+#~ msgid "Reaproveite"
+#~ msgstr "Reuse it"
+
+msgid "Recentes · toque ▶ para aplicar"
+msgstr ""
 
 #~ msgid "Recursos do modelo"
 #~ msgstr "Model resources"
 
-msgid "Reduzir movimento"
-msgstr "Reduce motion"
+#~ msgid "Reduzir movimento"
+#~ msgstr "Reduce motion"
 
 msgid "Refazer introdução"
 msgstr "Redo introduction"
 
-msgid "Refine conversando: peça mais exemplos, transforme parágrafos em tópicos, ajuste o tom."
-msgstr "Refine through conversation: ask for more examples, turn paragraphs into bullet points, adjust the tone."
+#~ msgid "Refine conversando: peça mais exemplos, transforme parágrafos em tópicos, ajuste o tom."
+#~ msgstr "Refine through conversation: ask for more examples, turn paragraphs into bullet points, adjust the tone."
 
-msgid "Reproduzir"
-msgstr "Play"
+#~ msgid "Reproduzir"
+#~ msgstr "Play"
 
 msgid "Restaurar"
 msgstr "Restore"
 
-msgid "Resumo"
-msgstr "Summary"
+msgid "Resultados"
+msgstr ""
 
-msgid "Reúna cores, fontes e assets — a IA aplica o estilo em todas as apresentações."
-msgstr "Bring together colors, fonts and assets — the AI applies the style across every presentation."
+msgid "Resultados prontos"
+msgstr ""
 
-msgid "Reutilize seus slides"
-msgstr "Reuse your slides"
+msgid "Resultados recentes"
+msgstr ""
 
-msgid "Reveja o tour de boas-vindas do Apresenta.AI."
-msgstr "Revisit the Apresenta.AI welcome tour."
+#~ msgid "Resumo"
+#~ msgstr "Summary"
 
-msgid "Salve como modelo"
-msgstr "Save as a model"
+#~ msgid "Reúna cores, fontes e assets — a IA aplica o estilo em todas as apresentações."
+#~ msgstr "Bring together colors, fonts and assets — the AI applies the style across every presentation."
 
-msgid "Salve seu primeiro modelo de slides"
-msgstr "Save your first slide model"
+#~ msgid "Reutilize seus slides"
+#~ msgstr "Reuse your slides"
 
-msgid "saturn V decolou em 16 jul 1969"
-msgstr "saturn V lifted off on jul 16 1969"
+#~ msgid "Reveja o tour de boas-vindas do Apresenta.AI."
+#~ msgstr "Revisit the Apresenta.AI welcome tour."
 
-msgid "Sem chave, sem custo — troque quando quiser."
-msgstr "No key, no cost — switch whenever you want."
+msgid "Reveja o tour de boas-vindas do OfflineClass."
+msgstr ""
 
-msgid "Solar"
-msgstr "Solar"
+#~ msgid "Salve como modelo"
+#~ msgstr "Save as a model"
+
+#~ msgid "Salve seu primeiro modelo de slides"
+#~ msgstr "Save your first slide model"
+
+#~ msgid "saturn V decolou em 16 jul 1969"
+#~ msgstr "saturn V lifted off on jul 16 1969"
+
+#~ msgid "Sem chave, sem custo — troque quando quiser."
+#~ msgstr "No key, no cost — switch whenever you want."
+
+msgid "Sem internet, sem problema"
+msgstr ""
+
+msgid "Sem resultados ainda"
+msgstr ""
+
+msgid "Sessão"
+msgstr ""
+
+msgid "Sessão ao vivo"
+msgstr ""
+
+msgid "Sessão encerrada"
+msgstr ""
+
+msgid "Sessões aplicadas"
+msgstr ""
+
+msgid "Seu computador vira o servidor da sala. Os alunos entram pela Wi-Fi local — nada depende da internet."
+msgstr ""
+
+#~ msgid "Solar"
+#~ msgstr "Solar"
 
 msgid "Som"
 msgstr "Sound"
@@ -747,17 +900,23 @@ msgstr "Sound"
 msgid "Som ao aparecer"
 msgstr "Sound on appearance"
 
-msgid "Sua biblioteca está vazia"
-msgstr "Your library is empty"
+#~ msgid "Sua biblioteca está vazia"
+#~ msgstr "Your library is empty"
 
-msgid "Suas apresentações"
-msgstr "Your presentations"
+#~ msgid "Suas apresentações"
+#~ msgstr "Your presentations"
+
+msgid "Suas avaliações"
+msgstr ""
+
+msgid "Suas provas"
+msgstr ""
 
 msgid "Sucesso"
 msgstr "Success"
 
-msgid "SUMÁRIO"
-msgstr "SUMMARY"
+#~ msgid "SUMÁRIO"
+#~ msgstr "SUMMARY"
 
 msgid "Superior centro"
 msgstr "Top center"
@@ -768,8 +927,8 @@ msgstr "Top right"
 msgid "Superior esquerda"
 msgstr "Top left"
 
-msgid "Suporta tema {label}"
-msgstr "Supports {label} theme"
+#~ msgid "Suporta tema {label}"
+#~ msgstr "Supports {label} theme"
 
 #~ msgid "Suporta tema {themeNames}"
 #~ msgstr "Supports {themeNames} theme"
@@ -777,14 +936,14 @@ msgstr "Supports {label} theme"
 msgid "Tema"
 msgstr "Theme"
 
-msgid "Temas"
-msgstr "Themes"
+#~ msgid "Temas"
+#~ msgstr "Themes"
 
 #~ msgid "Temas e estilos"
 #~ msgstr "Themes and styles"
 
-msgid "Template salvo"
-msgstr "Template saved"
+#~ msgid "Template salvo"
+#~ msgstr "Template saved"
 
 #~ msgid "Templates"
 #~ msgstr "Templates"
@@ -792,8 +951,8 @@ msgstr "Template saved"
 #~ msgid "Templates Markdown"
 #~ msgstr "Markdown Templates"
 
-msgid "Tentar de novo"
-msgstr "Try again"
+#~ msgid "Tentar de novo"
+#~ msgstr "Try again"
 
 msgid "Testar notificação"
 msgstr "Test notification"
@@ -813,74 +972,83 @@ msgstr "Test toast — success"
 msgid "Toca um som ao aparecer."
 msgstr "Plays a sound on appearance."
 
-msgid "Tradução"
-msgstr "Translation"
+#~ msgid "Tradução"
+#~ msgstr "Translation"
 
-msgid "Três dias de viagem até a órbita lunar"
-msgstr "Three days of travel to lunar orbit"
+#~ msgid "Três dias de viagem até a órbita lunar"
+#~ msgstr "Three days of travel to lunar orbit"
 
 msgid "Trilha de navegação"
 msgstr "Breadcrumb"
 
-msgid "tripulação: armstrong, aldrin, collins"
-msgstr "crew: armstrong, aldrin, collins"
+#~ msgid "tripulação: armstrong, aldrin, collins"
+#~ msgstr "crew: armstrong, aldrin, collins"
 
-msgid "trouxeram amostras da lua"
-msgstr "brought back samples from the moon"
+#~ msgid "trouxeram amostras da lua"
+#~ msgstr "brought back samples from the moon"
 
 msgid "Tudo em dia — avisaremos quando algo novo chegar."
 msgstr "All caught up — we'll let you know when something new arrives."
 
-msgid "Tudo o que você cria com o apresenta.ai, num só lugar."
-msgstr "Everything you create with apresenta.ai, in one place."
+#~ msgid "Tudo o que você cria com o apresenta.ai, num só lugar."
+#~ msgstr "Everything you create with apresenta.ai, in one place."
+
+msgid "Tudo pronto!"
+msgstr ""
 
 msgid "Tutorial"
 msgstr "Tutorial"
 
-msgid "Último passo"
-msgstr "Last step"
+msgid "Últimas sessões encerradas"
+msgstr ""
 
-msgid "Usar Mock"
-msgstr "Use Mock"
+#~ msgid "Último passo"
+#~ msgstr "Last step"
+
+#~ msgid "Usar Mock"
+#~ msgstr "Use Mock"
 
 msgid "Vazio"
 msgstr "Empty"
 
-msgid "Ver exemplos"
-msgstr "See examples"
+#~ msgid "Ver exemplos"
+#~ msgstr "See examples"
 
-msgid "Ver predefinições"
-msgstr "See presets"
+#~ msgid "Ver predefinições"
+#~ msgstr "See presets"
 
-msgid "Ver tudo"
-msgstr "See all"
+msgid "Ver todas"
+msgstr ""
 
-msgid "Vira apresentação de verdade"
-msgstr "Becomes a real presentation"
+#~ msgid "Ver tudo"
+#~ msgstr "See all"
 
-msgid "Você ainda não criou nenhum tema próprio."
-msgstr "You haven't created any themes of your own yet."
+#~ msgid "Vira apresentação de verdade"
+#~ msgstr "Becomes a real presentation"
+
+#~ msgid "Você ainda não criou nenhum tema próprio."
+#~ msgstr "You haven't created any themes of your own yet."
 
 #~ msgid "Você ainda não criou nenhum template."
 #~ msgstr "You haven't created any templates yet."
 
-msgid "Você ainda não criou nenhuma apresentação. Escolha um template ou comece do zero com a IA."
-msgstr "You haven't created any presentations yet. Pick a template or start from scratch with AI."
+#~ msgid "Você ainda não criou nenhuma apresentação. Escolha um template ou comece do zero com a IA."
+#~ msgstr "You haven't created any presentations yet. Pick a template or start from scratch with AI."
 
 #~ msgid "Você ainda não salvou temas ou estilos próprios."
 #~ msgstr "You haven't saved any themes or custom styles of your own yet."
 
-msgid "Você já usou 80% das gerações do mês."
-msgstr "You've already used 80% of this month's generations."
+#~ msgid "Você já usou 80% das gerações do mês."
+#~ msgstr "You've already used 80% of this month's generations."
 
 msgid "Voltar"
 msgstr "Back"
 
-msgid "voltaram à terra em 24 jul"
-msgstr "returned to earth on jul 24"
+#~ msgid "voltaram à terra em 24 jul"
+#~ msgstr "returned to earth on jul 24"
 
 msgid "Workspace"
 msgstr "Workspace"
 
-msgid "Zoom"
-msgstr "Zoom"
+#~ msgid "Zoom"
+#~ msgstr "Zoom"

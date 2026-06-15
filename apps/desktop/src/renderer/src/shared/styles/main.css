@@ -55,14 +55,14 @@
   --ring: oklch(0.58 0.19 270);
 
   /* ─── Brand gradient — indigo → amber → lime ───────────────────────── */
-  --ai-gradient-from: oklch(0.58 0.19 270);
-  --ai-gradient-via: oklch(0.83 0.16 80);
-  --ai-gradient-to: oklch(0.72 0.17 140);
-  --gradient-ai: linear-gradient(
+  --brand-gradient-from: oklch(0.58 0.19 270);
+  --brand-gradient-via: oklch(0.83 0.16 80);
+  --brand-gradient-to: oklch(0.72 0.17 140);
+  --gradient-brand: linear-gradient(
     135deg,
-    var(--ai-gradient-from),
-    var(--ai-gradient-via),
-    var(--ai-gradient-to)
+    var(--brand-gradient-from),
+    var(--brand-gradient-via),
+    var(--brand-gradient-to)
   );
 
   /* ─── Semantic ─────────────────────────────────────────────────────── */
@@ -128,7 +128,7 @@
 
   --shadow-glow-primary:
     0 1px 2px hsl(256 28% 16% / 0.08), 0 8px 24px -4px oklch(0.58 0.19 270 / 0.4);
-  --shadow-glow-ai:
+  --shadow-glow-brand:
     0 1px 2px hsl(256 28% 16% / 0.08), 0 16px 40px -8px oklch(0.58 0.19 270 / 0.3),
     0 16px 40px -8px oklch(0.72 0.17 140 / 0.2);
 
@@ -180,9 +180,9 @@
   --accent-foreground: oklch(0.86 0.1 270);
   --ring: oklch(0.7 0.17 270);
 
-  --ai-gradient-from: oklch(0.7 0.17 270);
-  --ai-gradient-via: oklch(0.84 0.15 80);
-  --ai-gradient-to: oklch(0.76 0.16 140);
+  --brand-gradient-from: oklch(0.7 0.17 270);
+  --brand-gradient-via: oklch(0.84 0.15 80);
+  --brand-gradient-to: oklch(0.76 0.16 140);
 
   --destructive: oklch(0.66 0.22 25);
   --destructive-foreground: oklch(1 0 0);
@@ -222,7 +222,7 @@
   --shadow-2xl: 0 60px 100px -20px hsl(0 0% 0% / 0.8);
 
   --shadow-glow-primary: 0 1px 2px hsl(0 0% 0% / 0.4), 0 12px 32px -4px oklch(0.7 0.17 270 / 0.6);
-  --shadow-glow-ai:
+  --shadow-glow-brand:
     0 1px 2px hsl(0 0% 0% / 0.4), 0 24px 56px -8px oklch(0.7 0.17 270 / 0.5),
     0 24px 56px -8px oklch(0.76 0.16 140 / 0.3);
 
@@ -303,7 +303,7 @@
   --shadow-xl: var(--shadow-xl);
   --shadow-2xl: var(--shadow-2xl);
   --shadow-glow-primary: var(--shadow-glow-primary);
-  --shadow-glow-ai: var(--shadow-glow-ai);
+  --shadow-glow-brand: var(--shadow-glow-brand);
 
   --tracking-tighter: calc(var(--tracking-normal) - 0.05em);
   --tracking-tight: calc(var(--tracking-normal) - 0.025em);
@@ -365,11 +365,11 @@
 
   /* Soft radial backlight behind featured surfaces.
      The element it's applied to must establish a stacking context. */
-  .ai-backlight {
+  .brand-backlight {
     position: relative;
     isolation: isolate;
   }
-  .ai-backlight::before {
+  .brand-backlight::before {
     content: '';
     position: absolute;
     inset: -20% -10%;
@@ -384,8 +384,8 @@
 
   /* Brand gradient as a background-image utility (Tailwind can't bind gradients
      through @theme inline like solid colors, so we expose it here). */
-  .bg-gradient-ai {
-    background-image: var(--gradient-ai);
+  .bg-gradient-brand {
+    background-image: var(--gradient-brand);
   }
 
   .scrollbar-minimal {
@@ -491,7 +491,7 @@
    itself is our two vertical-centre positions: we anchor it to the matching top
    corner and pull the fixed container to the middle. Unlayered + !important to
    sit above Sonner's own injected positioning rule. */
-[data-sonner-toaster].apresenta-toaster--vcenter {
+[data-sonner-toaster].offlineclass-toaster--vcenter {
   top: 50% !important;
   bottom: auto !important;
   transform: translateY(-50%);

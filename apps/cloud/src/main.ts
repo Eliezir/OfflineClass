@@ -7,5 +7,5 @@ import { createApp } from './app'
 const app = createApp(prisma)
 
 serve({ fetch: app.fetch, port: env.port }, (info) => {
-  console.log(`Apresenta.AI backend [${env.profile}] ouvindo em http://localhost:${info.port}`)
+  console.log(`OfflineClass backend [${env.profile}] ouvindo em http://localhost:${info.port}`)
 })

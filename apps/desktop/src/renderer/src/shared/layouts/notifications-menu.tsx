@@ -32,24 +32,24 @@ const TONES: Record<Tone, { Icon: LucideIcon; className: string }> = {
 const INITIAL_NOTIFICATIONS: AppNotification[] = [
   {
     id: '1',
-    title: msg`Apresentação gerada`,
-    description: msg`“Apollo 11” foi gerada com sucesso.`,
+    title: msg`Sessão encerrada`,
+    description: msg`A sessão da “Prova de Redes” foi encerrada.`,
     time: msg`agora`,
     read: false,
     tone: 'success'
   },
   {
     id: '2',
-    title: msg`Modelo visual atualizado`,
-    description: msg`O tema “Aurora” ganhou novos presets.`,
+    title: msg`Resultados prontos`,
+    description: msg`As notas da Turma A já estão disponíveis.`,
     time: msg`há 2 h`,
     read: false,
     tone: 'info'
   },
   {
     id: '3',
-    title: msg`Limite de uso próximo`,
-    description: msg`Você já usou 80% das gerações do mês.`,
+    title: msg`Aluno desconectado`,
+    description: msg`Maria saiu da sessão e pode ter perdido a conexão.`,
     time: msg`há 3 h`,
     read: false,
     tone: 'warning'
@@ -57,15 +57,15 @@ const INITIAL_NOTIFICATIONS: AppNotification[] = [
   {
     id: '4',
     title: msg`Falha ao exportar`,
-    description: msg`Não foi possível exportar o PDF. Tente novamente.`,
+    description: msg`Não foi possível exportar o CSV. Tente novamente.`,
     time: msg`ontem`,
     read: true,
     tone: 'error'
   },
   {
     id: '5',
-    title: msg`Template salvo`,
-    description: msg`“rascunho.md” foi salvo na sua biblioteca.`,
+    title: msg`Prova salva`,
+    description: msg`“Prova de SO” foi salva no seu computador.`,
     time: msg`ontem`,
     read: true,
     tone: 'success'
