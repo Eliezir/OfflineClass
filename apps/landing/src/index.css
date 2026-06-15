@@ -1,0 +1,179 @@
+@import 'tailwindcss';
+@import 'tw-animate-css';
+
+@custom-variant dark (&:is(.dark *));
+
+/* ════════════════════════════════════════════════════════════════════════
+   Apresenta.AI — landing theme. Framer-grade: deep neutral surfaces, one
+   restrained violet accent (the brand), no rainbow gradients. Dark-first.
+   Token names follow shadcn so the ui/ primitives work unchanged.
+════════════════════════════════════════════════════════════════════════ */
+:root {
+  --background: oklch(0.99 0.003 285);
+  --foreground: oklch(0.17 0.02 285);
+  --card: oklch(1 0 0);
+  --card-foreground: oklch(0.17 0.02 285);
+  --popover: oklch(1 0 0);
+  --popover-foreground: oklch(0.17 0.02 285);
+  --primary: oklch(0.55 0.24 295);
+  --primary-foreground: oklch(0.99 0.003 285);
+  --secondary: oklch(0.96 0.006 285);
+  --secondary-foreground: oklch(0.24 0.02 285);
+  --muted: oklch(0.96 0.006 285);
+  --muted-foreground: oklch(0.5 0.018 285);
+  --accent: oklch(0.96 0.01 295);
+  --accent-foreground: oklch(0.4 0.18 295);
+  --destructive: oklch(0.62 0.22 25);
+  --destructive-foreground: oklch(0.99 0 0);
+  --border: oklch(0.91 0.008 285);
+  --input: oklch(0.91 0.008 285);
+  --ring: oklch(0.55 0.24 295);
+
+  --radius: 0.85rem;
+  --font-sans: 'Geist', system-ui, -apple-system, sans-serif;
+  --font-mono: 'JetBrains Mono', ui-monospace, monospace;
+
+  --grid-color: oklch(0.55 0.05 285 / 0.08);
+}
+
+.dark {
+  --background: oklch(0.115 0.018 285);
+  --foreground: oklch(0.97 0.006 285);
+  --card: oklch(0.16 0.02 285);
+  --card-foreground: oklch(0.97 0.006 285);
+  --popover: oklch(0.16 0.02 285);
+  --popover-foreground: oklch(0.97 0.006 285);
+  --primary: oklch(0.7 0.19 295);
+  --primary-foreground: oklch(0.13 0.02 285);
+  --secondary: oklch(0.21 0.022 285);
+  --secondary-foreground: oklch(0.97 0.006 285);
+  --muted: oklch(0.2 0.02 285);
+  --muted-foreground: oklch(0.68 0.018 285);
+  --accent: oklch(0.26 0.05 295);
+  --accent-foreground: oklch(0.9 0.06 295);
+  --destructive: oklch(0.66 0.22 25);
+  --destructive-foreground: oklch(0.97 0 0);
+  --border: oklch(0.27 0.022 285);
+  --input: oklch(0.3 0.025 285);
+  --ring: oklch(0.7 0.19 295);
+
+  --grid-color: oklch(0.85 0.05 285 / 0.06);
+}
+
+@theme inline {
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+  --color-card: var(--card);
+  --color-card-foreground: var(--card-foreground);
+  --color-popover: var(--popover);
+  --color-popover-foreground: var(--popover-foreground);
+  --color-primary: var(--primary);
+  --color-primary-foreground: var(--primary-foreground);
+  --color-secondary: var(--secondary);
+  --color-secondary-foreground: var(--secondary-foreground);
+  --color-muted: var(--muted);
+  --color-muted-foreground: var(--muted-foreground);
+  --color-accent: var(--accent);
+  --color-accent-foreground: var(--accent-foreground);
+  --color-destructive: var(--destructive);
+  --color-destructive-foreground: var(--destructive-foreground);
+  --color-border: var(--border);
+  --color-input: var(--input);
+  --color-ring: var(--ring);
+
+  --font-sans: var(--font-sans);
+  --font-mono: var(--font-mono);
+
+  --radius-sm: calc(var(--radius) - 4px);
+  --radius-md: calc(var(--radius) - 2px);
+  --radius-lg: var(--radius);
+  --radius-xl: calc(var(--radius) + 4px);
+
+  --animate-marquee: marquee var(--duration, 40s) linear infinite;
+  --animate-marquee-vertical: marquee-vertical var(--duration, 40s) linear infinite;
+  --animate-shiny-text: shiny-text 8s infinite;
+  --animate-border-beam: border-beam calc(var(--duration) * 1s) infinite linear;
+  --animate-accordion-down: accordion-down 0.2s ease-out;
+  --animate-accordion-up: accordion-up 0.2s ease-out;
+
+  @keyframes accordion-down {
+    from { height: 0; }
+    to { height: var(--radix-accordion-content-height); }
+  }
+  @keyframes accordion-up {
+    from { height: var(--radix-accordion-content-height); }
+    to { height: 0; }
+  }
+
+  @keyframes marquee {
+    from { transform: translateX(0); }
+    to { transform: translateX(calc(-100% - var(--gap))); }
+  }
+  @keyframes marquee-vertical {
+    from { transform: translateY(0); }
+    to { transform: translateY(calc(-100% - var(--gap))); }
+  }
+  @keyframes shiny-text {
+    0%, 90%, 100% { background-position: calc(-100% - var(--shiny-width)) 0; }
+    30%, 60% { background-position: calc(100% + var(--shiny-width)) 0; }
+  }
+  @keyframes border-beam {
+    100% { offset-distance: 100%; }
+  }
+}
+
+@layer base {
+  * {
+    border-color: var(--border);
+  }
+  html {
+    scroll-behavior: smooth;
+    scroll-padding-top: 6rem;
+  }
+  body {
+    background-color: var(--background);
+    color: var(--foreground);
+    font-family: var(--font-sans);
+    letter-spacing: -0.011em;
+    -webkit-font-smoothing: antialiased;
+    text-rendering: optimizeLegibility;
+  }
+  h1, h2, h3, h4 {
+    letter-spacing: -0.03em;
+    font-weight: 600;
+  }
+  ::selection {
+    background: oklch(0.7 0.19 295 / 0.28);
+  }
+  @media (prefers-reduced-motion: reduce) {
+    html { scroll-behavior: auto; }
+    *, *::before, *::after {
+      animation-duration: 0.01ms !important;
+      transition-duration: 0.01ms !important;
+    }
+  }
+}
+
+@utility container-page {
+  width: min(76rem, 100% - 3rem);
+  margin-inline: auto;
+}
+
+@utility no-scrollbar {
+  scrollbar-width: none;
+  &::-webkit-scrollbar {
+    display: none;
+  }
+}
+
+/* Animated gradient border (reliable replacement for offset-path beams). */
+@property --bb-angle {
+  syntax: '<angle>';
+  inherits: false;
+  initial-value: 0deg;
+}
+@keyframes bb-spin {
+  to {
+    --bb-angle: 360deg;
+  }
+}

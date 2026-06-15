@@ -1,0 +1,78 @@
+<!doctype html>
+<html lang="pt-BR" class="dark">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <link rel="icon" type="image/png" href="./assets/logo.png" />
+    <link rel="apple-touch-icon" href="./assets/logo.png" />
+
+    <title>Apresenta.AI — Apresentações interativas em HTML, criadas com IA</title>
+    <meta
+      name="description"
+      content="App desktop que transforma ideias em apresentações HTML interativas — quizzes, zoom, animações e troca de tema. Mais que slides: uma experiência criada com IA."
+    />
+    <meta name="keywords" content="apresentações, slides interativos, IA, HTML, apresentação interativa, gerador de slides, quiz, IFAL" />
+    <meta name="author" content="Apresenta.AI — IFAL" />
+    <meta name="robots" content="index, follow" />
+    <meta name="theme-color" content="#0c0a14" />
+    <link rel="canonical" href="https://eliezir.github.io/apresenta.ai/" />
+
+    <!-- Open Graph -->
+    <meta property="og:type" content="website" />
+    <meta property="og:site_name" content="Apresenta.AI" />
+    <meta property="og:locale" content="pt_BR" />
+    <meta property="og:url" content="https://eliezir.github.io/apresenta.ai/" />
+    <meta property="og:title" content="Apresenta.AI — Apresentações interativas em HTML, criadas com IA" />
+    <meta
+      property="og:description"
+      content="Mais que slides: uma experiência. Crie apresentações HTML interativas — com quizzes, zoom, animações e troca de tema — geradas por IA."
+    />
+    <meta property="og:image" content="https://eliezir.github.io/apresenta.ai/assets/banner-dark.png" />
+    <meta property="og:image:alt" content="Apresenta.AI — apresentação interativa gerada por IA" />
+
+    <!-- Twitter -->
+    <meta name="twitter:card" content="summary_large_image" />
+    <meta name="twitter:title" content="Apresenta.AI — Apresentações interativas em HTML, criadas com IA" />
+    <meta
+      name="twitter:description"
+      content="Mais que slides: uma experiência. Apresentações HTML interativas geradas por IA."
+    />
+    <meta name="twitter:image" content="https://eliezir.github.io/apresenta.ai/assets/banner-dark.png" />
+
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Geist:wght@300..700&family=JetBrains+Mono:wght@400;500;600&display=swap"
+      rel="stylesheet"
+    />
+
+    <script type="application/ld+json">
+      {
+        "@context": "https://schema.org",
+        "@type": "SoftwareApplication",
+        "name": "Apresenta.AI",
+        "applicationCategory": "BusinessApplication",
+        "operatingSystem": "macOS, Windows, Linux",
+        "description": "App desktop que transforma ideias em apresentações HTML interativas, geradas por IA — com quizzes, zoom, animações e troca de tema.",
+        "url": "https://eliezir.github.io/apresenta.ai/",
+        "image": "https://eliezir.github.io/apresenta.ai/assets/banner-dark.png",
+        "inLanguage": "pt-BR",
+        "offers": { "@type": "Offer", "price": "0", "priceCurrency": "BRL" },
+        "author": { "@type": "Organization", "name": "IFAL — Programação Orientada a Objetos" }
+      }
+    </script>
+
+    <script>
+      // Tema antes da pintura para evitar flash.
+      try {
+        const t = localStorage.getItem('apai-theme')
+        const dark = t ? t === 'dark' : matchMedia('(prefers-color-scheme: dark)').matches
+        document.documentElement.classList.toggle('dark', dark)
+      } catch (e) {}
+    </script>
+  </head>
+  <body>
+    <div id="root"></div>
+    <script type="module" src="/src/main.tsx"></script>
+  </body>
+</html>

@@ -1,0 +1,105 @@
+{
+  "intro": "Guia rápido para começar com o Apresenta.AI. Todo o conteúdo desta seção vive em `content/docs.json` — edite o arquivo para adaptar, sem mexer no código.",
+  "sections": [
+    {
+      "id": "primeiros-passos",
+      "title": "Primeiros passos",
+      "articles": [
+        {
+          "id": "instalacao",
+          "title": "Instalação",
+          "body": [
+            "Baixe a versão mais recente na seção **Download** desta página — ela aponta direto para os releases do GitHub.",
+            "Escolha o instalador do seu sistema:",
+            "- **macOS** — arquivo `.dmg`",
+            "- **Windows** — instalador `.exe`",
+            "- **Linux** — `.AppImage`, `.deb` ou `.rpm`",
+            "Na primeira execução o app já vem com o provedor **Mock** ativo, então você pode explorar tudo sem configurar credenciais."
+          ]
+        },
+        {
+          "id": "primeiro-projeto",
+          "title": "Seu primeiro projeto",
+          "body": [
+            "1. Abra o app e vá em **Projetos → Novo**.",
+            "2. Comece em branco ou a partir de um template de Markdown da sua biblioteca.",
+            "3. Escreva o conteúdo livremente na aba **Conteúdo**.",
+            "4. Deixe a IA estruturar o roteiro e refine conversando na aba **Roteiro**.",
+            "5. Escolha um **modelo visual**, ajuste os presets e clique em **Gerar**."
+          ]
+        }
+      ]
+    },
+    {
+      "id": "fluxo",
+      "title": "O fluxo de criação",
+      "articles": [
+        {
+          "id": "conteudo-para-roteiro",
+          "title": "Do conteúdo ao roteiro",
+          "body": [
+            "O Apresenta.AI separa **o que** você quer dizer de **como** isso vira slides.",
+            "Você escreve em texto corrido; a IA converte em um roteiro Markdown organizado em seções, tópicos e transições. O editor é o mesmo Monaco nas abas de Conteúdo e Roteiro — com preview em tempo real e auto-save.",
+            "> Refinar é conversacional: peça para reescrever um trecho, dividir uma seção ou gerar mais conteúdo, e itere até aprovar."
+          ]
+        },
+        {
+          "id": "geracao",
+          "title": "Geração e histórico",
+          "body": [
+            "Com o roteiro aprovado, a geração produz **HTML real** — não uma imagem ou PDF, mas uma página com animações, transições e componentes interativos.",
+            "Cada geração fica salva no histórico do projeto. Você pode:",
+            "- Regerar com um **modelo visual** diferente",
+            "- Comparar duas versões lado a lado",
+            "- Abrir qualquer versão no **apresentador em tela cheia**"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "biblioteca",
+      "title": "Biblioteca e modelos",
+      "articles": [
+        {
+          "id": "modelos-visuais",
+          "title": "Modelos visuais",
+          "body": [
+            "Um modelo visual define a **identidade** das suas apresentações: paleta de cores, tipografia e um template HTML base reutilizável.",
+            "Você tem CRUD completo, com preview usando conteúdo de exemplo, e pode trocar o modelo de um projeto a qualquer momento."
+          ]
+        },
+        {
+          "id": "templates-markdown",
+          "title": "Templates de Markdown",
+          "body": [
+            "Salve roteiros recorrentes como **templates** reutilizáveis numa biblioteca pessoal pesquisável.",
+            "Ao criar um projeto novo, parta de um template para já começar com a estrutura pronta."
+          ]
+        }
+      ]
+    },
+    {
+      "id": "ia",
+      "title": "Provedores de IA",
+      "articles": [
+        {
+          "id": "configurar-claude",
+          "title": "Configurar o Claude",
+          "body": [
+            "Em **Configurações → Provedores de IA**, cadastre sua credencial da Anthropic.",
+            "A chave de API é protegida com **BCrypt** antes de ser guardada localmente no SQLite — o app é single-user e roda na sua máquina, sem login.",
+            "Use o botão de **testar conexão** para validar a credencial antes de gerar."
+          ]
+        },
+        {
+          "id": "mock",
+          "title": "Provedor Mock",
+          "body": [
+            "O provedor **Mock** acompanha o app desde o primeiro uso. Ele simula respostas da IA para você explorar o fluxo completo sem gastar créditos nem configurar nada.",
+            "Troque para o Claude quando quiser resultados reais."
+          ]
+        }
+      ]
+    }
+  ]
+}

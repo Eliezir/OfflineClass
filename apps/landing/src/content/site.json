@@ -1,0 +1,247 @@
+{
+  "repo": { "owner": "Eliezir", "name": "apresenta.ai" },
+  "product": {
+    "name": "Apresenta.AI",
+    "tagline": "Mais que slides — experiências interativas em HTML, criadas com IA.",
+    "headline": "Não crie slides.",
+    "headlineAccent": "Crie experiências.",
+    "rotatingWords": ["interativa", "animada", "em HTML real", "feita por IA"],
+    "lead": "O Apresenta.AI transforma suas ideias em apresentações HTML de verdade — interativas, navegáveis e cheias de vida. Você escreve, a IA dá forma e você refina conversando, até virar uma experiência que prende a plateia.",
+    "eyebrow": "App desktop · IA · Experiências em HTML"
+  },
+  "featuredDemo": {
+    "title": "IHC · Duolingo & WCAG",
+    "url": "https://eliezir.github.io/IHC-Duolingo-WCAG-Presentation/#1"
+  },
+  "nav": [
+    { "label": "Recursos", "to": "/#recursos" },
+    { "label": "Interativo", "to": "/#interativo" },
+    { "label": "Exemplos", "to": "/#exemplos" },
+    { "label": "Download", "to": "/download" },
+    { "label": "Releases", "to": "/releases" },
+    { "label": "Docs", "to": "/docs" }
+  ],
+  "stats": [
+    { "value": 100, "suffix": "%", "label": "HTML interativo real" },
+    { "value": 4, "suffix": "", "label": "etapas até o resultado" },
+    { "value": 8, "suffix": "", "label": "recursos no app" },
+    { "value": 2, "suffix": "", "label": "provedores de IA" }
+  ],
+  "features": [
+    {
+      "accent": "primary",
+      "icon": "sparkles",
+      "title": "Da ideia ao roteiro",
+      "body": "Escreva em texto corrido. A IA organiza tudo em seções, tópicos e transições — pronto para virar uma experiência.",
+      "span": "wide"
+    },
+    {
+      "accent": "secondary",
+      "icon": "chat",
+      "title": "Refine conversando",
+      "body": "Ajuste seções, reescreva trechos e peça mais conteúdo num chat com a IA — até o roteiro ficar do seu jeito."
+    },
+    {
+      "accent": "tertiary",
+      "icon": "palette",
+      "title": "Modelos visuais",
+      "body": "Paleta, tipografia e template HTML base reutilizáveis, com preview e CRUD completo."
+    },
+    {
+      "accent": "quaternary",
+      "icon": "code",
+      "title": "HTML real na saída",
+      "body": "A geração produz uma página HTML de verdade — animações, transições e componentes interativos que a web oferece."
+    },
+    {
+      "accent": "primary",
+      "icon": "present",
+      "title": "Apresentador em tela cheia",
+      "body": "Abra a apresentação numa janela dedicada, sem distrações, pronta para projetar."
+    },
+    {
+      "accent": "secondary",
+      "icon": "history",
+      "title": "Histórico e comparação",
+      "body": "Cada geração fica guardada. Regere com outro modelo e compare versões lado a lado.",
+      "span": "wide"
+    },
+    {
+      "accent": "tertiary",
+      "icon": "editor",
+      "title": "Editor de conteúdo",
+      "body": "Escreva com preview em tempo real e auto-save, com foco total no conteúdo — sem distração de formatação."
+    }
+  ],
+  "interactive": [
+    {
+      "icon": "quiz",
+      "title": "Quizzes",
+      "body": "Perguntas clicáveis com feedback na hora — engaje a plateia, não só mostre slides.",
+      "points": ["Resposta imediata", "Acompanhe o raciocínio"]
+    },
+    {
+      "icon": "carousel",
+      "title": "Carrosséis",
+      "body": "Galerias e passos navegáveis dentro de um único slide, sem sair da apresentação.",
+      "points": ["Vários conteúdos num slide", "Navegação por pontos"]
+    },
+    {
+      "icon": "zoom",
+      "title": "Zoom",
+      "body": "Amplie diagramas e imagens em detalhe, direto na tela, sem ferramentas externas.",
+      "points": ["Foco em qualquer detalhe", "Sem sair do slide"]
+    },
+    {
+      "icon": "shortcuts",
+      "title": "Atalhos de teclado",
+      "body": "Navegue com ← →, tela cheia, ir para um slide — fluxo de apresentador de verdade.",
+      "points": ["Setas e tela cheia", "Controle total no teclado"]
+    },
+    {
+      "icon": "theme",
+      "title": "Tema claro/escuro",
+      "body": "A própria apresentação alterna tema — perfeita para qualquer sala ou projetor.",
+      "points": ["Claro e escuro", "Ideal para qualquer ambiente"]
+    },
+    {
+      "icon": "language",
+      "title": "Troca de idioma",
+      "body": "Apresente em dois idiomas e alterne na hora, sem refazer nada.",
+      "points": ["Troca instantânea", "Um arquivo, dois públicos"]
+    }
+  ],
+  "demo": {
+    "hint": "Use ← →, ou clique nos controles",
+    "slides": [
+      {
+        "kind": "cover",
+        "pt": {
+          "kicker": "IFAL · POO",
+          "title": "Padrão Strategy",
+          "subtitle": "Comportamentos intercambiáveis em tempo de execução"
+        },
+        "en": {
+          "kicker": "IFAL · OOP",
+          "title": "Strategy Pattern",
+          "subtitle": "Interchangeable behaviors at runtime"
+        }
+      },
+      {
+        "kind": "points",
+        "pt": {
+          "title": "Quando usar",
+          "points": [
+            "Famílias de algoritmos parecidos",
+            "Trocar comportamento sem if/else",
+            "Isolar regras que mudam com frequência"
+          ]
+        },
+        "en": {
+          "title": "When to use it",
+          "points": [
+            "Families of similar algorithms",
+            "Swap behavior without if/else",
+            "Isolate rules that change often"
+          ]
+        }
+      },
+      {
+        "kind": "quiz",
+        "pt": {
+          "title": "Quiz relâmpago",
+          "question": "O padrão Strategy favorece...",
+          "options": ["Herança profunda", "Composição", "Variáveis globais"],
+          "answer": 1,
+          "correct": "Isso! Composição no lugar de herança.",
+          "wrong": "Quase — a ideia é compor comportamentos."
+        },
+        "en": {
+          "title": "Lightning quiz",
+          "question": "The Strategy pattern favors...",
+          "options": ["Deep inheritance", "Composition", "Global variables"],
+          "answer": 1,
+          "correct": "Right! Composition over inheritance.",
+          "wrong": "Close — the idea is to compose behaviors."
+        }
+      }
+    ]
+  },
+  "steps": [
+    {
+      "n": "01",
+      "title": "Documento de conteúdo",
+      "body": "Você escreve livremente o material da apresentação em texto corrido — sem se preocupar com formato."
+    },
+    {
+      "n": "02",
+      "title": "Estrutura inteligente",
+      "body": "A IA organiza o conteúdo em seções, tópicos e transições. Refine conversando até aprovar."
+    },
+    {
+      "n": "03",
+      "title": "Tema visual + presets",
+      "body": "Escolha cores, tipografia, layout HTML e instruções customizadas para o resultado."
+    },
+    {
+      "n": "04",
+      "title": "Geração em HTML",
+      "body": "A IA produz a apresentação final em HTML interativo. Não gostou? Troque o tema ou ajuste o conteúdo."
+    }
+  ],
+  "examples": [
+    {
+      "title": "Heurísticas de Nielsen no Spotify",
+      "tag": "IHC · Avaliação heurística",
+      "image": "assets/examples/spotify-heuristics.png",
+      "href": "https://eliezir.github.io/IHC-Spotify-Heuristics-Presentation/slides/"
+    },
+    {
+      "title": "Design Pattern: Strategy",
+      "tag": "POO · Padrão de projeto",
+      "image": "assets/examples/strategy-pattern.png",
+      "href": "https://eliezir.github.io/strategy/slides/"
+    },
+    {
+      "title": "Percurso Cognitivo ADT Studio",
+      "tag": "IHC · Inspeção de usabilidade",
+      "image": "assets/examples/percurso-cognitivo.png",
+      "href": "https://eliezir.github.io/percurso-cognitivo-adt-studio/slides/"
+    }
+  ],
+  "platforms": [
+    {
+      "id": "mac",
+      "label": "macOS",
+      "icon": "apple",
+      "match": ["\\.dmg$", "-mac", "darwin", "\\.pkg$"]
+    },
+    {
+      "id": "windows",
+      "label": "Windows",
+      "icon": "windows",
+      "match": ["\\.exe$", "-win", "windows", "setup", "\\.msi$"]
+    },
+    {
+      "id": "linux",
+      "label": "Linux",
+      "icon": "linux",
+      "match": ["\\.appimage$", "\\.deb$", "\\.rpm$", "linux", "\\.tar\\.gz$", "\\.snap$"]
+    }
+  ],
+  "stack": [
+    "TypeScript", "Electron", "React", "Hono", "Prisma", "SQLite",
+    "Monaco Editor", "Vitest", "Zod", "Anthropic (Claude)"
+  ],
+  "team": [
+    { "name": "Andrezza Abreu", "github": "dzzabreu" },
+    { "name": "Carlos Henrique Roque", "github": "Roque-if" },
+    { "name": "Eduardo Calado", "github": "doardoE" },
+    { "name": "Eliezir Moreira", "github": "Eliezir" },
+    { "name": "Maria Luísa Alaquoke", "github": "quokequack" },
+    { "name": "Thomas Pinheiro", "github": "thomas-pinheiro" }
+  ],
+  "advisor": "Prof. Fernando Kenji Kamei",
+  "course": "IFAL · Programação Orientada a Objetos · 2026",
+  "footerNote": "Feito para transformar slides em experiências."
+}

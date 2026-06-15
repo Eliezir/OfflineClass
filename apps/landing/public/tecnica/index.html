@@ -1,0 +1,1528 @@
+<!doctype html>
+<html lang="pt-BR">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Apresenta.AI — Documentação do Projeto</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Geist:wght@300..700&family=JetBrains+Mono:wght@400;500&display=swap"
+      rel="stylesheet"
+    />
+    <style>
+      /* ════════════════════════════════════════════════════════════════════
+         Tokens do produto — copiados de
+         frontend/src/renderer/src/shared/styles/main.css
+         (mesmo tema, claro + escuro via .dark)
+      ════════════════════════════════════════════════════════════════════ */
+      :root {
+        --canvas: oklch(0.95 0.008 280);
+        --background: oklch(0.985 0.004 280);
+        --foreground: oklch(0.2 0.04 280);
+        --card: oklch(1 0 0);
+        --card-foreground: oklch(0.2 0.04 280);
+        --muted: oklch(0.965 0.006 280);
+        --muted-foreground: oklch(0.52 0.025 280);
+        --border: oklch(0.92 0.012 280);
+
+        --primary: oklch(0.55 0.24 295);
+        --secondary: oklch(0.74 0.18 0);
+        --tertiary: oklch(0.78 0.16 65);
+        --quaternary: oklch(0.72 0.16 165);
+
+        --primary-soft: oklch(0.96 0.04 295);
+        --primary-soft-foreground: oklch(0.4 0.2 295);
+        --secondary-soft: oklch(0.96 0.04 0);
+        --secondary-soft-foreground: oklch(0.45 0.2 0);
+        --tertiary-soft: oklch(0.96 0.04 65);
+        --tertiary-soft-foreground: oklch(0.45 0.14 60);
+        --quaternary-soft: oklch(0.96 0.04 165);
+        --quaternary-soft-foreground: oklch(0.4 0.16 165);
+
+        --gradient-ai: linear-gradient(
+          135deg,
+          oklch(0.55 0.24 295),
+          oklch(0.74 0.18 0),
+          oklch(0.78 0.16 65)
+        );
+
+        --success: oklch(0.72 0.16 165);
+
+        --font-sans: 'Geist', system-ui, sans-serif;
+        --font-mono: 'JetBrains Mono', monospace;
+
+        --radius-sm: 0.625rem;
+        --radius-md: 1rem;
+        --radius-lg: 1.5rem;
+        --radius-xl: 2rem;
+
+        --shadow-sm:
+          0 1px 2px hsl(280 30% 15% / 0.05), 0 4px 8px -2px hsl(280 30% 15% / 0.06);
+        --shadow-md:
+          0 1px 2px hsl(280 30% 15% / 0.05), 0 12px 24px -6px hsl(280 30% 15% / 0.1),
+          0 4px 8px -2px hsl(280 30% 15% / 0.06);
+        --shadow-xl:
+          0 2px 4px hsl(280 30% 15% / 0.06), 0 40px 64px -16px hsl(280 30% 15% / 0.18),
+          0 16px 32px -8px hsl(280 30% 15% / 0.1);
+        --shadow-glow-ai:
+          0 1px 2px hsl(280 30% 15% / 0.08), 0 16px 40px -8px oklch(0.55 0.24 295 / 0.3),
+          0 16px 40px -8px oklch(0.74 0.18 0 / 0.2);
+
+        --tracking-normal: -0.011em;
+      }
+
+      .dark {
+        --canvas: oklch(0.1 0.022 285);
+        --background: oklch(0.14 0.025 285);
+        --foreground: oklch(0.97 0.008 90);
+        --card: oklch(0.2 0.03 285);
+        --card-foreground: oklch(0.97 0.008 90);
+        --muted: oklch(0.22 0.03 285);
+        --muted-foreground: oklch(0.72 0.025 280);
+        --border: oklch(0.28 0.03 285);
+
+        --primary: oklch(0.68 0.22 295);
+        --secondary: oklch(0.78 0.17 0);
+        --tertiary: oklch(0.83 0.15 65);
+        --quaternary: oklch(0.78 0.13 165);
+
+        --primary-soft: oklch(0.28 0.08 295);
+        --primary-soft-foreground: oklch(0.86 0.1 295);
+        --secondary-soft: oklch(0.28 0.07 0);
+        --secondary-soft-foreground: oklch(0.86 0.1 0);
+        --tertiary-soft: oklch(0.28 0.06 65);
+        --tertiary-soft-foreground: oklch(0.86 0.1 65);
+        --quaternary-soft: oklch(0.26 0.06 165);
+        --quaternary-soft-foreground: oklch(0.86 0.1 165);
+
+        --gradient-ai: linear-gradient(
+          135deg,
+          oklch(0.68 0.22 295),
+          oklch(0.78 0.17 0),
+          oklch(0.83 0.15 65)
+        );
+
+        --success: oklch(0.78 0.13 165);
+
+        --shadow-sm:
+          0 1px 2px hsl(0 0% 0% / 0.3), 0 4px 8px -2px hsl(0 0% 0% / 0.4);
+        --shadow-md:
+          0 1px 2px hsl(0 0% 0% / 0.3), 0 12px 24px -6px hsl(0 0% 0% / 0.6),
+          0 4px 8px -2px hsl(0 0% 0% / 0.4);
+        --shadow-xl:
+          0 2px 4px hsl(0 0% 0% / 0.4), 0 40px 64px -16px hsl(0 0% 0% / 0.7),
+          0 16px 32px -8px hsl(0 0% 0% / 0.5);
+        --shadow-glow-ai:
+          0 1px 2px hsl(0 0% 0% / 0.4), 0 24px 56px -8px oklch(0.68 0.22 295 / 0.5),
+          0 24px 56px -8px oklch(0.78 0.17 0 / 0.3);
+      }
+
+      /* ════════════════════════════════════════════════════════════════════
+         Layout do documento (construído sobre os tokens)
+      ════════════════════════════════════════════════════════════════════ */
+      * {
+        box-sizing: border-box;
+      }
+      html {
+        scroll-behavior: smooth;
+        scroll-padding-top: 80px;
+      }
+      body {
+        margin: 0;
+        font-family: var(--font-sans);
+        background: var(--canvas);
+        color: var(--foreground);
+        line-height: 1.6;
+        letter-spacing: var(--tracking-normal);
+        -webkit-font-smoothing: antialiased;
+        transition:
+          background 0.3s,
+          color 0.3s;
+      }
+      h1,
+      h2,
+      h3,
+      h4 {
+        letter-spacing: -0.022em;
+        line-height: 1.15;
+      }
+      a {
+        color: var(--primary);
+        text-decoration: none;
+      }
+      a:hover {
+        text-decoration: underline;
+      }
+      code {
+        font-family: var(--font-mono);
+        font-size: 0.86em;
+        background: var(--muted);
+        border: 1px solid var(--border);
+        padding: 1px 6px;
+        border-radius: 6px;
+      }
+
+      .wrap {
+        max-width: 1000px;
+        margin: 0 auto;
+        padding: 0 24px;
+      }
+
+      /* ── Top nav ── */
+      nav.top {
+        position: sticky;
+        top: 0;
+        z-index: 50;
+        backdrop-filter: blur(12px);
+        background: color-mix(in oklab, var(--canvas) 80%, transparent);
+        border-bottom: 1px solid var(--border);
+      }
+      nav.top .wrap {
+        display: flex;
+        align-items: center;
+        gap: 16px;
+        height: 60px;
+        max-width: 1120px;
+      }
+      .brand {
+        display: flex;
+        align-items: center;
+        gap: 9px;
+        font-weight: 600;
+        font-size: 15px;
+        color: var(--foreground);
+        flex-shrink: 0;
+      }
+      .brand:hover {
+        text-decoration: none;
+      }
+      .logo {
+        height: 24px;
+        width: 24px;
+        object-fit: contain;
+      }
+      .logo--dark {
+        display: none;
+      }
+      .dark .logo--light {
+        display: none;
+      }
+      .dark .logo--dark {
+        display: inline-block;
+      }
+      nav.top .links {
+        display: flex;
+        gap: 2px;
+        margin-left: auto;
+        flex-wrap: nowrap;
+        overflow-x: auto;
+        min-width: 0;
+        scrollbar-width: none;
+      }
+      nav.top .links::-webkit-scrollbar {
+        display: none;
+      }
+      nav.top .links a {
+        color: var(--muted-foreground);
+        font-size: 13px;
+        padding: 6px 9px;
+        border-radius: var(--radius-sm);
+        transition: 0.15s;
+        white-space: nowrap;
+      }
+      nav.top .links a:hover {
+        color: var(--foreground);
+        background: var(--muted);
+        text-decoration: none;
+      }
+      .toggle {
+        border: 1px solid var(--border);
+        background: var(--card);
+        color: var(--foreground);
+        width: 36px;
+        height: 36px;
+        border-radius: var(--radius-sm);
+        cursor: pointer;
+        font-size: 15px;
+        display: grid;
+        place-items: center;
+        flex-shrink: 0;
+      }
+      .toggle:hover {
+        box-shadow: var(--shadow-sm);
+      }
+
+      /* ── Hero ── */
+      .hero {
+        position: relative;
+        padding: 84px 0 64px;
+        overflow: hidden;
+      }
+      .hero::before {
+        content: '';
+        position: absolute;
+        inset: -30% -10% auto;
+        height: 480px;
+        background:
+          radial-gradient(ellipse 50% 60% at 25% 30%, oklch(0.55 0.24 295 / 0.22), transparent 70%),
+          radial-gradient(ellipse 45% 55% at 78% 35%, oklch(0.74 0.18 0 / 0.16), transparent 70%),
+          radial-gradient(ellipse 45% 50% at 55% 80%, oklch(0.78 0.16 65 / 0.14), transparent 70%);
+        filter: blur(50px);
+        z-index: -1;
+        pointer-events: none;
+      }
+      .kicker {
+        font-family: var(--font-mono);
+        font-size: 12px;
+        letter-spacing: 0.16em;
+        text-transform: uppercase;
+        color: var(--primary);
+        margin: 0 0 16px;
+      }
+      .hero h1 {
+        font-size: clamp(36px, 6vw, 60px);
+        margin: 0 0 18px;
+        font-weight: 600;
+      }
+      .grad {
+        background: var(--gradient-ai);
+        -webkit-background-clip: text;
+        background-clip: text;
+        color: transparent;
+      }
+      .hero p.lede {
+        font-size: 19px;
+        color: var(--muted-foreground);
+        max-width: 68ch;
+        margin: 0;
+      }
+      .badges {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 8px;
+        margin-top: 30px;
+      }
+      .badge {
+        font-family: var(--font-mono);
+        font-size: 12px;
+        padding: 6px 12px;
+        border-radius: 999px;
+        border: 1px solid var(--border);
+        background: var(--card);
+        box-shadow: var(--shadow-sm);
+      }
+
+      /* ── Sections / panel ── */
+      section {
+        padding: 30px 0;
+      }
+      .panel {
+        background: var(--background);
+        border: 1px solid var(--border);
+        border-radius: var(--radius-xl);
+        box-shadow: var(--shadow-xl);
+        padding: 40px;
+        margin-bottom: 28px;
+      }
+      .eyebrow {
+        font-family: var(--font-mono);
+        font-size: 12px;
+        letter-spacing: 0.14em;
+        text-transform: uppercase;
+        color: var(--muted-foreground);
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        margin: 0 0 8px;
+      }
+      .eyebrow::before {
+        content: '';
+        width: 8px;
+        height: 8px;
+        border-radius: 3px;
+        background: var(--gradient-ai);
+      }
+      .panel > h2 {
+        font-size: 28px;
+        margin: 0 0 8px;
+        font-weight: 600;
+      }
+      .panel > .sub {
+        color: var(--muted-foreground);
+        font-size: 16px;
+        margin: 0 0 28px;
+        max-width: 70ch;
+      }
+
+      .grid {
+        display: grid;
+        gap: 16px;
+      }
+      /* Impede o "grid blowout": itens podem encolher e o <pre> rola
+         internamente, em vez de empurrar os cards para fora do painel. */
+      .grid > * {
+        min-width: 0;
+      }
+      .cols-2 {
+        grid-template-columns: repeat(2, 1fr);
+      }
+      .cols-3 {
+        grid-template-columns: repeat(3, 1fr);
+      }
+      .cols-4 {
+        grid-template-columns: repeat(4, 1fr);
+      }
+
+      .card {
+        background: var(--card);
+        color: var(--card-foreground);
+        border: 1px solid var(--border);
+        border-radius: var(--radius-md);
+        padding: 20px;
+        box-shadow: var(--shadow-sm);
+      }
+      .card .ico {
+        font-size: 22px;
+        display: block;
+        margin-bottom: 10px;
+      }
+      .card h3 {
+        font-size: 16px;
+        margin: 0 0 6px;
+      }
+      .card p {
+        margin: 0;
+        font-size: 14px;
+        color: var(--muted-foreground);
+      }
+
+      /* color-coded left border for "the four" */
+      .card.c-primary {
+        border-left: 3px solid var(--primary);
+      }
+      .card.c-secondary {
+        border-left: 3px solid var(--secondary);
+      }
+      .card.c-tertiary {
+        border-left: 3px solid var(--tertiary);
+      }
+      .card.c-quaternary {
+        border-left: 3px solid var(--quaternary);
+      }
+
+      /* ── Flow steps ── */
+      .flow {
+        display: grid;
+        grid-template-columns: repeat(5, 1fr);
+        gap: 12px;
+      }
+      .fstep {
+        background: var(--card);
+        border: 1px solid var(--border);
+        border-radius: var(--radius-md);
+        padding: 16px;
+        box-shadow: var(--shadow-sm);
+        position: relative;
+      }
+      .fstep .n {
+        font-family: var(--font-mono);
+        font-size: 11px;
+        color: var(--primary);
+      }
+      .fstep h4 {
+        margin: 6px 0 4px;
+        font-size: 14px;
+      }
+      .fstep p {
+        margin: 0;
+        font-size: 12.5px;
+        color: var(--muted-foreground);
+      }
+
+      /* ── Architecture two-column ── */
+      .arch {
+        display: grid;
+        grid-template-columns: 1fr 56px 1fr;
+        align-items: stretch;
+        gap: 0;
+      }
+      .arch .col {
+        border: 1px solid var(--border);
+        border-radius: var(--radius-lg);
+        padding: 22px;
+        background: var(--card);
+        box-shadow: var(--shadow-sm);
+      }
+      .arch .col h3 {
+        margin: 0 0 4px;
+        font-size: 17px;
+      }
+      .arch .col .meta {
+        font-family: var(--font-mono);
+        font-size: 11.5px;
+        color: var(--muted-foreground);
+        margin-bottom: 14px;
+      }
+      .arch .bridge {
+        display: grid;
+        place-items: center;
+        color: var(--muted-foreground);
+        font-family: var(--font-mono);
+        font-size: 11px;
+        text-align: center;
+      }
+      .arch .bridge .b-arrow {
+        font-size: 20px;
+        color: var(--primary);
+      }
+      .stack-row {
+        display: flex;
+        align-items: baseline;
+        gap: 8px;
+        padding: 7px 0;
+        border-bottom: 1px dashed var(--border);
+        font-size: 13.5px;
+      }
+      .stack-row:last-child {
+        border-bottom: none;
+      }
+      .stack-row .t {
+        font-family: var(--font-mono);
+        font-size: 12px;
+        color: var(--primary);
+        min-width: 0;
+      }
+      .stack-row .d {
+        color: var(--muted-foreground);
+        margin-left: auto;
+        text-align: right;
+        font-size: 12px;
+      }
+
+      /* ── Layer stack (backend) ── */
+      .layer {
+        position: relative;
+        background: var(--card);
+        border: 1px solid var(--border);
+        border-radius: var(--radius-md);
+        padding: 14px 18px;
+        margin-bottom: 28px;
+        display: flex;
+        align-items: center;
+        gap: 14px;
+        box-shadow: var(--shadow-sm);
+      }
+      .layer:last-child {
+        margin-bottom: 0;
+      }
+      .layer::after {
+        content: '↓';
+        position: absolute;
+        left: 50%;
+        bottom: -23px;
+        transform: translateX(-50%);
+        color: var(--primary);
+        font-size: 16px;
+        font-weight: 700;
+      }
+      .layer:last-child::after {
+        display: none;
+      }
+      .layer .lname {
+        font-weight: 600;
+        min-width: 120px;
+      }
+      .layer .lpath {
+        font-family: var(--font-mono);
+        font-size: 12px;
+        color: var(--primary-soft-foreground);
+        background: var(--primary-soft);
+        padding: 3px 8px;
+        border-radius: 6px;
+        white-space: nowrap;
+      }
+      .layer p {
+        margin: 0;
+        font-size: 13px;
+        color: var(--muted-foreground);
+      }
+
+      /* ── Tables ── */
+      table {
+        width: 100%;
+        border-collapse: collapse;
+        font-size: 14px;
+        background: var(--card);
+        border: 1px solid var(--border);
+        border-radius: var(--radius-md);
+        overflow: hidden;
+        box-shadow: var(--shadow-sm);
+      }
+      th,
+      td {
+        text-align: left;
+        padding: 11px 16px;
+        border-bottom: 1px solid var(--border);
+        vertical-align: top;
+      }
+      th {
+        font-family: var(--font-mono);
+        font-size: 11px;
+        letter-spacing: 0.06em;
+        text-transform: uppercase;
+        color: var(--muted-foreground);
+        background: var(--muted);
+      }
+      tr:last-child td {
+        border-bottom: none;
+      }
+      td .m {
+        font-family: var(--font-mono);
+        font-size: 12.5px;
+        color: var(--primary);
+      }
+      .ar {
+        color: var(--muted-foreground);
+        text-align: center;
+      }
+
+      /* ── Code blocks ── */
+      pre {
+        max-width: 100%;
+        background: var(--card);
+        border: 1px solid var(--border);
+        border-radius: var(--radius-md);
+        padding: 18px 20px;
+        overflow-x: auto;
+        font-family: var(--font-mono);
+        font-size: 13px;
+        line-height: 1.7;
+        box-shadow: var(--shadow-sm);
+        margin: 0;
+      }
+      pre .c {
+        color: var(--muted-foreground);
+      }
+
+      /* ── Swatches (design system) ── */
+      .swatches {
+        display: grid;
+        grid-template-columns: repeat(4, 1fr);
+        gap: 14px;
+      }
+      .sw {
+        border: 1px solid var(--border);
+        border-radius: var(--radius-md);
+        overflow: hidden;
+        box-shadow: var(--shadow-sm);
+        background: var(--card);
+      }
+      .sw .chip {
+        height: 64px;
+      }
+      .sw .meta {
+        padding: 10px 12px;
+      }
+      .sw .meta b {
+        font-size: 13px;
+      }
+      .sw .meta span {
+        display: block;
+        font-family: var(--font-mono);
+        font-size: 10.5px;
+        color: var(--muted-foreground);
+        margin-top: 2px;
+      }
+      .gradient-bar {
+        height: 56px;
+        border-radius: var(--radius-md);
+        background: var(--gradient-ai);
+        box-shadow: var(--shadow-glow-ai);
+        margin-top: 4px;
+      }
+
+      .note {
+        font-size: 14px;
+        border-radius: var(--radius-md);
+        padding: 14px 18px;
+        margin-top: 18px;
+        background: var(--primary-soft);
+        color: var(--primary-soft-foreground);
+        border: 1px solid color-mix(in oklab, var(--primary) 25%, transparent);
+      }
+      .note b {
+        color: inherit;
+      }
+
+      ul.clean {
+        margin: 0;
+        padding-left: 18px;
+        color: var(--muted-foreground);
+        font-size: 14px;
+      }
+      ul.clean li {
+        margin-bottom: 8px;
+      }
+      ul.clean b {
+        color: var(--foreground);
+      }
+
+      .pill {
+        display: inline-block;
+        font-family: var(--font-mono);
+        font-size: 11px;
+        padding: 3px 9px;
+        border-radius: 999px;
+        background: color-mix(in oklab, var(--success) 16%, transparent);
+        color: var(--success);
+        border: 1px solid color-mix(in oklab, var(--success) 35%, transparent);
+      }
+
+      /* ── Tutorial steps ── */
+      .steps {
+        counter-reset: step;
+        margin-top: 8px;
+      }
+      .step {
+        position: relative;
+        padding: 0 0 26px 28px;
+        border-left: 2px solid var(--border);
+        margin-left: 15px;
+      }
+      .step:last-child {
+        border-left-color: transparent;
+        padding-bottom: 0;
+      }
+      .step::before {
+        counter-increment: step;
+        content: counter(step);
+        position: absolute;
+        left: -16px;
+        top: -2px;
+        width: 30px;
+        height: 30px;
+        border-radius: 999px;
+        background: var(--gradient-ai);
+        color: #fff;
+        display: grid;
+        place-items: center;
+        font-family: var(--font-mono);
+        font-size: 13px;
+        font-weight: 600;
+        box-shadow: var(--shadow-glow-ai);
+      }
+      .step h4 {
+        margin: 0 0 8px;
+        font-size: 16px;
+      }
+      .step p {
+        margin: 0 0 10px;
+        font-size: 14px;
+        color: var(--muted-foreground);
+      }
+      .step pre {
+        margin-bottom: 10px;
+      }
+
+      /* ── Tip / callout variants ── */
+      .tip {
+        font-size: 14px;
+        border-radius: var(--radius-md);
+        padding: 13px 16px;
+        margin: 0 0 18px;
+        background: var(--tertiary-soft);
+        color: var(--tertiary-soft-foreground);
+        border: 1px solid color-mix(in oklab, var(--tertiary) 30%, transparent);
+      }
+      .tip.warn {
+        background: var(--secondary-soft);
+        color: var(--secondary-soft-foreground);
+        border-color: color-mix(in oklab, var(--secondary) 30%, transparent);
+      }
+      .tip b {
+        color: inherit;
+      }
+
+      /* ── External-link marker ── */
+      a.ext::after {
+        content: ' ↗';
+        font-size: 0.78em;
+        opacity: 0.6;
+      }
+
+      /* ── Recipes ── */
+      .recipe h3 {
+        font-size: 15px;
+        margin: 0 0 8px;
+      }
+      .recipe pre {
+        margin: 0 0 10px;
+      }
+      .recipe p {
+        font-size: 13px;
+      }
+
+      /* Receitas: cada card abraça o próprio conteúdo (sem espaço morto) */
+      #receitas .grid {
+        align-items: start;
+      }
+
+      footer {
+        padding: 40px 0 64px;
+        color: var(--muted-foreground);
+        font-size: 13px;
+        text-align: center;
+      }
+
+      @media (max-width: 820px) {
+        .panel {
+          padding: 26px;
+        }
+        .cols-2,
+        .cols-3,
+        .cols-4,
+        .flow,
+        .swatches {
+          grid-template-columns: 1fr 1fr;
+        }
+        .arch {
+          grid-template-columns: 1fr;
+        }
+        .arch .bridge {
+          padding: 10px;
+        }
+        .arch .bridge .b-arrow {
+          transform: rotate(90deg);
+        }
+        nav.top .links {
+          display: none;
+        }
+        .layer {
+          flex-direction: column;
+          align-items: flex-start;
+          gap: 8px;
+        }
+      }
+      @media (max-width: 520px) {
+        .cols-3,
+        .cols-4,
+        .flow,
+        .swatches {
+          grid-template-columns: 1fr;
+        }
+      }
+    </style>
+  </head>
+  <body>
+    <!-- ───────────────────────── NAV ───────────────────────── -->
+    <nav class="top">
+      <div class="wrap">
+        <a class="brand" href="#topo"><img class="logo logo--light" src="data:image/png;base64,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" alt="Apresenta.AI" /><img class="logo logo--dark" src="data:image/png;base64,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" alt="Apresenta.AI" /> Apresenta.AI</a>
+        <div class="links">
+          <a href="#produto">Produto</a>
+          <a href="#arquitetura">Arquitetura</a>
+          <a href="#frontend">Frontend</a>
+          <a href="#backend">Backend</a>
+          <a href="#tutorial">Tutorial</a>
+          <a href="#receitas">Receitas</a>
+          <a href="#tecnologias">Tecnologias</a>
+          <a href="#design">Design</a>
+          <a href="#rodar">Rodar</a>
+          <a href="#convencoes">Convenções</a>
+        </div>
+        <button class="toggle" id="themeToggle" title="Alternar tema" aria-label="Alternar tema">
+          🌗
+        </button>
+      </div>
+    </nav>
+
+    <!-- ───────────────────────── HERO ───────────────────────── -->
+    <header class="hero" id="topo">
+      <div class="wrap">
+        <p class="kicker">Documentação do projeto</p>
+        <h1>Apresenta.<span class="grad">AI</span></h1>
+        <p class="lede">
+          App desktop que transforma conteúdo livre em <strong>apresentações HTML interativas</strong>
+          geradas por IA. Você escreve, a IA estrutura em Markdown, você refina no chat, escolhe um modelo
+          visual — e a IA gera a apresentação final em HTML real, com animações e transições. Este guia
+          apresenta o produto, a arquitetura e como contribuir.
+        </p>
+        <div class="badges">
+          <span class="badge">Electron + React</span>
+          <span class="badge">TypeScript ponta a ponta</span>
+          <span class="badge">Hono + Prisma</span>
+          <span class="badge">Anthropic Claude</span>
+          <span class="badge">Monorepo pnpm</span>
+          <span class="pill" style="align-self: center">Projeto POO · IFAL</span>
+        </div>
+      </div>
+    </header>
+
+    <div class="wrap">
+      <!-- ───────────────────────── PRODUTO ───────────────────────── -->
+      <section id="produto">
+        <div class="panel">
+          <p class="eyebrow">O produto</p>
+          <h2>Como funciona</h2>
+          <p class="sub">
+            O fluxo central, do texto livre à apresentação pronta. A IA aparece em duas etapas: estruturar
+            o conteúdo e gerar o HTML final.
+          </p>
+          <div class="flow">
+            <div class="fstep">
+              <span class="n">01</span>
+              <h4>Escreva</h4>
+              <p>Conteúdo livre, do seu jeito.</p>
+            </div>
+            <div class="fstep">
+              <span class="n">02</span>
+              <h4>IA estrutura</h4>
+              <p>Vira um roteiro em Markdown.</p>
+            </div>
+            <div class="fstep">
+              <span class="n">03</span>
+              <h4>Refine no chat</h4>
+              <p>Ajusta conversando com a IA.</p>
+            </div>
+            <div class="fstep">
+              <span class="n">04</span>
+              <h4>Escolha o visual</h4>
+              <p>Modelo visual + presets.</p>
+            </div>
+            <div class="fstep">
+              <span class="n">05</span>
+              <h4>IA gera o HTML</h4>
+              <p>Apresentação real, interativa.</p>
+            </div>
+          </div>
+          <div class="note">
+            <b>Decisões fechadas:</b> app local de usuário único (sem login); o onboarding é opcional e começa
+            no provedor <b>Mock</b>; o editor de conteúdo e de roteiro é o mesmo Markdown (Monaco); o
+            apresentador roda em janela Electron dedicada, sem chrome. O BCrypt existe só para proteger a
+            API key dos provedores de IA salva no SQLite.
+          </div>
+        </div>
+      </section>
+
+      <!-- ───────────────────────── ARQUITETURA ───────────────────────── -->
+      <section id="arquitetura">
+        <div class="panel">
+          <p class="eyebrow">Visão geral</p>
+          <h2>Arquitetura do monorepo</h2>
+          <p class="sub">
+            Dois pacotes em um workspace pnpm. O frontend Electron conversa com o backend por HTTP
+            (<code>/api</code>, porta 8080). Hoje as telas rodam com dados mockados; trocar mock por HTTP
+            real é uma mudança de um arquivo por recurso.
+          </p>
+          <div class="arch">
+            <div class="col">
+              <h3>🖥️ Frontend</h3>
+              <div class="meta">/frontend · Electron + React</div>
+              <div class="stack-row"><span class="t">Electron 39</span><span class="d">shell desktop</span></div>
+              <div class="stack-row"><span class="t">React 19 + TS</span><span class="d">UI</span></div>
+              <div class="stack-row"><span class="t">TanStack Router/Query</span><span class="d">rotas + dados</span></div>
+              <div class="stack-row"><span class="t">Tailwind v4 + shadcn</span><span class="d">estilo</span></div>
+              <div class="stack-row"><span class="t">Monaco</span><span class="d">editor Markdown</span></div>
+            </div>
+            <div class="bridge">
+              <div>
+                <div class="b-arrow">⇄</div>
+                HTTP<br />/api · 8080
+              </div>
+            </div>
+            <div class="col">
+              <h3>⚙️ Backend</h3>
+              <div class="meta">/backend · Hono + Prisma</div>
+              <div class="stack-row"><span class="t">TypeScript · Node 22</span><span class="d">runtime (tsx)</span></div>
+              <div class="stack-row"><span class="t">Hono</span><span class="d">HTTP</span></div>
+              <div class="stack-row"><span class="t">Prisma + SQLite</span><span class="d">persistência</span></div>
+              <div class="stack-row"><span class="t">Zod</span><span class="d">validação</span></div>
+              <div class="stack-row"><span class="t">Vitest</span><span class="d">testes (TDD)</span></div>
+            </div>
+          </div>
+          <pre style="margin-top: 18px"><span class="c"># raiz do repositório</span>
+/frontend     <span class="c">Electron + React (renderer em src/renderer/src)</span>
+/backend      <span class="c">API TypeScript (Hono + Prisma)</span>
+/assets       <span class="c">logos e banners</span>
+/docs         <span class="c">esta documentação</span></pre>
+        </div>
+      </section>
+
+      <!-- ───────────────────────── FRONTEND ───────────────────────── -->
+      <section id="frontend">
+        <div class="panel">
+          <p class="eyebrow">Frontend</p>
+          <h2>Electron + React</h2>
+          <p class="sub">
+            Três processos (main / preload / renderer) via electron-vite. O renderer é uma SPA React com
+            roteamento por arquivos e estado de servidor no TanStack Query.
+          </p>
+          <div class="grid cols-3">
+            <div class="card c-primary">
+              <span class="ico">🧭</span>
+              <h3>Roteamento</h3>
+              <p>TanStack Router por arquivos em <code>routes/</code>. Layout <code>_app</code> com sidebar; code-splitting automático.</p>
+            </div>
+            <div class="card c-secondary">
+              <span class="ico">🔌</span>
+              <h3>Processos &amp; IPC</h3>
+              <p>main controla janela/IPC; preload expõe uma bridge tipada (<code>window.api</code>); renderer fala HTTP com o backend.</p>
+            </div>
+            <div class="card c-tertiary">
+              <span class="ico">📝</span>
+              <h3>Formulários</h3>
+              <p>TanStack Form + Zod. Editor de conteúdo e roteiro compartilham o mesmo <code>MonacoMarkdownEditor</code>.</p>
+            </div>
+          </div>
+          <pre style="margin-top: 18px"><span class="c"># frontend/src</span>
+main/            <span class="c">processo Electron — janelas, IPC handlers</span>
+preload/         <span class="c">bridge tipada exposta ao renderer</span>
+shared/ipc/      <span class="c">contrato de canais IPC (main ⇄ renderer)</span>
+renderer/src/
+  app/           <span class="c">bootstrap, providers</span>
+  routes/        <span class="c">telas (TanStack Router por arquivos)</span>
+  modules/       <span class="c">features por domínio</span>
+  shared/        <span class="c">ui (shadcn), components, hooks, stores, styles</span></pre>
+          <div class="note">
+            <b>Mapa de telas:</b> <code>/</code> splash · <code>/onboarding/*</code> ·
+            <code>/projects</code> dashboard · <code>/projects/new</code> wizard ·
+            <code>/projects/$id</code> editor (conteúdo, roteiro, tema, preview, histórico) ·
+            <code>/library/*</code> templates e modelos visuais · <code>/settings/*</code> ·
+            <code>/present/$generationId</code> apresentador. Algumas telas ainda estão em construção.
+          </div>
+        </div>
+      </section>
+
+      <!-- ───────────────────────── BACKEND ───────────────────────── -->
+      <section id="backend">
+        <div class="panel">
+          <p class="eyebrow">Backend</p>
+          <h2>API em camadas (MVC)</h2>
+          <p class="sub">
+            Migrado de Java/Spring Boot para TypeScript mantendo a mesma arquitetura: uma requisição desce
+            por <code>Controller → BO → DAO → Models</code> e nunca pula etapas. A composição (DI manual) vive
+            em <code>src/app.ts</code>.
+          </p>
+          <div class="layer">
+            <span class="lname">Controller</span><span class="lpath">src/controllers/</span>
+            <p>Camada HTTP (routers Hono), montada em <code>/api/*</code>. Valida entrada e delega ao BO.</p>
+          </div>
+          <div class="layer">
+            <span class="lname">BO</span><span class="lpath">src/bo/</span>
+            <p>Regra de negócio. Depende só do DAO; mapeia entidades para VOs.</p>
+          </div>
+          <div class="layer">
+            <span class="lname">DAO</span><span class="lpath">src/dao/</span>
+            <p>Acesso a dados; envolve o <code>PrismaClient</code>.</p>
+          </div>
+          <div class="layer">
+            <span class="lname">Models / DB</span><span class="lpath">prisma/schema.prisma</span>
+            <p>Entidades + SQLite. DTOs imutáveis como schemas Zod em <code>src/models/vo/</code>.</p>
+          </div>
+          <div class="grid cols-3" style="margin-top: 24px">
+            <div class="card c-quaternary">
+              <span class="ico">🧱</span>
+              <h3>Camadas garantidas</h3>
+              <p><code>dependency-cruiser</code> reprova no CI atalhos entre camadas (substitui o ArchUnit).</p>
+            </div>
+            <div class="card c-primary">
+              <span class="ico">🚨</span>
+              <h3>Contrato de erro</h3>
+              <p>Tudo vira <code>{ timestamp, status, erro, mensagens[] }</code> via <code>app.onError</code>.</p>
+            </div>
+            <div class="card c-tertiary">
+              <span class="ico">🗄️</span>
+              <h3>Migrations</h3>
+              <p><code>prisma migrate</code> (substitui o Flyway). Banco SQLite local, persistido em volume no Docker.</p>
+            </div>
+          </div>
+          <table style="margin-top: 24px">
+            <thead>
+              <tr><th>Java / Spring Boot</th><th></th><th>TypeScript</th></tr>
+            </thead>
+            <tbody>
+              <tr><td>@RestController</td><td class="ar">→</td><td><span class="m">controllers/ (Hono)</span></td></tr>
+              <tr><td>@Service (BO)</td><td class="ar">→</td><td><span class="m">bo/ (classe + DI)</span></td></tr>
+              <tr><td>@Repository (JPA)</td><td class="ar">→</td><td><span class="m">dao/ (PrismaClient)</span></td></tr>
+              <tr><td>GlobalExceptionHandler</td><td class="ar">→</td><td><span class="m">exception/error-handler</span></td></tr>
+              <tr><td>Flyway · JUnit · ArchUnit</td><td class="ar">→</td><td><span class="m">prisma migrate · Vitest · dependency-cruiser</span></td></tr>
+            </tbody>
+          </table>
+        </div>
+      </section>
+
+      <!-- ───────────────────────── TUTORIAL ───────────────────────── -->
+      <section id="tutorial">
+        <div class="panel">
+          <p class="eyebrow">Tutorial · backend</p>
+          <h2>Criando um endpoint do zero</h2>
+          <p class="sub">
+            Vamos adicionar um recurso completo — <code>Tarefa</code> — atravessando todas as camadas, com
+            <strong>teste primeiro</strong>. Mesmo sem conhecer as ferramentas, siga os passos: cada um linka
+            a documentação oficial. A fatia <code>exemplo</code> (em <code>backend/src/**/exemplo.*</code>) é a
+            referência viva desse padrão.
+          </p>
+          <div class="tip">
+            💡 <b>Ordem TDD:</b> para cada camada, escreva o teste que falha, deixe o <a class="ext" href="https://vitest.dev/guide/" target="_blank" rel="noopener">Vitest</a>
+            rodando com <code>pnpm test:watch</code> e só então implemente até ficar verde.
+            <a class="ext" href="https://martinfowler.com/bliki/TestDrivenDevelopment.html" target="_blank" rel="noopener">O que é TDD?</a>
+          </div>
+
+          <div class="steps">
+            <div class="step">
+              <h4>Modele a entidade no schema do Prisma</h4>
+              <p>As entidades ficam em <code>prisma/schema.prisma</code> — <a class="ext" href="https://www.prisma.io/docs/orm/prisma-schema" target="_blank" rel="noopener">Prisma Schema</a>.</p>
+              <pre>model Tarefa {
+  id        Int     @id @default(autoincrement())
+  titulo    String
+  concluida Boolean @default(false)
+}</pre>
+              <p>Gere e aplique a migration (<a class="ext" href="https://www.prisma.io/docs/orm/prisma-migrate/getting-started" target="_blank" rel="noopener">Prisma Migrate</a>):</p>
+              <pre>pnpm migrate:dev --name cria_tarefa</pre>
+              <p>Isso cria <code>prisma/migrations/&lt;timestamp&gt;_cria_tarefa/</code> e regenera o client tipado.</p>
+            </div>
+
+            <div class="step">
+              <h4>Defina os DTOs com Zod</h4>
+              <p>Em <code>src/models/vo/tarefa.vo.ts</code> — o schema <a class="ext" href="https://zod.dev/?id=basic-usage" target="_blank" rel="noopener">Zod</a> é a validação <em>e</em> o tipo.</p>
+              <pre><span class="c">// src/models/vo/tarefa.vo.ts</span>
+import { z } from 'zod'
+
+<span class="c">// entrada do POST (validação + tipo inferido)</span>
+export const criaTarefaSchema = z.object({
+  titulo: z.string().min(1, 'O título é obrigatório')
+})
+export type CriaTarefa = z.infer&lt;typeof criaTarefaSchema&gt;
+
+<span class="c">// formato de resposta da API</span>
+export type TarefaVO = { id: number; titulo: string; concluida: boolean }</pre>
+            </div>
+
+            <div class="step">
+              <h4>DAO — acesso a dados (teste → código)</h4>
+              <p>Escreva o teste com o banco de teste real, depois implemente o DAO sobre o <a class="ext" href="https://www.prisma.io/docs/orm/prisma-client/queries/crud" target="_blank" rel="noopener">Prisma Client</a>.</p>
+              <pre><span class="c">// test/tarefa.dao.test.ts</span>
+import { describe, expect, it } from 'vitest'
+import { prisma } from '../src/config/prisma'
+import { TarefaDao } from '../src/dao/tarefa.dao'
+
+describe('TarefaDao', () =&gt; {
+  it('cria e lista tarefas', async () =&gt; {
+    const dao = new TarefaDao(prisma)
+    await dao.criar('Estudar Hono')
+    const todas = await dao.listar()
+    expect(todas).toHaveLength(1)
+  })
+})</pre>
+              <pre><span class="c">// src/dao/tarefa.dao.ts</span>
+import type { PrismaClient, Tarefa } from '@prisma/client'
+
+export class TarefaDao {
+  constructor(private readonly prisma: PrismaClient) {}
+
+  listar(): Promise&lt;Tarefa[]&gt; {
+    return this.prisma.tarefa.findMany({ orderBy: { id: 'asc' } })
+  }
+
+  criar(titulo: string): Promise&lt;Tarefa&gt; {
+    return this.prisma.tarefa.create({ data: { titulo } })
+  }
+}</pre>
+            </div>
+
+            <div class="step">
+              <h4>BO — regra de negócio</h4>
+              <p>O BO depende só do DAO (injetado no construtor) e devolve VOs. No teste, injete um DAO falso.</p>
+              <pre><span class="c">// test/tarefa.bo.test.ts</span>
+import { describe, expect, it } from 'vitest'
+import { TarefaBo } from '../src/bo/tarefa.bo'
+import type { TarefaDao } from '../src/dao/tarefa.dao'
+
+describe('TarefaBo', () =&gt; {
+  it('mapeia a entidade para VO', async () =&gt; {
+    const fakeDao = {
+      criar: () =&gt; Promise.resolve({ id: 1, titulo: 'X', concluida: false })
+    } as unknown as TarefaDao
+    expect(await new TarefaBo(fakeDao).criar({ titulo: 'X' }))
+      .toEqual({ id: 1, titulo: 'X', concluida: false })
+  })
+})</pre>
+              <pre><span class="c">// src/bo/tarefa.bo.ts</span>
+import type { TarefaDao } from '../dao/tarefa.dao'
+import type { CriaTarefa, TarefaVO } from '../models/vo/tarefa.vo'
+
+export class TarefaBo {
+  constructor(private readonly dao: TarefaDao) {}
+
+  async listar(): Promise&lt;TarefaVO[]&gt; {
+    const tarefas = await this.dao.listar()
+    return tarefas.map((t) =&gt; ({ id: t.id, titulo: t.titulo, concluida: t.concluida }))
+  }
+
+  async criar(input: CriaTarefa): Promise&lt;TarefaVO&gt; {
+    const t = await this.dao.criar(input.titulo)
+    return { id: t.id, titulo: t.titulo, concluida: t.concluida }
+  }
+}</pre>
+            </div>
+
+            <div class="step">
+              <h4>Controller — camada HTTP + validação</h4>
+              <p>Um router <a class="ext" href="https://hono.dev/docs/api/routing" target="_blank" rel="noopener">Hono</a>. O <code>validar</code> (veja Receitas) faz a validação cair no contrato de erro.</p>
+              <pre><span class="c">// src/controllers/tarefa.controller.ts</span>
+import { Hono } from 'hono'
+import { validar } from '../config/validar'
+import { criaTarefaSchema } from '../models/vo/tarefa.vo'
+import type { TarefaBo } from '../bo/tarefa.bo'
+
+export function tarefaController(bo: TarefaBo): Hono {
+  const router = new Hono()
+
+  router.get('/', async (c) =&gt; c.json(await bo.listar()))
+
+  router.post('/', validar('json', criaTarefaSchema), async (c) =&gt; {
+    const dados = c.req.valid('json')
+    return c.json(await bo.criar(dados), 201)
+  })
+
+  return router
+}</pre>
+            </div>
+
+            <div class="step">
+              <h4>Ligue tudo no <code>app.ts</code> (injeção de dependência)</h4>
+              <p>No <em>composition root</em>, instancie a cadeia e monte o router em <code>/api/tarefas</code>.</p>
+              <pre><span class="c">// src/app.ts — dentro de createApp(prisma)</span>
+const tarefaDao = new TarefaDao(prisma)
+const tarefaBo = new TarefaBo(tarefaDao)
+app.route('/api/tarefas', tarefaController(tarefaBo))</pre>
+            </div>
+
+            <div class="step">
+              <h4>Teste o endpoint de ponta a ponta</h4>
+              <p>Sem subir servidor: o <a class="ext" href="https://hono.dev/docs/getting-started/nodejs" target="_blank" rel="noopener">Hono</a> testa em processo com <code>app.request()</code>.</p>
+              <pre><span class="c">// test/tarefa.controller.test.ts</span>
+import { describe, expect, it } from 'vitest'
+import { prisma } from '../src/config/prisma'
+import { createApp } from '../src/app'
+
+describe('/api/tarefas', () =&gt; {
+  it('POST cria (201) e GET lista', async () =&gt; {
+    const app = createApp(prisma)
+    const r = await app.request('/api/tarefas', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ titulo: 'Estudar Prisma' })
+    })
+    expect(r.status).toBe(201)
+    const lista = await app.request('/api/tarefas')
+    expect(await lista.json()).toHaveLength(1)
+  })
+
+  it('POST sem título → 400 no contrato de erro', async () =&gt; {
+    const app = createApp(prisma)
+    const r = await app.request('/api/tarefas', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({})
+    })
+    expect(r.status).toBe(400)
+  })
+})</pre>
+            </div>
+
+            <div class="step">
+              <h4>Rode a esteira antes do PR</h4>
+              <pre>pnpm dc:check        <span class="c"># as camadas continuam respeitadas?</span>
+pnpm lint            <span class="c"># ESLint</span>
+pnpm typecheck       <span class="c"># tsc --noEmit</span>
+pnpm test:coverage   <span class="c"># verde + cobertura 70%</span></pre>
+            </div>
+          </div>
+
+          <div class="note">
+            <b>Pronto!</b> Você criou <code>GET</code> e <code>POST /api/tarefas</code> atravessando
+            Controller → BO → DAO → Prisma, com validação Zod e o contrato de erro padrão — tudo coberto por
+            testes.
+          </div>
+        </div>
+      </section>
+
+      <!-- ───────────────────────── RECEITAS ───────────────────────── -->
+      <section id="receitas">
+        <div class="panel">
+          <p class="eyebrow">Receitas do backend</p>
+          <h2>Receitas práticas</h2>
+          <p class="sub">Tarefas comuns do dia a dia, com o código mínimo.</p>
+          <div class="grid cols-2">
+            <div class="card recipe">
+              <h3>🧾 Validar entrada (Zod)</h3>
+              <p>Crie um helper que joga a falha de validação no <code>error-handler</code>:</p>
+              <pre><span class="c">// src/config/validar.ts</span>
+import { zValidator } from '@hono/zod-validator'
+import type { ZodSchema } from 'zod'
+
+type Alvo = 'json' | 'query' | 'param'
+
+export const validar = (alvo: Alvo, schema: ZodSchema) =&gt;
+  zValidator(alvo, schema, (r) =&gt; {
+    <span class="c">// vira ErroResponse 400 automaticamente</span>
+    if (!r.success) throw r.error
+  })</pre>
+              <p><a class="ext" href="https://github.com/honojs/middleware/tree/main/packages/zod-validator" target="_blank" rel="noopener">@hono/zod-validator</a></p>
+            </div>
+
+            <div class="card recipe">
+              <h3>🚨 Lançar erros de negócio</h3>
+              <p>Lance exceções; o <code>error-handler</code> (em <code>app.onError</code>) cuida do status e do corpo.</p>
+              <pre>import { ExcecaoNaoEncontrado } from '../exception/excecao-nao-encontrado'
+
+const tarefa = await this.dao.buscar(id)
+if (!tarefa) {
+  throw new ExcecaoNaoEncontrado('Tarefa ' + id + ' não existe')
+}
+<span class="c">// → 404 { timestamp, status, erro, mensagens }</span></pre>
+              <p><code>ExcecaoNaoEncontrado</code> → 404 · <code>ExcecaoValidacao</code> → 400 · <code>ExcecaoApp</code> → 500.</p>
+            </div>
+
+            <div class="card recipe">
+              <h3>🗄️ Criar / alterar migration</h3>
+              <pre>pnpm migrate:dev --name minha_mudanca
+pnpm exec prisma studio   <span class="c"># GUI do banco</span></pre>
+              <p>
+                <b>Nunca</b> edite uma migration já comitada — gere a próxima.
+                <a class="ext" href="https://www.prisma.io/docs/orm/prisma-migrate/workflows/development-and-production" target="_blank" rel="noopener">Workflows do Prisma Migrate</a>
+              </p>
+            </div>
+
+            <div class="card recipe">
+              <h3>🔎 Consultar dados (Prisma)</h3>
+              <pre>prisma.tarefa.findMany()
+prisma.tarefa.findUnique({ where: { id } })
+prisma.tarefa.create({ data: { titulo } })
+prisma.tarefa.update({ where: { id }, data: { concluida: true } })
+prisma.tarefa.delete({ where: { id } })</pre>
+              <p><a class="ext" href="https://www.prisma.io/docs/orm/prisma-client/queries/crud" target="_blank" rel="noopener">CRUD no Prisma Client</a></p>
+            </div>
+
+            <div class="card recipe">
+              <h3>🧪 Testar com banco</h3>
+              <p>
+                <code>test/global-setup.ts</code> recria e migra o <code>test.db</code> uma vez;
+                <code>test/setup.ts</code> limpa as tabelas entre os testes. Use DAO falso em testes de BO e o
+                <code>prisma</code> real em DAO/controller.
+              </p>
+              <p><a class="ext" href="https://vitest.dev/api/expect.html" target="_blank" rel="noopener">Asserções do Vitest</a></p>
+            </div>
+
+            <div class="card recipe">
+              <h3>🧩 Injeção de dependência</h3>
+              <p>
+                Quem instancia quem fica só no <code>app.ts</code> (composition root). As classes recebem suas
+                dependências no construtor — por isso são fáceis de testar (basta injetar um falso).
+              </p>
+              <p><a class="ext" href="https://martinfowler.com/articles/injection.html" target="_blank" rel="noopener">Inversion of Control & DI (Fowler)</a></p>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- ───────────────────────── TECNOLOGIAS ───────────────────────── -->
+      <section id="tecnologias">
+        <div class="panel">
+          <p class="eyebrow">Referência</p>
+          <h2>Tecnologias &amp; onde aprender</h2>
+          <p class="sub">
+            Nunca usou alguma delas? Os links levam à documentação oficial e a um bom ponto de partida — com
+            foco no backend.
+          </p>
+
+          <h3 style="font-size: 15px; margin: 0 0 10px">Backend</h3>
+          <table>
+            <thead><tr><th>Tecnologia</th><th>Papel no projeto</th><th>Comece por</th></tr></thead>
+            <tbody>
+              <tr><td><a class="ext" href="https://www.typescriptlang.org/docs/" target="_blank" rel="noopener">TypeScript</a></td><td>Linguagem de todo o backend</td><td><a class="ext" href="https://www.typescriptlang.org/docs/handbook/intro.html" target="_blank" rel="noopener">Handbook</a></td></tr>
+              <tr><td><a class="ext" href="https://nodejs.org/docs/latest-v22.x/api/" target="_blank" rel="noopener">Node.js 22</a></td><td>Runtime onde o servidor roda</td><td><a class="ext" href="https://nodejs.org/en/learn/getting-started/introduction-to-nodejs" target="_blank" rel="noopener">Introdução</a></td></tr>
+              <tr><td><a class="ext" href="https://tsx.is/" target="_blank" rel="noopener">tsx</a></td><td>Executa TypeScript direto, sem build</td><td><a class="ext" href="https://tsx.is/" target="_blank" rel="noopener">tsx.is</a></td></tr>
+              <tr><td><a class="ext" href="https://hono.dev/docs/" target="_blank" rel="noopener">Hono</a></td><td>Framework HTTP (rotas, middlewares)</td><td><a class="ext" href="https://hono.dev/docs/getting-started/nodejs" target="_blank" rel="noopener">Getting started (Node)</a></td></tr>
+              <tr><td><a class="ext" href="https://www.prisma.io/docs" target="_blank" rel="noopener">Prisma</a></td><td>ORM + migrations sobre SQLite</td><td><a class="ext" href="https://www.prisma.io/docs/getting-started/quickstart-sqlite" target="_blank" rel="noopener">Quickstart SQLite</a></td></tr>
+              <tr><td><a class="ext" href="https://www.sqlite.org/docs.html" target="_blank" rel="noopener">SQLite</a></td><td>Banco de dados local em arquivo</td><td><a class="ext" href="https://www.sqlite.org/lang.html" target="_blank" rel="noopener">SQL suportado</a></td></tr>
+              <tr><td><a class="ext" href="https://zod.dev/" target="_blank" rel="noopener">Zod</a></td><td>Validação e tipos dos DTOs</td><td><a class="ext" href="https://zod.dev/?id=basic-usage" target="_blank" rel="noopener">Basic usage</a></td></tr>
+              <tr><td><a class="ext" href="https://vitest.dev/" target="_blank" rel="noopener">Vitest</a></td><td>Testes + cobertura</td><td><a class="ext" href="https://vitest.dev/guide/" target="_blank" rel="noopener">Guia</a></td></tr>
+              <tr><td><a class="ext" href="https://eslint.org/docs/latest/" target="_blank" rel="noopener">ESLint</a></td><td>Lint (erros e estilo)</td><td><a class="ext" href="https://eslint.org/docs/latest/use/getting-started" target="_blank" rel="noopener">Getting started</a></td></tr>
+              <tr><td><a class="ext" href="https://prettier.io/docs/" target="_blank" rel="noopener">Prettier</a></td><td>Formatação automática</td><td><a class="ext" href="https://prettier.io/docs/options" target="_blank" rel="noopener">Opções</a></td></tr>
+              <tr><td><a class="ext" href="https://github.com/sverweij/dependency-cruiser" target="_blank" rel="noopener">dependency-cruiser</a></td><td>Regras de camadas (≈ ArchUnit)</td><td><a class="ext" href="https://github.com/sverweij/dependency-cruiser/blob/main/doc/rules-reference.md" target="_blank" rel="noopener">Rules reference</a></td></tr>
+              <tr><td><a class="ext" href="https://pnpm.io/" target="_blank" rel="noopener">pnpm</a></td><td>Gerenciador de pacotes (workspace)</td><td><a class="ext" href="https://pnpm.io/workspaces" target="_blank" rel="noopener">Workspaces</a></td></tr>
+              <tr><td><a class="ext" href="https://docs.docker.com/" target="_blank" rel="noopener">Docker</a></td><td>Empacota e roda o backend</td><td><a class="ext" href="https://docs.docker.com/get-started/" target="_blank" rel="noopener">Get started</a></td></tr>
+              <tr><td><a class="ext" href="https://docs.anthropic.com/" target="_blank" rel="noopener">Anthropic Claude</a></td><td>API de IA que gera as apresentações</td><td><a class="ext" href="https://docs.anthropic.com/en/api/overview" target="_blank" rel="noopener">API overview</a></td></tr>
+            </tbody>
+          </table>
+
+          <h3 style="font-size: 15px; margin: 24px 0 10px">Frontend</h3>
+          <table>
+            <thead><tr><th>Tecnologia</th><th>Papel</th><th>Comece por</th></tr></thead>
+            <tbody>
+              <tr><td><a class="ext" href="https://www.electronjs.org/docs/latest" target="_blank" rel="noopener">Electron</a></td><td>Shell desktop (main/preload/renderer)</td><td><a class="ext" href="https://www.electronjs.org/docs/latest/tutorial/quick-start" target="_blank" rel="noopener">Quick start</a></td></tr>
+              <tr><td><a class="ext" href="https://react.dev/" target="_blank" rel="noopener">React 19</a></td><td>Interface (UI)</td><td><a class="ext" href="https://react.dev/learn" target="_blank" rel="noopener">Learn React</a></td></tr>
+              <tr><td><a class="ext" href="https://tanstack.com/router/latest" target="_blank" rel="noopener">TanStack Router</a></td><td>Roteamento file-based</td><td><a class="ext" href="https://tanstack.com/router/latest/docs/framework/react/quick-start" target="_blank" rel="noopener">Quick start</a></td></tr>
+              <tr><td><a class="ext" href="https://tanstack.com/query/latest" target="_blank" rel="noopener">TanStack Query</a></td><td>Estado do servidor e cache (data fetching)</td><td><a class="ext" href="https://tanstack.com/query/latest/docs/framework/react/overview" target="_blank" rel="noopener">Overview</a></td></tr>
+              <tr><td><a class="ext" href="https://tailwindcss.com/docs" target="_blank" rel="noopener">Tailwind CSS v4</a></td><td>CSS utilitário (utility-first)</td><td><a class="ext" href="https://tailwindcss.com/docs/styling-with-utility-classes" target="_blank" rel="noopener">Utility classes</a></td></tr>
+              <tr><td><a class="ext" href="https://ui.shadcn.com/" target="_blank" rel="noopener">shadcn/ui</a></td><td>Componentes base</td><td><a class="ext" href="https://ui.shadcn.com/docs" target="_blank" rel="noopener">Docs</a></td></tr>
+              <tr><td><a class="ext" href="https://microsoft.github.io/monaco-editor/" target="_blank" rel="noopener">Monaco</a></td><td>Editor de Markdown</td><td><a class="ext" href="https://microsoft.github.io/monaco-editor/docs.html" target="_blank" rel="noopener">Docs</a></td></tr>
+            </tbody>
+          </table>
+
+          <h3 style="font-size: 15px; margin: 24px 0 10px">Conceitos</h3>
+          <table>
+            <tbody>
+              <tr><td><a class="ext" href="https://martinfowler.com/bliki/TestDrivenDevelopment.html" target="_blank" rel="noopener">TDD</a></td><td>Escrever o teste antes do código.</td></tr>
+              <tr><td><a class="ext" href="https://martinfowler.com/articles/injection.html" target="_blank" rel="noopener">Injeção de dependência</a></td><td>Por que passamos o DAO/BO no construtor.</td></tr>
+              <tr><td><a class="ext" href="https://en.wikipedia.org/wiki/Multitier_architecture" target="_blank" rel="noopener">Arquitetura em camadas</a></td><td>O fluxo Controller → BO → DAO.</td></tr>
+              <tr><td><a class="ext" href="https://oklch.com/" target="_blank" rel="noopener">OKLCH</a></td><td>O sistema de cores dos design tokens.</td></tr>
+            </tbody>
+          </table>
+        </div>
+      </section>
+
+      <!-- ───────────────────────── DESIGN SYSTEM ───────────────────────── -->
+      <section id="design">
+        <div class="panel">
+          <p class="eyebrow">Design System</p>
+          <h2>O tema do produto</h2>
+          <p class="sub">
+            Esta página usa exatamente os mesmos tokens da aplicação (cores OKLch, fontes Geist + JetBrains
+            Mono, sombras e raios), definidos em
+            <code>frontend/src/renderer/src/shared/styles/main.css</code>. Use o botão 🌗 no topo para ver
+            claro/escuro. <b>Nunca</b> use cores fixas no código — sempre os tokens.
+          </p>
+          <h3 style="font-size: 15px; margin: 0 0 12px">As quatro cores</h3>
+          <div class="swatches">
+            <div class="sw">
+              <div class="chip" style="background: var(--primary)"></div>
+              <div class="meta"><b>Primary</b><span>violeta · play</span></div>
+            </div>
+            <div class="sw">
+              <div class="chip" style="background: var(--secondary)"></div>
+              <div class="meta"><b>Secondary</b><span>rosa quente</span></div>
+            </div>
+            <div class="sw">
+              <div class="chip" style="background: var(--tertiary)"></div>
+              <div class="meta"><b>Tertiary</b><span>âmbar · sparkle</span></div>
+            </div>
+            <div class="sw">
+              <div class="chip" style="background: var(--quaternary)"></div>
+              <div class="meta"><b>Quaternary</b><span>menta</span></div>
+            </div>
+          </div>
+          <h3 style="font-size: 15px; margin: 22px 0 8px">O gradiente AI</h3>
+          <div class="gradient-bar"></div>
+          <div class="grid cols-3" style="margin-top: 22px">
+            <div class="card">
+              <span class="ico">🔤</span>
+              <h3>Tipografia</h3>
+              <p><b>Geist</b> para texto e títulos; <b>JetBrains Mono</b> para código. Tracking levemente negativo.</p>
+            </div>
+            <div class="card">
+              <span class="ico">📐</span>
+              <h3>Formas</h3>
+              <p>Raios: 10px (botões), 16px (cards), 24px (superfícies), 32px (o painel flutuante).</p>
+            </div>
+            <div class="card">
+              <span class="ico">🌗</span>
+              <h3>Claro &amp; escuro</h3>
+              <p>Tudo via tokens — alternados pela classe <code>.dark</code> no <code>&lt;html&gt;</code>.</p>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- ───────────────────────── COMO RODAR ───────────────────────── -->
+      <section id="rodar">
+        <div class="panel">
+          <p class="eyebrow">Primeiros passos</p>
+          <h2>Como rodar</h2>
+          <p class="sub">Pré-requisitos: Node.js 22+ e pnpm (via <code>corepack enable</code>). Tudo a partir da raiz do monorepo.</p>
+          <div class="grid cols-2">
+            <div>
+              <h3 style="font-size: 15px; margin: 0 0 10px">Frontend</h3>
+              <pre>pnpm install        <span class="c"># instala tudo</span>
+pnpm dev            <span class="c"># Electron com HMR</span>
+pnpm dev:web        <span class="c"># só o renderer no navegador</span>
+pnpm build          <span class="c"># typecheck + build</span></pre>
+            </div>
+            <div>
+              <h3 style="font-size: 15px; margin: 0 0 10px">Backend</h3>
+              <pre>pnpm dev:backend    <span class="c"># API em http://localhost:8080</span>
+pnpm test:backend   <span class="c"># testes (Vitest)</span>
+
+<span class="c"># dentro de backend/</span>
+pnpm dc:check       <span class="c"># regras de camadas</span>
+pnpm migrate:dev --name x</pre>
+            </div>
+          </div>
+          <h3 style="font-size: 15px; margin: 22px 0 10px">Docker (backend)</h3>
+          <pre>docker compose up -d --build   <span class="c"># constrói e sobe (porta 8080)</span>
+docker compose logs -f backend
+docker compose down            <span class="c"># derruba mantendo o banco (volume)</span></pre>
+        </div>
+      </section>
+
+      <!-- ───────────────────────── CONVENÇÕES ───────────────────────── -->
+      <section id="convencoes">
+        <div class="panel">
+          <p class="eyebrow">Para contribuir</p>
+          <h2>Convenções do time</h2>
+          <div class="grid cols-2">
+            <div>
+              <h3 style="font-size: 15px; margin: 0 0 10px">Git &amp; PRs</h3>
+              <ul class="clean">
+                <li>Branches com prefixo: <b>feature/</b>, <b>fix/</b>, <b>chore/</b>, <b>refactor/</b>, <b>docs/</b>, <b>test/</b>.</li>
+                <li>Título do PR espelha o tipo: <code>feat:</code>, <code>fix:</code>, etc.</li>
+                <li>Um PR = um objetivo claro. A <b>main</b> sempre funcionando.</li>
+                <li>Nunca adicionar IA como co-autora de commits.</li>
+              </ul>
+            </div>
+            <div>
+              <h3 style="font-size: 15px; margin: 0 0 10px">Qualidade</h3>
+              <ul class="clean">
+                <li><b>Toda nova tela/componente</b> precisa de proposta de design aprovada antes do código.</li>
+                <li>Sempre usar <b>design tokens</b>; precisa funcionar em claro e escuro.</li>
+                <li>Arquivos pequenos, sem duplicação — reutilizar antes de criar.</li>
+                <li>Backend é <b>TDD</b>; CI: estilo → arquitetura → testes (cobertura 70%).</li>
+              </ul>
+            </div>
+          </div>
+          <div class="note">
+            <b>Fonte da verdade:</b> o <code>CLAUDE.md</code> na raiz detalha stack, mapa de telas, decisões
+            fechadas e todas as convenções. Em caso de dúvida, ele prevalece.
+          </div>
+        </div>
+      </section>
+    </div>
+
+    <footer>
+      <div class="wrap">
+        <p>
+          <strong>Apresenta.AI</strong> · Projeto de Programação Orientada a Objetos — IFAL<br />
+          Andrezza Abreu · Carlos Henrique Roque · Eduardo Calado · Eliezir Moreira · Maria Luísa Alaquoke ·
+          Thomas Pinheiro · Orientador: Prof. Fernando Kenji Kamei
+        </p>
+      </div>
+    </footer>
+
+    <script>
+      // Tema: respeita a preferência do sistema e lembra a escolha (localStorage).
+      ;(function () {
+        const root = document.documentElement
+        const saved = localStorage.getItem('apai-docs-theme')
+        const prefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches
+        if (saved === 'dark' || (!saved && prefersDark)) root.classList.add('dark')
+        document.getElementById('themeToggle').addEventListener('click', function () {
+          root.classList.toggle('dark')
+          localStorage.setItem('apai-docs-theme', root.classList.contains('dark') ? 'dark' : 'light')
+        })
+      })()
+    </script>
+  </body>
+</html>

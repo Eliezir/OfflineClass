@@ -1,0 +1,14 @@
+node_modules
+dist
+out
+.DS_Store
+.eslintcache
+*.log*
+*.tsbuildinfo
+
+# TanStack Router generated route tree
+src/renderer/src/routeTree.gen.ts
+
+# Catálogos compilados do Lingui — os .po são importados direto pelo vite-plugin;
+# os .js são apenas artefatos de validação (lingui compile no CI).
+src/renderer/src/locales/*.js
