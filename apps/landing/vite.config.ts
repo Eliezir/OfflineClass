@@ -4,9 +4,9 @@ import { defineConfig, type Plugin } from 'vite'
 import react from '@vitejs/plugin-react'
 import tailwindcss from '@tailwindcss/vite'
 
-// GitHub Pages serves this project at /apresenta.ai/. In dev we use '/' so
+// GitHub Pages serves this project at /OfflineClass/. In dev we use '/' so
 // localhost is clean. The router reads import.meta.env.BASE_URL for its basename.
-const PAGES_BASE = '/apresenta.ai/'
+const PAGES_BASE = '/OfflineClass/'
 
 // Known client-side routes. Each gets a static index.html shell so GitHub Pages
 // serves it with HTTP 200 (crawlable/indexable) instead of a soft-404.

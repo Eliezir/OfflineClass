@@ -1,5 +1,5 @@
 {
-  "intro": "Guia rápido para começar com o Apresenta.AI. Todo o conteúdo desta seção vive em `content/docs.json` — edite o arquivo para adaptar, sem mexer no código.",
+  "intro": "Guia rápido para começar com o OfflineClass. Todo o conteúdo desta seção vive em `content/docs.json` — edite o arquivo para adaptar, sem mexer no código.",
   "sections": [
     {
       "id": "primeiros-passos",
@@ -14,89 +14,79 @@
             "- **macOS** — arquivo `.dmg`",
             "- **Windows** — instalador `.exe`",
             "- **Linux** — `.AppImage`, `.deb` ou `.rpm`",
-            "Na primeira execução o app já vem com o provedor **Mock** ativo, então você pode explorar tudo sem configurar credenciais."
+            "O app roda inteiramente offline — nada precisa de internet para funcionar."
           ]
         },
         {
-          "id": "primeiro-projeto",
-          "title": "Seu primeiro projeto",
+          "id": "conta-professor",
+          "title": "Conta de professor",
           "body": [
-            "1. Abra o app e vá em **Projetos → Novo**.",
-            "2. Comece em branco ou a partir de um template de Markdown da sua biblioteca.",
-            "3. Escreva o conteúdo livremente na aba **Conteúdo**.",
-            "4. Deixe a IA estruturar o roteiro e refine conversando na aba **Roteiro**.",
-            "5. Escolha um **modelo visual**, ajuste os presets e clique em **Gerar**."
+            "Na primeira execução, crie sua conta local de professor (nome, e-mail e senha).",
+            "As contas e provas ficam **somente no seu computador**. Um mesmo computador suporta várias contas de professor, com dados isolados.",
+            "Não há login na nuvem por padrão — o sync é opcional e opt-in (veja **Sync opcional**)."
+          ]
+        }
+      ]
+    },
+    {
+      "id": "rede",
+      "title": "Rede da sala",
+      "articles": [
+        {
+          "id": "como-funciona-a-rede",
+          "title": "Como a rede funciona",
+          "body": [
+            "Ao iniciar uma sessão, o computador do professor sobe um **servidor local** que atende os alunos pela Wi-Fi da sala.",
+            "Os alunos entram pelo navegador do PC — escaneando o **QR code** na tela do professor ou pelo endereço anunciado via **mDNS** (`offlineclass.local`).",
+            "> Nenhum dado trafega pela internet. É a garantia LAN-only que sustenta o anti-cheat básico.",
+            "Alunos usam **PCs** na mesma Wi-Fi (desktops de laboratório ou notebooks). Celulares não são suportados de propósito."
           ]
         }
       ]
     },
     {
       "id": "fluxo",
-      "title": "O fluxo de criação",
+      "title": "Aplicando uma avaliação",
       "articles": [
         {
-          "id": "conteudo-para-roteiro",
-          "title": "Do conteúdo ao roteiro",
+          "id": "criar-prova",
+          "title": "Criar a prova",
           "body": [
-            "O Apresenta.AI separa **o que** você quer dizer de **como** isso vira slides.",
-            "Você escreve em texto corrido; a IA converte em um roteiro Markdown organizado em seções, tópicos e transições. O editor é o mesmo Monaco nas abas de Conteúdo e Roteiro — com preview em tempo real e auto-save.",
-            "> Refinar é conversacional: peça para reescrever um trecho, dividir uma seção ou gerar mais conteúdo, e itere até aprovar."
+            "Em **Provas → Nova**, monte a avaliação num form builder único.",
+            "Adicione questões de sete tipos — múltipla escolha, V/F, resposta curta, dissertativa, código, ordenação e associação — e blocos de material de apoio (PDF, imagem, vídeo, link) inline.",
+            "Cada questão tem um valor em pontos; a nota é a soma dos pontos das questões corretas."
           ]
         },
         {
-          "id": "geracao",
-          "title": "Geração e histórico",
+          "id": "abrir-sessao",
+          "title": "Abrir a sessão",
           "body": [
-            "Com o roteiro aprovado, a geração produz **HTML real** — não uma imagem ou PDF, mas uma página com animações, transições e componentes interativos.",
-            "Cada geração fica salva no histórico do projeto. Você pode:",
-            "- Regerar com um **modelo visual** diferente",
-            "- Comparar duas versões lado a lado",
-            "- Abrir qualquer versão no **apresentador em tela cheia**"
+            "Inicie uma sessão para a prova: escolha o **modo de formação de grupos** (livre, designado ou sorteio), a **duração** e as regras.",
+            "A sessão passa por **lobby → em andamento → encerrada**. No lobby os alunos entram e formam grupos; ao iniciar, a composição trava e o cronômetro começa.",
+            "Acompanhe tudo no **painel ao vivo** — e abra a **vista de projetor** para a turma."
+          ]
+        },
+        {
+          "id": "corrigir-exportar",
+          "title": "Corrigir & exportar",
+          "body": [
+            "Questões objetivas são corrigidas automaticamente. Dissertativas e código você corrige manualmente, com campo de comentário por questão.",
+            "Exporte os resultados localmente em **CSV/JSON** — e, opcionalmente, envie as notas por e-mail via cloud (quando vinculado)."
           ]
         }
       ]
     },
     {
-      "id": "biblioteca",
-      "title": "Biblioteca e modelos",
+      "id": "sync",
+      "title": "Sync opcional",
       "articles": [
         {
-          "id": "modelos-visuais",
-          "title": "Modelos visuais",
+          "id": "stay-local",
+          "title": "Offline-first por padrão",
           "body": [
-            "Um modelo visual define a **identidade** das suas apresentações: paleta de cores, tipografia e um template HTML base reutilizável.",
-            "Você tem CRUD completo, com preview usando conteúdo de exemplo, e pode trocar o modelo de um projeto a qualquer momento."
-          ]
-        },
-        {
-          "id": "templates-markdown",
-          "title": "Templates de Markdown",
-          "body": [
-            "Salve roteiros recorrentes como **templates** reutilizáveis numa biblioteca pessoal pesquisável.",
-            "Ao criar um projeto novo, parta de um template para já começar com a estrutura pronta."
-          ]
-        }
-      ]
-    },
-    {
-      "id": "ia",
-      "title": "Provedores de IA",
-      "articles": [
-        {
-          "id": "configurar-claude",
-          "title": "Configurar o Claude",
-          "body": [
-            "Em **Configurações → Provedores de IA**, cadastre sua credencial da Anthropic.",
-            "A chave de API é protegida com **BCrypt** antes de ser guardada localmente no SQLite — o app é single-user e roda na sua máquina, sem login.",
-            "Use o botão de **testar conexão** para validar a credencial antes de gerar."
-          ]
-        },
-        {
-          "id": "mock",
-          "title": "Provedor Mock",
-          "body": [
-            "O provedor **Mock** acompanha o app desde o primeiro uso. Ele simula respostas da IA para você explorar o fluxo completo sem gastar créditos nem configurar nada.",
-            "Troque para o Claude quando quiser resultados reais."
+            "Na primeira instalação o app fica em modo **somente local**: zero chamadas à nuvem, zero notificações.",
+            "O sync é **opt-in**. Quando quiser, vincule uma conta na nuvem pelo indicador de sync para fazer backup das provas e upload dos resultados.",
+            "Mesmo vinculado, o sync é sempre **manual** — nunca uma dependência de runtime."
           ]
         }
       ]

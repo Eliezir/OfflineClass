@@ -12,9 +12,9 @@ export function Footer() {
         <div className="grid gap-10 md:grid-cols-[1.5fr_1fr_1fr]">
           <div>
             <Link to="/" className="flex items-center gap-2 font-semibold">
-              <Logo className="size-7" />
+              <Logo className="size-10" />
               <span>
-                Apresenta<span className="text-primary">.AI</span>
+                Offline<span className="text-primary">Class</span>
               </span>
             </Link>
             <p className="mt-3 max-w-xs text-sm text-muted-foreground">

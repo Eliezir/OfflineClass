@@ -1,35 +1,29 @@
 import {
-  Sparkles,
-  MessagesSquare,
-  Palette,
-  Code2,
-  Presentation,
-  History,
-  PenLine,
-  KeyRound,
+  WifiOff,
+  ListChecks,
+  Users,
+  QrCode,
+  Activity,
+  BarChart3,
+  Cloud,
+  RadioTower,
+  PlugZap,
   Apple,
   Monitor,
   Terminal,
-  ListChecks,
-  GalleryHorizontalEnd,
-  ZoomIn,
-  Keyboard,
-  SunMoon,
-  Languages,
   type LucideIcon,
 } from 'lucide-react'
 import { BlurFade } from '@/components/magicui/blur-fade'
 import { AnimatedShinyText } from '@/components/magicui/animated-shiny-text'
 
 export const FEATURE_ICONS: Record<string, LucideIcon> = {
-  sparkles: Sparkles,
-  chat: MessagesSquare,
-  palette: Palette,
-  code: Code2,
-  present: Presentation,
-  history: History,
-  editor: PenLine,
-  key: KeyRound,
+  offline: WifiOff,
+  types: ListChecks,
+  groups: Users,
+  join: QrCode,
+  panel: Activity,
+  results: BarChart3,
+  sync: Cloud,
 }
 
 export const PLATFORM_ICONS: Record<string, LucideIcon> = {
@@ -39,12 +33,12 @@ export const PLATFORM_ICONS: Record<string, LucideIcon> = {
 }
 
 export const INTERACTIVE_ICONS: Record<string, LucideIcon> = {
-  quiz: ListChecks,
-  carousel: GalleryHorizontalEnd,
-  zoom: ZoomIn,
-  shortcuts: Keyboard,
-  theme: SunMoon,
-  language: Languages,
+  realtime: RadioTower,
+  join: QrCode,
+  groups: Users,
+  panel: Activity,
+  reconnect: PlugZap,
+  offline: WifiOff,
 }
 
 export function SectionHeading({

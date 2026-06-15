@@ -55,9 +55,9 @@ export function Download() {
       />
       <div className="container-page">
         <BlurFade>
-          <Logo className="mx-auto size-14 drop-shadow-sm" />
+          <Logo className="mx-auto size-28 drop-shadow-sm sm:size-32" />
           <h2 className="mt-6 text-3xl font-semibold tracking-tight text-balance sm:text-5xl">
-            Baixe e comece a criar.
+            Baixe e comece a aplicar.
           </h2>
           <p className="mx-auto mt-4 max-w-md text-lg text-muted-foreground text-pretty">
             Roda localmente na sua máquina. Disponível para macOS, Windows e Linux.

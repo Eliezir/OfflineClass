@@ -11,12 +11,12 @@ export function Logo({ className }: { className?: string }) {
     <span className={cn('inline-block', className)}>
       <img
         src={asset('assets/logo.png')}
-        alt="Apresenta.AI"
+        alt="OfflineClass"
         className="block size-full dark:hidden"
       />
       <img
         src={asset('assets/logo-dark.png')}
-        alt="Apresenta.AI"
+        alt="OfflineClass"
         className="hidden size-full dark:block"
       />
     </span>

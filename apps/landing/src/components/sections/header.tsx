@@ -37,9 +37,9 @@ export function Header() {
           )}
         >
           <Link to="/" className="flex shrink-0 items-center gap-2 font-semibold">
-            <Logo className="size-7" />
+            <Logo className="size-9" />
             <span className="text-[0.95rem]">
-              Apresenta<span className="text-primary">.AI</span>
+              Offline<span className="text-primary">Class</span>
             </span>
           </Link>
 

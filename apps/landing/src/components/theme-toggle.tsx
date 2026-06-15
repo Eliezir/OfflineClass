@@ -12,7 +12,7 @@ export function ThemeToggle() {
   useEffect(() => {
     document.documentElement.classList.toggle('dark', dark)
     try {
-      localStorage.setItem('apai-theme', dark ? 'dark' : 'light')
+      localStorage.setItem('offlineclass-theme', dark ? 'dark' : 'light')
     } catch {
       /* ignore */
     }

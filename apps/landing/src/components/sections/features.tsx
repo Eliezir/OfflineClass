@@ -1,50 +1,42 @@
-import { BentoGrid, BentoCard } from '@/components/magicui/bento-grid'
-import { DotPattern } from '@/components/magicui/dot-pattern'
+import { WifiOff } from 'lucide-react'
 import { BlurFade } from '@/components/magicui/blur-fade'
 import { SectionHeading, FEATURE_ICONS } from './shared'
-import { cn } from '@/lib/utils'
-import { Sparkles } from 'lucide-react'
 import { site } from '@/content'
+
+const ACCENT: Record<string, string> = {
+  primary: 'bg-primary/12 text-primary',
+  secondary: 'bg-lime/15 text-lime',
+  tertiary: 'bg-amber/15 text-amber',
+  quaternary: 'bg-coral/15 text-coral',
+}
 
 export function Features() {
   return (
     <section id="recursos" className="container-page scroll-mt-24 py-20 sm:py-28">
       <SectionHeading
         eyebrow="Recursos"
-        title="Tudo que você precisa, do rascunho ao palco"
-        description="Um fluxo único: escreva, deixe a IA estruturar, refine conversando e gere HTML interativo de verdade."
+        title="Tudo que a sala precisa, sem depender da internet"
+        description="Da autoria da prova ao painel ao vivo: um app offline-first que roda na rede local da sua sala de aula."
       />
 
-      <BlurFade delay={0.2} className="mt-12">
-        <BentoGrid>
-          {site.features.map((f, i) => {
-            const Icon = FEATURE_ICONS[f.icon] ?? Sparkles
-            const wide = f.span === 'wide'
-            return (
-              <BentoCard
-                key={f.title}
-                name={f.title}
-                description={f.body}
-                Icon={Icon}
-                className={cn(wide && 'lg:col-span-2')}
-                background={
-                  <DotPattern
-                    width={18}
-                    height={18}
-                    cx={1}
-                    cy={1}
-                    cr={1}
-                    className={cn(
-                      'absolute inset-0 opacity-50 [mask-image:radial-gradient(280px_circle_at_top_right,white,transparent)]',
-                      i % 2 === 0 ? 'fill-primary/15' : 'fill-foreground/10',
-                    )}
-                  />
-                }
-              />
-            )
-          })}
-        </BentoGrid>
-      </BlurFade>
+      <div className="mt-12 grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+        {site.features.map((f, i) => {
+          const Icon = FEATURE_ICONS[f.icon] ?? WifiOff
+          return (
+            <BlurFade key={f.title} delay={0.05 * i}>
+              <div className="h-full rounded-2xl border border-border bg-card p-6 transition-colors hover:border-primary/40">
+                <span
+                  className={`grid size-11 place-items-center rounded-xl ${ACCENT[f.accent] ?? ACCENT.primary}`}
+                >
+                  <Icon className="size-5" />
+                </span>
+                <h3 className="mt-4 text-lg font-bold">{f.title}</h3>
+                <p className="mt-2 text-sm text-muted-foreground text-pretty">{f.body}</p>
+              </div>
+            </BlurFade>
+          )
+        })}
+      </div>
     </section>
   )
 }

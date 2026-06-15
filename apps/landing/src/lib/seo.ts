@@ -1,23 +1,23 @@
-const SITE_URL = 'https://eliezir.github.io/apresenta.ai'
+const SITE_URL = 'https://eliezir.github.io/OfflineClass'
 
 const ROUTE_SEO: Record<string, { title: string; description: string }> = {
   '/': {
-    title: 'Apresenta.AI — Apresentações interativas em HTML, criadas com IA',
+    title: 'OfflineClass — Provas em grupo, ao vivo, sem internet',
     description:
-      'App desktop que transforma ideias em apresentações HTML interativas — quizzes, zoom, animações e troca de tema. Mais que slides: uma experiência criada com IA.',
+      'App desktop para aplicar avaliações colaborativas na rede local da sala. O professor hospeda, os alunos entram pela Wi-Fi e respondem em grupo, em tempo real — sem depender da internet.',
   },
   '/download': {
-    title: 'Download — Apresenta.AI',
+    title: 'Download — OfflineClass',
     description:
-      'Baixe o Apresenta.AI para macOS, Windows ou Linux e comece a criar apresentações HTML interativas.',
+      'Baixe o OfflineClass para macOS, Windows ou Linux e comece a aplicar avaliações na rede local da sua sala.',
   },
   '/releases': {
-    title: 'Releases — Apresenta.AI',
-    description: 'Histórico de versões e notas de cada release do Apresenta.AI.',
+    title: 'Releases — OfflineClass',
+    description: 'Histórico de versões e notas de cada release do OfflineClass.',
   },
   '/docs': {
-    title: 'Documentação — Apresenta.AI',
-    description: 'Guia rápido para começar com o Apresenta.AI e criar sua primeira apresentação.',
+    title: 'Documentação — OfflineClass',
+    description: 'Guia rápido para instalar o OfflineClass e aplicar sua primeira avaliação na rede local.',
   },
 }
 
