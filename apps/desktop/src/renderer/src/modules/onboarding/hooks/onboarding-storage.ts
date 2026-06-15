@@ -1,4 +1,4 @@
-const ONBOARDING_DONE_KEY = 'apresenta:onboarding-done'
+const ONBOARDING_DONE_KEY = 'offlineclass:onboarding-done'
 
 /** Whether the user has finished (or skipped) onboarding before. Persisted in
     localStorage, which survives restarts in the packaged app. */
