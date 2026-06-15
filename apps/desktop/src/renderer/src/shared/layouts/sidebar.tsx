@@ -1,15 +1,16 @@
-import { useRef, useState } from 'react'
-import { Home, LayoutGrid, Palette, Presentation, Search, Server, Settings } from 'lucide-react'
+import { useState } from 'react'
+import { ChartColumn, ClipboardList, House, Radio, Search, Settings } from 'lucide-react'
 import { Link, useNavigate, useRouterState } from '@tanstack/react-router'
 import { msg } from '@lingui/core/macro'
 import { Trans, useLingui } from '@lingui/react/macro'
 import type { MessageDescriptor } from '@lingui/core'
+import logo from '@renderer/shared/assets/logo-icon.png'
 import { Popover, PopoverContent, PopoverItem, PopoverTrigger } from '@renderer/shared/ui/popover'
-import { SlidingHighlight } from '@renderer/shared/ui/sliding-highlight'
-import { cn, usesCustomWindowChrome } from '@renderer/shared/utils'
+import { cn } from '@renderer/shared/utils'
+import { WindowControls } from '@renderer/shared/layouts/window-controls'
 import { NotificationsMenu } from './notifications-menu'
 
-type NavTo = '/home' | '/projects' | '/themes' | '/slides-models' | '/provedores' | '/settings'
+type NavTo = '/home' | '/provas' | '/sessao' | '/resultados' | '/settings'
 
 type NavItem = {
   label: MessageDescriptor
@@ -19,16 +20,10 @@ type NavItem = {
 }
 
 const primaryNav: NavItem[] = [
-  { label: msg`Home`, caption: msg`Painel inicial`, icon: Home, to: '/home' },
-  { label: msg`Projetos`, caption: msg`Suas apresentações`, icon: LayoutGrid, to: '/projects' },
-  { label: msg`Temas`, caption: msg`Cores, fontes e tom`, icon: Palette, to: '/themes' },
-  {
-    label: msg`Modelos de Slides`,
-    caption: msg`Estruturas de slides`,
-    icon: Presentation,
-    to: '/slides-models'
-  },
-  { label: msg`Provedores`, caption: msg`Conexões de IA`, icon: Server, to: '/provedores' }
+  { label: msg`Início`, caption: msg`Painel inicial`, icon: House, to: '/home' },
+  { label: msg`Provas`, caption: msg`Suas avaliações`, icon: ClipboardList, to: '/provas' },
+  { label: msg`Sessão`, caption: msg`Aplicar ao vivo`, icon: Radio, to: '/sessao' },
+  { label: msg`Resultados`, caption: msg`Notas e relatórios`, icon: ChartColumn, to: '/resultados' }
 ]
 
 const settingsNav: NavItem = {
@@ -59,7 +54,7 @@ function SearchPopover(): React.JSX.Element {
         <button
           type="button"
           className={cn(
-            'flex h-10 w-full items-center gap-2 rounded-[10px] border border-input-border bg-input px-3',
+            'flex h-10 w-full items-center gap-2 rounded-[12px] border border-input-border bg-muted/50 px-3',
             'text-left text-sm text-muted-foreground',
             'shadow-[var(--edge-soft)] transition-[box-shadow,border-color] duration-150 outline-none',
             'hover:border-ring/40',
@@ -68,7 +63,7 @@ function SearchPopover(): React.JSX.Element {
           )}
         >
           <Search className="size-4 shrink-0" />
-          <span className="flex-1 truncate">{t`Buscar projetos, templates…`}</span>
+          <span className="flex-1 truncate">{t`Buscar…`}</span>
           <kbd className="rounded-[6px] border border-border bg-muted px-1.5 py-0.5 font-mono text-[10px] font-medium text-muted-foreground">
             ⌘K
           </kbd>
@@ -96,17 +91,17 @@ function SearchPopover(): React.JSX.Element {
 function NavRow({ item, active }: { item: NavItem; active: boolean }): React.JSX.Element {
   const { i18n } = useLingui()
   const rowClass = cn(
-    'relative z-10 flex w-full items-center gap-3 rounded-[8px] px-2 py-1.5 text-sm font-medium',
+    'flex w-full items-center gap-3 rounded-[10px] px-2.5 py-2 text-sm font-bold',
     'transition-colors duration-200 [transition-timing-function:var(--ease-out)]',
     active
-      ? 'text-foreground'
-      : 'text-foreground/75 hover:bg-foreground/[0.06] hover:text-foreground dark:hover:bg-foreground/[0.05]'
+      ? 'bg-primary-soft text-primary'
+      : 'text-foreground/70 hover:bg-foreground/[0.05] hover:text-foreground'
   )
 
   return (
     <Link to={item.to} className={rowClass} data-active={active ? 'true' : undefined}>
-      <span className="grid size-7 shrink-0 place-items-center">
-        <item.icon className="size-4" />
+      <span className="grid size-6 shrink-0 place-items-center">
+        <item.icon className="size-[18px]" />
       </span>
       <span className="truncate">{i18n._(item.label)}</span>
     </Link>
@@ -115,25 +110,31 @@ function NavRow({ item, active }: { item: NavItem; active: boolean }): React.JSX
 
 export function Sidebar(): React.JSX.Element {
   const pathname = useRouterState({ select: (s) => s.location.pathname })
-  const primaryNavRef = useRef<HTMLElement>(null)
-  // On Windows/Linux notifications + drag live in the topbar; on macOS/web the
-  // sidebar keeps its own top bar (which also clears the traffic lights).
-  const hasTopBar = usesCustomWindowChrome()
 
   return (
     <aside
-      className="flex h-full w-64 shrink-0 flex-col overflow-hidden text-foreground"
+      className="flex h-full w-64 shrink-0 flex-col overflow-hidden border-r border-border text-foreground"
       style={dragRegion}
     >
-      {hasTopBar ? (
-        <div className="h-3 shrink-0" />
-      ) : (
-        <div className="flex h-12 shrink-0 items-center justify-end pr-2" style={noDragRegion}>
+      {/* Chrome row — notifications + (frameless) min/max/close. The native
+          macOS traffic lights sit over its empty left edge; the row itself stays
+          draggable, only the buttons opt out. */}
+      <div className="flex h-11 shrink-0 items-center justify-end px-2">
+        <div className="flex items-center gap-0.5" style={noDragRegion}>
           <NotificationsMenu />
+          <WindowControls />
         </div>
-      )}
+      </div>
 
-      <div className="px-3 pt-1 pb-3" style={noDragRegion}>
+      {/* Brand — doubles as a window-drag handle (no no-drag override). */}
+      <div className="flex items-center gap-2.5 px-4 pt-1 pb-3">
+        <img src={logo} alt="" aria-hidden draggable={false} className="size-7 select-none" />
+        <span className="font-display text-[17px] font-extrabold tracking-tight">
+          Offline<span className="text-primary">Class</span>
+        </span>
+      </div>
+
+      <div className="px-3 pb-3" style={noDragRegion}>
         <SearchPopover />
       </div>
 
@@ -144,15 +145,9 @@ export function Sidebar(): React.JSX.Element {
       </div>
 
       <nav
-        ref={primaryNavRef}
-        className="scrollbar-subtle relative flex-1 space-y-0.5 overflow-y-auto px-3"
+        className="scrollbar-subtle flex-1 space-y-0.5 overflow-y-auto px-3"
         style={noDragRegion}
       >
-        <SlidingHighlight
-          containerRef={primaryNavRef}
-          deps={[pathname]}
-          className="right-3 left-3 rounded-[8px] border border-border bg-card shadow-sm"
-        />
         {primaryNav.map((item) => (
           <NavRow key={item.to} item={item} active={item.to === pathname} />
         ))}

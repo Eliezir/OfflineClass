@@ -20,18 +20,20 @@ const buttonVariants = cva(
            that compresses on press (Duolingo-style). */
         default:
           'rounded-[14px] bg-primary text-primary-foreground shadow-[0_4px_0_var(--primary-dark)] hover:brightness-[1.04] active:translate-y-[2px] active:shadow-[0_1px_0_var(--primary-dark)]',
-        /* Secondary — neutral surface with hairline border */
-        secondary: 'rounded-[14px] bg-card text-foreground border border-border hover:bg-muted',
+        /* Secondary — neutral surface, pressable edge so it matches the primary's height */
+        secondary:
+          'rounded-[14px] bg-card text-foreground border border-border shadow-[0_4px_0_var(--input-border)] hover:bg-muted active:translate-y-[2px] active:shadow-[0_1px_0_var(--input-border)]',
         /* AI — brand gradient (indigo → amber → lime). Reserved for hero/brand actions. */
         ai: 'rounded-[14px] bg-gradient-ai text-white hover:opacity-95',
         /* Destructive — solid red, flat */
         destructive:
           'rounded-[14px] bg-destructive text-destructive-foreground hover:bg-destructive/90',
-        /* Outline — neutral border, used for cancel/dismiss actions */
-        outline: 'rounded-[14px] bg-card text-foreground border border-border hover:bg-muted',
-        /* Outline primary — indigo border + text, for CTAs that read actionable without dominating */
+        /* Outline — neutral border + pressable edge (matches the primary 3D height) */
+        outline:
+          'rounded-[14px] bg-card text-foreground border border-border shadow-[0_4px_0_var(--input-border)] hover:bg-muted active:translate-y-[2px] active:shadow-[0_1px_0_var(--input-border)]',
+        /* Outline primary — indigo border + text, pressable edge */
         'outline-primary':
-          'rounded-[14px] bg-card text-primary border border-primary hover:bg-primary/5',
+          'rounded-[14px] bg-card text-primary border border-primary shadow-[0_4px_0_var(--input-border)] hover:bg-primary/5 active:translate-y-[2px] active:shadow-[0_1px_0_var(--input-border)]',
         /* Ghost — no chrome until hover */
         ghost: 'rounded-[14px] hover:bg-muted hover:text-foreground',
         /* Link */
