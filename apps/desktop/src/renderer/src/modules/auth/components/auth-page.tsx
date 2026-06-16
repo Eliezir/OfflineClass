@@ -155,7 +155,7 @@ export function AuthPage(): React.JSX.Element {
                   type={showPassword ? 'text' : 'password'}
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
-                  placeholder={isRegister ? t`Mínimo 8 caracteres` : '••••••••'}
+                  placeholder={isRegister ? t`Mínimo 8 caracteres` : t`Sua senha`}
                   autoComplete={isRegister ? 'new-password' : 'current-password'}
                   className="h-11 pr-10 text-[15px]"
                 />
