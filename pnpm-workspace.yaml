@@ -1,11 +1,11 @@
 packages:
-  - "apps/desktop"
-  - "apps/cloud"
-  - "apps/landing"
+  - "apps/*"
+  - "packages/*"
 
 onlyBuiltDependencies:
   - electron
   - esbuild
+  - better-sqlite3
   - "@prisma/client"
   - "@prisma/engines"
   - prisma
