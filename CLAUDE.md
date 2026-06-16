@@ -2,7 +2,9 @@
 
 > This file orients any Claude agent (or human) opening this repo. Read it before anything else.
 > The product docs live in `docs/architecture.md` (system design) and `docs/features.md`
-> (feature inventory). The current clone/refactor plan lives in `.context/clone-plan.md`.
+> (feature inventory). **The live plan — current status + parallel workstreams (read this
+> before starting work) — is `docs/roadmap.md`.** Local-only working notes (gitignored, not
+> shared across sessions) live in `.context/`.
 
 ---
 
