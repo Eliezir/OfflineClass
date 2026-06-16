@@ -3,7 +3,7 @@ import { createServer } from 'node:https'
 import { join, resolve } from 'node:path'
 import { serve, type ServerType } from '@hono/node-server'
 import { serveStatic } from '@hono/node-server/serve-static'
-import { createNodeWebSocket } from '@hono/node-ws'
+import { Server as IoServer } from 'socket.io'
 import { app as electronApp } from 'electron'
 import { Hono, type Context } from 'hono'
 import { and, eq } from 'drizzle-orm'
@@ -21,6 +21,7 @@ import {
 import type { Db } from '../db/client'
 import { resolveSession } from '../auth/sessions'
 import { examSessions } from '../db/schema'
+import { SERVER_EVENT, sessionRoom, studentRoom, teacherRoom } from '../sessions/rooms'
 import type { Rooms } from '../sessions/rooms'
 import {
   findActiveSessionPublic,
@@ -78,7 +79,6 @@ function mapSessionError(c: Context, err: unknown): Response {
 export async function startServer(port: number, deps: ServerDeps): Promise<ServerHandle> {
   const { db, rooms } = deps
   const app = new Hono()
-  const { injectWebSocket, upgradeWebSocket } = createNodeWebSocket({ app })
 
   app.get('/api/health', (c) => c.json({ ok: true }))
 
@@ -192,76 +192,6 @@ export async function startServer(port: number, deps: ServerDeps): Promise<Serve
     }
   })
 
-  // ---- WebSocket --------------------------------------------------------
-  // MUST come before the static / SPA-fallback handlers below: Hono matches
-  // routes in declaration order and `app.get('*')` would otherwise swallow
-  // GET /api/ws (returning 404 JSON instead of the WS upgrade response).
-
-  app.get(
-    '/api/ws',
-    upgradeWebSocket((c) => {
-      const role = c.req.query('role')
-      const token = c.req.query('token') ?? ''
-      const sessionIdParam = c.req.query('sessionId')
-
-      type Auth =
-        | { kind: 'teacher'; sessionId: string }
-        | { kind: 'student'; studentId: string; sessionId: string }
-      let auth: Auth | null = null
-
-      if (role === 'teacher' && sessionIdParam) {
-        const teacherSession = resolveSession(db, token)
-        if (teacherSession) {
-          const examSession = db
-            .select({ id: examSessions.id })
-            .from(examSessions)
-            .where(
-              and(
-                eq(examSessions.id, sessionIdParam),
-                eq(examSessions.ownerId, teacherSession.teacherId)
-              )
-            )
-            .get()
-          if (examSession) auth = { kind: 'teacher', sessionId: examSession.id }
-        }
-      } else if (role === 'student') {
-        const student = findStudentByToken(db, token)
-        if (student) {
-          auth = { kind: 'student', studentId: student.id, sessionId: student.sessionId }
-        }
-      }
-
-      return {
-        onOpen: (_event, ws) => {
-          if (!auth) {
-            ws.close(4001, 'unauthorized')
-            return
-          }
-          if (auth.kind === 'teacher') {
-            rooms.addTeacher(auth.sessionId, ws)
-            ws.send(
-              JSON.stringify({ type: 'connection.ack', role: 'teacher' } satisfies WsServerEvent)
-            )
-            ws.send(
-              JSON.stringify({
-                type: 'session.lobby.update',
-                students: listLobbyStudents(db, auth.sessionId)
-              } satisfies WsServerEvent)
-            )
-          } else {
-            rooms.addStudent(auth.sessionId, auth.studentId, ws)
-            ws.send(
-              JSON.stringify({ type: 'connection.ack', role: 'student' } satisfies WsServerEvent)
-            )
-          }
-        },
-        onClose: (_event, ws) => {
-          rooms.remove(ws)
-        }
-      }
-    })
-  )
-
   // ---- Static SPA --------------------------------------------------------
   // Serves apps/student-web/dist on every non-API path so a phone scanning
   // the QR loads the student SPA from the same origin as the API (no CORS).
@@ -298,13 +228,62 @@ export async function startServer(port: number, deps: ServerDeps): Promise<Serve
     )
   })
 
-  injectWebSocket(server)
+  // ---- Socket.IO --------------------------------------------------------
+  // Attaches to the same HTTPS server. Socket.IO owns its `/socket.io/` path
+  // and delegates every other request back to Hono, so the HTTP routes and the
+  // SPA fallback above are unaffected. Auth travels in the connection handshake
+  // (`auth: { role, token, sessionId }`); each socket joins its role room plus
+  // the shared session room. Membership cleanup on disconnect is automatic.
+  const io = new IoServer(server, { serveClient: false, cors: { origin: '*' } })
+
+  io.on('connection', (socket) => {
+    const { role, token = '', sessionId } = socket.handshake.auth as {
+      role?: string
+      token?: string
+      sessionId?: string
+    }
+
+    if (role === 'teacher' && sessionId) {
+      const teacherSession = resolveSession(db, token)
+      if (!teacherSession) return void socket.disconnect(true)
+      const examSession = db
+        .select({ id: examSessions.id })
+        .from(examSessions)
+        .where(and(eq(examSessions.id, sessionId), eq(examSessions.ownerId, teacherSession.teacherId)))
+        .get()
+      if (!examSession) return void socket.disconnect(true)
+
+      void socket.join(teacherRoom(examSession.id))
+      void socket.join(sessionRoom(examSession.id))
+      socket.emit(SERVER_EVENT, { type: 'connection.ack', role: 'teacher' } satisfies WsServerEvent)
+      socket.emit(SERVER_EVENT, {
+        type: 'session.lobby.update',
+        students: listLobbyStudents(db, examSession.id)
+      } satisfies WsServerEvent)
+      return
+    }
+
+    if (role === 'student') {
+      const student = findStudentByToken(db, token)
+      if (!student) return void socket.disconnect(true)
+
+      void socket.join(studentRoom(student.sessionId))
+      void socket.join(sessionRoom(student.sessionId))
+      socket.emit(SERVER_EVENT, { type: 'connection.ack', role: 'student' } satisfies WsServerEvent)
+      return
+    }
+
+    socket.disconnect(true)
+  })
+
+  rooms.attach(io)
 
   return {
     port,
     stop: () =>
       new Promise((resolve, reject) => {
-        server.close((err) => (err ? reject(err) : resolve()))
+        // io.close() disconnects all sockets and closes the underlying server.
+        io.close((err) => (err ? reject(err) : resolve()))
       })
   }
 }

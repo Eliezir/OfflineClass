@@ -1,3 +1,4 @@
+import { io, type Socket } from 'socket.io-client'
 import { WsServerEvent } from '@offlineclass/shared'
 
 export type WsStatus = 'connecting' | 'open' | 'closed'
@@ -12,44 +13,30 @@ export interface WsConnection {
   close: () => void
 }
 
+/** Live connection to the session over Socket.IO. Same origin as the SPA
+    bundle; auth (role + token) travels in the handshake. Socket.IO handles
+    reconnection, so callers just react to status + events. The public API is
+    unchanged from the previous WebSocket implementation. */
 export function connectStudentWs(opts: ConnectOptions): WsConnection {
-  let closed = false
-  let socket: WebSocket | null = null
-  let reconnectTimer: ReturnType<typeof setTimeout> | null = null
+  opts.onStatus?.('connecting')
 
-  const open = (): void => {
-    opts.onStatus?.('connecting')
-    // Same host:port as the SPA bundle's origin.
-    const proto = location.protocol === 'https:' ? 'wss:' : 'ws:'
-    const url = `${proto}//${location.host}/api/ws?role=student&token=${encodeURIComponent(opts.token)}`
-    const ws = new WebSocket(url)
-    socket = ws
-    ws.onopen = () => opts.onStatus?.('open')
-    ws.onmessage = (event) => {
-      if (typeof event.data !== 'string') return
-      let raw: unknown
-      try {
-        raw = JSON.parse(event.data)
-      } catch {
-        return
-      }
-      const parsed = WsServerEvent.safeParse(raw)
-      if (parsed.success) opts.onEvent(parsed.data)
-    }
-    ws.onclose = () => {
-      opts.onStatus?.('closed')
-      socket = null
-      if (!closed) reconnectTimer = setTimeout(open, 1500)
-    }
-  }
+  // No URL → connects to the page origin (same host:port as the SPA bundle).
+  const socket: Socket = io({
+    auth: { role: 'student', token: opts.token }
+  })
 
-  open()
+  socket.on('connect', () => opts.onStatus?.('open'))
+  socket.on('disconnect', () => opts.onStatus?.('closed'))
+  socket.on('connect_error', () => opts.onStatus?.('closed'))
+
+  socket.on('server-event', (raw: unknown) => {
+    const parsed = WsServerEvent.safeParse(raw)
+    if (parsed.success) opts.onEvent(parsed.data)
+  })
 
   return {
     close: () => {
-      closed = true
-      if (reconnectTimer) clearTimeout(reconnectTimer)
-      socket?.close()
+      socket.close()
     }
   }
 }

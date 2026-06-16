@@ -1,55 +1,38 @@
-import type { WSContext } from 'hono/ws'
+import type { Server as IoServer } from 'socket.io'
 import type { WsServerEvent } from '@offlineclass/shared'
 
-interface Subscription {
-  ws: WSContext
-  role: 'teacher' | 'student'
-  sessionId: string
-  studentId?: string
-}
+// Socket.IO room names for a session. Each socket joins its role room plus a
+// shared session room, so we can target teachers, students, or everyone.
+export const teacherRoom = (sessionId: string): string => `teacher:${sessionId}`
+export const studentRoom = (sessionId: string): string => `student:${sessionId}`
+export const sessionRoom = (sessionId: string): string => `session:${sessionId}`
 
-// In-memory registry of live WS subscriptions, keyed by the WSContext
-// instance for O(1) removal on socket close. One Rooms per app — created
-// at boot and shared between IPC handlers (broadcasting after writes) and
-// the Hono server (subscribing new sockets on /api/ws).
+/** Every real-time message rides this single Socket.IO event name; the payload
+    is the shared discriminated union, so clients keep parsing with one Zod
+    schema (`WsServerEvent`). */
+export const SERVER_EVENT = 'server-event'
+
+// Thin facade over Socket.IO rooms. Created at boot and shared with the IPC
+// handlers (which broadcast after DB writes); `attach` wires in the io instance
+// once the server is up. Broadcasts before attach are no-ops — no clients yet.
+// Socket membership/cleanup is handled by Socket.IO itself (join on connect,
+// auto-leave on disconnect), so this class only broadcasts.
 export class Rooms {
-  private subs = new Map<WSContext, Subscription>()
+  private io: IoServer | null = null
 
-  addTeacher(sessionId: string, ws: WSContext): void {
-    this.subs.set(ws, { ws, role: 'teacher', sessionId })
-  }
-
-  addStudent(sessionId: string, studentId: string, ws: WSContext): void {
-    this.subs.set(ws, { ws, role: 'student', sessionId, studentId })
-  }
-
-  remove(ws: WSContext): void {
-    this.subs.delete(ws)
-  }
-
-  private emit(predicate: (s: Subscription) => boolean, payload: string): void {
-    for (const sub of this.subs.values()) {
-      if (!predicate(sub)) continue
-      try {
-        sub.ws.send(payload)
-      } catch {
-        // ignore broken sockets; their onClose handlers will clean up
-      }
-    }
+  attach(io: IoServer): void {
+    this.io = io
   }
 
   toTeachers(sessionId: string, event: WsServerEvent): void {
-    const json = JSON.stringify(event)
-    this.emit((s) => s.role === 'teacher' && s.sessionId === sessionId, json)
+    this.io?.to(teacherRoom(sessionId)).emit(SERVER_EVENT, event)
   }
 
   toStudents(sessionId: string, event: WsServerEvent): void {
-    const json = JSON.stringify(event)
-    this.emit((s) => s.role === 'student' && s.sessionId === sessionId, json)
+    this.io?.to(studentRoom(sessionId)).emit(SERVER_EVENT, event)
   }
 
   toAll(sessionId: string, event: WsServerEvent): void {
-    const json = JSON.stringify(event)
-    this.emit((s) => s.sessionId === sessionId, json)
+    this.io?.to(sessionRoom(sessionId)).emit(SERVER_EVENT, event)
   }
 }
