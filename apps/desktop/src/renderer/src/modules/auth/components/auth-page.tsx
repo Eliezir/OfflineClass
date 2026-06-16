@@ -77,15 +77,15 @@ export function AuthPage(): React.JSX.Element {
 
       {/* Form panel (left). */}
       <div
-        className="flex w-full flex-col justify-center px-8 md:w-[45%] md:px-14 lg:px-20"
+        className="flex w-full flex-col justify-center px-8 md:w-[48%] md:px-16 lg:px-24"
         style={noDragRegion}
       >
-        <div className="mx-auto w-full max-w-sm">
-          <div className="space-y-1">
-            <h1 className="font-display text-3xl font-bold tracking-tight">
+        <div className="mx-auto w-full max-w-md">
+          <div className="space-y-1.5">
+            <h1 className="font-display text-4xl font-bold tracking-tight">
               {isRegister ? <Trans>Criar sua conta</Trans> : <Trans>Bem-vindo de volta</Trans>}
             </h1>
-            <p className="text-sm text-muted-foreground">
+            <p className="text-base text-muted-foreground">
               {isRegister ? (
                 <>
                   <Trans>Já tem conta?</Trans>{' '}
@@ -112,7 +112,7 @@ export function AuthPage(): React.JSX.Element {
             </p>
           </div>
 
-          <form onSubmit={handleSubmit} className="mt-7 space-y-4">
+          <form onSubmit={handleSubmit} className="mt-8 space-y-5">
             {isRegister && (
               <div className="space-y-1.5">
                 <Label htmlFor="auth-name">
@@ -124,6 +124,7 @@ export function AuthPage(): React.JSX.Element {
                   onChange={(e) => setName(e.target.value)}
                   placeholder={t`Como devemos te chamar?`}
                   autoFocus
+                  className="h-11 text-[15px]"
                 />
               </div>
             )}
@@ -140,6 +141,7 @@ export function AuthPage(): React.JSX.Element {
                 placeholder="voce@escola.com"
                 autoFocus={!isRegister}
                 autoComplete="email"
+                className="h-11 text-[15px]"
               />
             </div>
 
@@ -155,7 +157,7 @@ export function AuthPage(): React.JSX.Element {
                   onChange={(e) => setPassword(e.target.value)}
                   placeholder={isRegister ? t`Mínimo 8 caracteres` : '••••••••'}
                   autoComplete={isRegister ? 'new-password' : 'current-password'}
-                  className="pr-10"
+                  className="h-11 pr-10 text-[15px]"
                 />
                 <button
                   type="button"
