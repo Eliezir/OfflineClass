@@ -5,6 +5,7 @@ import { join } from 'node:path'
 import icon from '../../resources/icon.png?asset'
 import { getDb } from './db/client'
 import { runMigrations } from './db/migrate'
+import { findFreePort } from './find-free-port'
 import { publishMdns, type MdnsHandle } from './discovery/mdns'
 import { registerIpcHandlers } from './ipc'
 import { startServer, type ServerHandle } from './server'
@@ -44,7 +45,11 @@ function createWindow(): void {
 }
 
 async function bootstrap(): Promise<void> {
-  const port = Number(process.env['OFFLINECLASS_PORT'] ?? DEFAULT_PORT)
+  // Preferred base port, then the first free one at/after it — so we never clash
+  // with another running project (or a sibling worktree) holding the base port.
+  // Students get the actual port from the QR code + mDNS, so any port works.
+  const preferredPort = Number(process.env['OFFLINECLASS_PORT'] ?? DEFAULT_PORT)
+  const port = await findFreePort(preferredPort)
 
   // 1. Migrate DB (creates the file under userData on first run).
   const db = getDb()
@@ -61,6 +66,10 @@ async function bootstrap(): Promise<void> {
 
   // 4. Start the LAN-facing Hono server with TLS.
   serverHandle = await startServer(port, { db, rooms, tls })
+  console.log(
+    `[server] OfflineClass ouvindo em https://${tls.lanIp}:${serverHandle.port}` +
+      (serverHandle.port === preferredPort ? '' : ` (porta ${preferredPort} ocupada)`)
+  )
 
   // 5. Announce the service over mDNS so students can hit offlineclass.local.
   mdnsHandle = await publishMdns(serverHandle.port)
