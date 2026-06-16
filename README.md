@@ -132,7 +132,7 @@ Na primeira execução:
 1. SQLite criado em `~/Library/Application Support/@offlineclass/desktop/offlineclass.db` (macOS; `%APPDATA%/@offlineclass/desktop/` no Windows; `~/.config/@offlineclass/desktop/` no Linux)
 2. Migrações Drizzle aplicadas (`0000_init.sql`, `0001_add_score_to_answers.sql`)
 3. Certificado self-signed gerado em `userData/tls/`
-4. Servidor sobe em `https://0.0.0.0:8000`
+4. Servidor sobe em `https://0.0.0.0:<porta>` — a primeira porta livre a partir de `8000` (configurável via `OFFLINECLASS_PORT`), então não conflita com outros projetos/abas rodando. O QR e o mDNS anunciam a porta real, então o aluno nunca precisa saber qual foi.
 5. `offlineclass._https._tcp.local` é anunciado via mDNS
 6. Janela do Electron abre na tela de login
 
