@@ -1,4 +1,10 @@
-import { useMutation, useQueryClient, type UseMutationResult } from '@tanstack/react-query'
+import {
+  useMutation,
+  useQuery,
+  useQueryClient,
+  type UseMutationResult,
+  type UseQueryResult
+} from '@tanstack/react-query'
 import type { LoginInput, RegisterInput, Teacher } from '@offlineclass/shared'
 import { getMe, login, logout, register } from './api'
 
@@ -11,6 +17,12 @@ export const authKeys = {
 export const meQueryOptions = {
   queryKey: authKeys.me,
   queryFn: getMe
+}
+
+/** The current teacher (or null). Cache is warmed by the route gate, so this
+    resolves without a loading flash inside the app shell. */
+export function useMe(): UseQueryResult<Teacher | null, Error> {
+  return useQuery(meQueryOptions)
 }
 
 export function useLogin(): UseMutationResult<Teacher, Error, LoginInput> {
