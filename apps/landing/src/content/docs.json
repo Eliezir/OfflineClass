@@ -1,0 +1,95 @@
+{
+  "intro": "Guia rápido para começar com o OfflineClass. Todo o conteúdo desta seção vive em `content/docs.json` — edite o arquivo para adaptar, sem mexer no código.",
+  "sections": [
+    {
+      "id": "primeiros-passos",
+      "title": "Primeiros passos",
+      "articles": [
+        {
+          "id": "instalacao",
+          "title": "Instalação",
+          "body": [
+            "Baixe a versão mais recente na seção **Download** desta página — ela aponta direto para os releases do GitHub.",
+            "Escolha o instalador do seu sistema:",
+            "- **macOS** — arquivo `.dmg`",
+            "- **Windows** — instalador `.exe`",
+            "- **Linux** — `.AppImage`, `.deb` ou `.rpm`",
+            "O app roda inteiramente offline — nada precisa de internet para funcionar."
+          ]
+        },
+        {
+          "id": "conta-professor",
+          "title": "Conta de professor",
+          "body": [
+            "Na primeira execução, crie sua conta local de professor (nome, e-mail e senha).",
+            "As contas e provas ficam **somente no seu computador**. Um mesmo computador suporta várias contas de professor, com dados isolados.",
+            "Não há login na nuvem por padrão — o sync é opcional e opt-in (veja **Sync opcional**)."
+          ]
+        }
+      ]
+    },
+    {
+      "id": "rede",
+      "title": "Rede da sala",
+      "articles": [
+        {
+          "id": "como-funciona-a-rede",
+          "title": "Como a rede funciona",
+          "body": [
+            "Ao iniciar uma sessão, o computador do professor sobe um **servidor local** que atende os alunos pela Wi-Fi da sala.",
+            "Os alunos entram pelo navegador do PC — escaneando o **QR code** na tela do professor ou pelo endereço anunciado via **mDNS** (`offlineclass.local`).",
+            "> Nenhum dado trafega pela internet. É a garantia LAN-only que sustenta o anti-cheat básico.",
+            "Alunos usam **PCs** na mesma Wi-Fi (desktops de laboratório ou notebooks). Celulares não são suportados de propósito."
+          ]
+        }
+      ]
+    },
+    {
+      "id": "fluxo",
+      "title": "Aplicando uma avaliação",
+      "articles": [
+        {
+          "id": "criar-prova",
+          "title": "Criar a prova",
+          "body": [
+            "Em **Provas → Nova**, monte a avaliação num form builder único.",
+            "Adicione questões de sete tipos — múltipla escolha, V/F, resposta curta, dissertativa, código, ordenação e associação — e blocos de material de apoio (PDF, imagem, vídeo, link) inline.",
+            "Cada questão tem um valor em pontos; a nota é a soma dos pontos das questões corretas."
+          ]
+        },
+        {
+          "id": "abrir-sessao",
+          "title": "Abrir a sessão",
+          "body": [
+            "Inicie uma sessão para a prova: escolha o **modo de formação de grupos** (livre, designado ou sorteio), a **duração** e as regras.",
+            "A sessão passa por **lobby → em andamento → encerrada**. No lobby os alunos entram e formam grupos; ao iniciar, a composição trava e o cronômetro começa.",
+            "Acompanhe tudo no **painel ao vivo** — e abra a **vista de projetor** para a turma."
+          ]
+        },
+        {
+          "id": "corrigir-exportar",
+          "title": "Corrigir & exportar",
+          "body": [
+            "Questões objetivas são corrigidas automaticamente. Dissertativas e código você corrige manualmente, com campo de comentário por questão.",
+            "Exporte os resultados localmente em **CSV/JSON** — e, opcionalmente, envie as notas por e-mail via cloud (quando vinculado)."
+          ]
+        }
+      ]
+    },
+    {
+      "id": "sync",
+      "title": "Sync opcional",
+      "articles": [
+        {
+          "id": "stay-local",
+          "title": "Offline-first por padrão",
+          "body": [
+            "Na primeira instalação o app fica em modo **somente local**: zero chamadas à nuvem, zero notificações.",
+            "O sync é **opt-in**. Quando quiser, vincule uma conta na nuvem pelo indicador de sync para fazer backup das provas e upload dos resultados.",
+            "Mesmo vinculado, o sync é sempre **manual** — nunca uma dependência de runtime."
+          ]
+        }
+      ]
+    }
+  ]
+}

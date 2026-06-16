@@ -1,0 +1,11 @@
+packages:
+  - "apps/desktop"
+  - "apps/cloud"
+  - "apps/landing"
+
+onlyBuiltDependencies:
+  - electron
+  - esbuild
+  - "@prisma/client"
+  - "@prisma/engines"
+  - prisma

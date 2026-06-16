@@ -1,0 +1,148 @@
+{
+  "repo": { "owner": "Eliezir", "name": "OfflineClass" },
+  "product": {
+    "name": "OfflineClass",
+    "tagline": "Avaliações colaborativas na rede local da sala — em tempo real, sem internet.",
+    "headline": "Provas\nem grupo,\nao vivo,",
+    "headlineAccent": "sem internet.",
+    "rotatingWords": ["offline", "em tempo real", "em grupo"],
+    "lead": "O computador do professor vira o servidor da sala. Os alunos entram pela Wi-Fi local e respondem em grupo, com tudo sincronizado em tempo real.",
+    "eyebrow": "App desktop · Rede local · Tempo real"
+  },
+  "nav": [
+    { "label": "Recursos", "to": "/#recursos" },
+    { "label": "Ao vivo", "to": "/#ao-vivo" },
+    { "label": "Como funciona", "to": "/#como-funciona" },
+    { "label": "Equipe", "to": "/#equipe" },
+    { "label": "Download", "to": "/download" },
+    { "label": "Releases", "to": "/releases" },
+    { "label": "Docs", "to": "/docs" }
+  ],
+  "stats": [
+    { "value": 0, "suffix": "", "label": "internet necessária" },
+    { "value": 7, "suffix": "", "label": "tipos de questão" },
+    { "value": "tempo real", "suffix": "", "label": "colaboração (Yjs)" },
+    { "value": 3, "suffix": "", "label": "plataformas" }
+  ],
+  "features": [
+    {
+      "accent": "primary",
+      "icon": "offline",
+      "title": "Funciona 100% offline",
+      "body": "O computador do professor cria a rede da avaliação e atende os alunos pela Wi-Fi da sala. Nada depende de gateways externos ou internet.",
+      "span": "wide"
+    },
+    {
+      "accent": "secondary",
+      "icon": "types",
+      "title": "Sete tipos de questão",
+      "body": "Múltipla escolha, V/F, resposta curta, dissertativa, código, ordenação e associação — num form builder único, com materiais de apoio inline."
+    },
+    {
+      "accent": "tertiary",
+      "icon": "groups",
+      "title": "Grupos colaborativos",
+      "body": "Alunos respondem em grupo com estado compartilhado: cursores, presença e respostas sincronizadas, com last-write-wins."
+    },
+    {
+      "accent": "quaternary",
+      "icon": "join",
+      "title": "Entrada por QR & mDNS",
+      "body": "Sem configurar IP: os alunos entram escaneando um QR code ou pelo endereço anunciado automaticamente na rede."
+    },
+    {
+      "accent": "primary",
+      "icon": "panel",
+      "title": "Painel ao vivo + projetor",
+      "body": "Acompanhe o progresso de cada grupo, quem está online e as respostas chegando em tempo real — com uma vista de projetor segura para a turma.",
+      "span": "wide"
+    },
+    {
+      "accent": "secondary",
+      "icon": "results",
+      "title": "Resultados & correção",
+      "body": "Auto-correção das objetivas, correção manual de dissertativas e código, e exportação local em CSV/JSON."
+    },
+    {
+      "accent": "tertiary",
+      "icon": "sync",
+      "title": "Sync opcional com a nuvem",
+      "body": "Backup das provas e upload de resultados para um servidor na nuvem — sempre manual, nunca obrigatório em runtime."
+    }
+  ],
+  "interactive": [
+    {
+      "icon": "realtime",
+      "title": "Tempo real",
+      "body": "Respostas, cursores e presença sincronizados entre os membros do grupo, instantaneamente.",
+      "points": ["Estado compartilhado (Yjs)", "Veja quem está digitando"]
+    },
+    {
+      "icon": "join",
+      "title": "Entrada num toque",
+      "body": "Alunos entram por QR code ou pelo endereço da rede — sem digitar IP nem instalar nada.",
+      "points": ["QR code + mDNS", "Funciona no navegador"]
+    },
+    {
+      "icon": "groups",
+      "title": "Grupos flexíveis",
+      "body": "Formação livre, designada pelo professor ou por sorteio. Aluno sozinho é um grupo de 1.",
+      "points": ["3 modos de formação", "Submit confirmado por todos"]
+    },
+    {
+      "icon": "panel",
+      "title": "Painel ao vivo",
+      "body": "Progresso por grupo, quem está online e uma vista de projetor para a turma toda.",
+      "points": ["Vista privada + projetor", "Sem dados sensíveis na tela"]
+    },
+    {
+      "icon": "reconnect",
+      "title": "Reconexão",
+      "body": "Caiu a Wi-Fi? O aluno reconecta e continua de onde parou, sem perder respostas.",
+      "points": ["Backoff automático", "Snapshots no SQLite"]
+    },
+    {
+      "icon": "offline",
+      "title": "LAN-only",
+      "body": "Tudo roda na rede local da sala — a garantia de integridade que sustenta o anti-cheat.",
+      "points": ["Zero internet", "PCs na mesma Wi-Fi"]
+    }
+  ],
+  "steps": [
+    {
+      "n": "01",
+      "title": "Crie a prova",
+      "body": "Monte questões e materiais de apoio num form builder único. Tudo fica salvo localmente no seu computador."
+    },
+    {
+      "n": "02",
+      "title": "Abra a sessão",
+      "body": "Defina grupos, duração e regras. O servidor da sala sobe automaticamente e gera o QR de entrada."
+    },
+    {
+      "n": "03",
+      "title": "Alunos entram",
+      "body": "Pela Wi-Fi local, via QR code ou endereço da rede. Formam grupos e respondem em tempo real."
+    },
+    {
+      "n": "04",
+      "title": "Corrija & exporte",
+      "body": "Auto-correção das objetivas, correção manual das dissertativas, e exportação dos resultados em CSV/JSON."
+    }
+  ],
+  "platforms": [
+    { "id": "mac", "label": "macOS", "icon": "apple", "match": ["\\.dmg$", "-mac", "darwin", "\\.pkg$"] },
+    { "id": "windows", "label": "Windows", "icon": "windows", "match": ["\\.exe$", "-win", "windows", "setup", "\\.msi$"] },
+    { "id": "linux", "label": "Linux", "icon": "linux", "match": ["\\.appimage$", "\\.deb$", "\\.rpm$", "linux", "\\.tar\\.gz$", "\\.snap$"] }
+  ],
+  "stack": [
+    "TypeScript", "Electron", "React", "Hono", "Socket.IO", "Yjs", "Drizzle", "SQLite", "Zod", "Tailwind"
+  ],
+  "team": [
+    { "name": "Eliezir Moreira", "github": "Eliezir" },
+    { "name": "Pedro Roberto", "github": "PedroChicuta" },
+    { "name": "Raphael Phillipe", "github": "raphaelphillipe023" }
+  ],
+  "course": "Projeto de Sistemas Operacionais e Redes · 2026",
+  "footerNote": "Feito para salas de aula reais — onde a internet nem sempre coopera."
+}

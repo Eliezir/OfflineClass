@@ -1,0 +1,11 @@
+node_modules/
+dist/
+coverage/
+database/*.db
+prisma/*.db
+.env
+.git
+.idea/
+.vscode/
+*.iml
+README.md

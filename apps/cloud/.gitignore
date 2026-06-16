@@ -1,0 +1,18 @@
+# Dependencies & build output
+node_modules/
+dist/
+coverage/
+
+# Environment
+.env
+
+# SQLite databases (dev/prod live in database/, test in prisma/)
+database/*.db
+database/*.db-journal
+prisma/*.db
+prisma/*.db-journal
+
+# Editors
+.idea/
+.vscode/
+*.iml

@@ -1,0 +1,4 @@
+User-agent: *
+Allow: /
+
+Sitemap: https://eliezir.github.io/OfflineClass/sitemap.xml
