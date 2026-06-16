@@ -19,6 +19,7 @@ import {
 } from '@offlineclass/shared'
 
 import type { Db } from '../db/client'
+import { env } from '../env'
 import { resolveSession } from '../auth/sessions'
 import { examSessions } from '../db/schema'
 import { SERVER_EVENT, sessionRoom, studentRoom, teacherRoom } from '../sessions/rooms'
@@ -220,7 +221,7 @@ export async function startServer(port: number, deps: ServerDeps): Promise<Serve
       {
         fetch: app.fetch,
         port,
-        hostname: '0.0.0.0',
+        hostname: env.host,
         createServer,
         serverOptions: { key: deps.tls.key, cert: deps.tls.cert }
       },
@@ -234,7 +235,7 @@ export async function startServer(port: number, deps: ServerDeps): Promise<Serve
   // SPA fallback above are unaffected. Auth travels in the connection handshake
   // (`auth: { role, token, sessionId }`); each socket joins its role room plus
   // the shared session room. Membership cleanup on disconnect is automatic.
-  const io = new IoServer(server, { serveClient: false, cors: { origin: '*' } })
+  const io = new IoServer(server, { serveClient: false, cors: { origin: env.corsOrigin } })
 
   io.on('connection', (socket) => {
     const { role, token = '', sessionId } = socket.handshake.auth as {

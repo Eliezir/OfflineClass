@@ -1,8 +1,12 @@
+// Load apps/desktop/.env (dev convenience) before anything reads process.env.
+// Real environment variables take precedence; absent in packaged builds.
+import 'dotenv/config'
 import { app, shell, BrowserWindow, ipcMain } from 'electron'
 import { join } from 'path'
 import { electronApp, optimizer, is } from '@electron-toolkit/utils'
 import type { BackendStatus } from '@shared/ipc/backend'
 import { IPC } from '@shared/ipc/channels'
+import { env } from './env'
 import { registerIpcHandlers } from './ipc'
 import { registerMainWindow, getMainWindow } from './windows'
 import { getDb } from './db/client'
@@ -13,8 +17,6 @@ import { startServer, type ServerHandle } from './server'
 import { Rooms } from './sessions/rooms'
 import { ensureSelfSignedCert } from './tls'
 import icon from '../../resources/icon.png?asset'
-
-const DEFAULT_PORT = 8000
 
 let splashWindow: BrowserWindow | null = null
 let serverHandle: ServerHandle | null = null
@@ -124,7 +126,7 @@ async function bootstrap(): Promise<void> {
     trustedHostnames = new Set(['127.0.0.1', 'localhost', 'offlineclass.local', tls.lanIp])
 
     if (!serverHandle) {
-      const preferredPort = Number(process.env['OFFLINECLASS_PORT'] ?? DEFAULT_PORT)
+      const preferredPort = env.port
       const port = await findFreePort(preferredPort)
       serverHandle = await startServer(port, { db, rooms: activeRooms, tls })
       console.log(
