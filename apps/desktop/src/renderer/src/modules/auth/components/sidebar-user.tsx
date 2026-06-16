@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { ChevronsUpDown, LogOut, Settings } from 'lucide-react'
+import { ChevronsUpDown, LogOut, Settings, UserRound } from 'lucide-react'
 import { useLingui } from '@lingui/react/macro'
 import { useNavigate } from '@tanstack/react-router'
 import {
@@ -14,14 +14,7 @@ import {
 } from '@renderer/shared/ui/popover'
 import { cn } from '@renderer/shared/utils'
 import { useLogout, useMe } from '../queries'
-
-/** Up to two initials from a display name, for the avatar fallback. */
-function initials(name: string): string {
-  const parts = name.trim().split(/\s+/).filter(Boolean)
-  if (parts.length === 0) return '?'
-  if (parts.length === 1) return parts[0].slice(0, 2).toUpperCase()
-  return (parts[0][0] + parts[parts.length - 1][0]).toUpperCase()
-}
+import { initials } from '../initials'
 
 /** Logged-in teacher chip pinned to the sidebar bottom, with a popover for
     quick settings access and logout. */
@@ -33,6 +26,11 @@ export function SidebarUser(): React.JSX.Element | null {
   const logout = useLogout()
 
   if (!me) return null
+
+  const goProfile = (): void => {
+    setOpen(false)
+    void navigate({ to: '/profile' })
+  }
 
   const goSettings = (): void => {
     setOpen(false)
@@ -80,6 +78,11 @@ export function SidebarUser(): React.JSX.Element | null {
           <PopoverDescription className="truncate">{me.email}</PopoverDescription>
         </PopoverHeader>
         <PopoverSeparator />
+        <PopoverItem
+          icon={<UserRound className="size-4" />}
+          title={t`Perfil`}
+          onClick={goProfile}
+        />
         <PopoverItem
           icon={<Settings className="size-4" />}
           title={t`Configurações`}
