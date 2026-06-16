@@ -12,6 +12,7 @@
     "i18n:compile": "lingui compile",
     "routes:generate": "tsr generate",
     "db:generate": "drizzle-kit generate",
+    "db:studio": "node scripts/db-studio.mjs",
     "typecheck:node": "tsc --noEmit -p tsconfig.node.json --composite false",
     "typecheck:web": "tsc --noEmit -p tsconfig.web.json --composite false",
     "typecheck": "npm run routes:generate && npm run typecheck:node && npm run typecheck:web",
