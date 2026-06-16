@@ -1,9 +1,9 @@
 import type { ElectronAPI } from '@electron-toolkit/preload'
-import type { IpcBridge } from '@shared/ipc/contract'
+import type { ApiSurface } from './index'
 
 declare global {
   interface Window {
     electron: ElectronAPI
-    api: IpcBridge
+    api: ApiSurface
   }
 }

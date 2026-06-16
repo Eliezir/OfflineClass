@@ -17,10 +17,10 @@ export default defineConfig(async () => {
   return {
     main: {
       resolve: { alias: sharedAlias },
-      // Keep node deps (the Claude Agent SDK, which spawns a bundled native
-      // binary) external so they resolve from node_modules at runtime instead
-      // of being inlined into the main bundle.
-      plugins: [externalizeDepsPlugin()]
+      // Node deps stay external (resolved from node_modules at runtime), except
+      // @offlineclass/shared: it's a TS-source workspace package, so it must be
+      // inline-bundled or the packaged main would require() a .ts entry and crash.
+      plugins: [externalizeDepsPlugin({ exclude: ['@offlineclass/shared'] })]
     },
     preload: {
       resolve: { alias: sharedAlias },
@@ -51,10 +51,7 @@ export default defineConfig(async () => {
       ],
       server: {
         port,
-        strictPort: true,
-        proxy: {
-          '/api': 'http://localhost:8080'
-        }
+        strictPort: true
       }
     }
   }

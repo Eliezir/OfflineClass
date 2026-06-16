@@ -8,6 +8,7 @@ import logo from '@renderer/shared/assets/logo-icon.png'
 import { Popover, PopoverContent, PopoverItem, PopoverTrigger } from '@renderer/shared/ui/popover'
 import { cn } from '@renderer/shared/utils'
 import { WindowControls } from '@renderer/shared/layouts/window-controls'
+import { SidebarUser } from '@renderer/modules/auth/components/sidebar-user'
 import { NotificationsMenu } from './notifications-menu'
 
 type NavTo = '/home' | '/provas' | '/sessao' | '/resultados' | '/settings'
@@ -153,6 +154,10 @@ export function Sidebar(): React.JSX.Element {
         ))}
         <NavRow item={settingsNav} active={pathname === '/settings'} />
       </nav>
+
+      <div className="mt-2 border-t border-border px-3 py-2" style={noDragRegion}>
+        <SidebarUser />
+      </div>
     </aside>
   )
 }

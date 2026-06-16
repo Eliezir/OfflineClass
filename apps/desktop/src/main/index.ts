@@ -1,14 +1,37 @@
 import { app, shell, BrowserWindow, ipcMain } from 'electron'
 import { join } from 'path'
 import { electronApp, optimizer, is } from '@electron-toolkit/utils'
+import type { BackendStatus } from '@shared/ipc/backend'
 import { IPC } from '@shared/ipc/channels'
 import { registerIpcHandlers } from './ipc'
 import { registerMainWindow, getMainWindow } from './windows'
-import { BackendService } from './backend/backend-service'
+import { getDb } from './db/client'
+import { runMigrations } from './db/migrate'
+import { publishMdns, type MdnsHandle } from './discovery/mdns'
+import { findFreePort } from './find-free-port'
+import { startServer, type ServerHandle } from './server'
+import { Rooms } from './sessions/rooms'
+import { ensureSelfSignedCert } from './tls'
 import icon from '../../resources/icon.png?asset'
 
+const DEFAULT_PORT = 8000
+
 let splashWindow: BrowserWindow | null = null
-const backend = new BackendService()
+let serverHandle: ServerHandle | null = null
+let mdnsHandle: MdnsHandle | null = null
+let rooms: Rooms | null = null
+let ipcRegistered = false
+let trustedHostnames = new Set<string>()
+
+// Boot status drives the splash (starting → ready / error), like the old
+// spawned-backend flow — but now it's the in-process services coming up.
+let bootStatus: BackendStatus = { phase: 'starting' }
+function setStatus(status: BackendStatus): void {
+  bootStatus = status
+  if (splashWindow && !splashWindow.isDestroyed()) {
+    splashWindow.webContents.send(IPC.BACKEND.STATUS, status)
+  }
+}
 
 function createSplashWindow(): void {
   splashWindow = new BrowserWindow({
@@ -29,18 +52,13 @@ function createSplashWindow(): void {
     }
   })
 
-  splashWindow.once('ready-to-show', () => {
-    splashWindow?.show()
-  })
-
-  // Re-push the latest status once the page can receive it — covers a fast
-  // failure (e.g. backend missing) that resolves before the splash finishes loading.
+  splashWindow.once('ready-to-show', () => splashWindow?.show())
+  // Re-push the latest status once the page can receive it.
   splashWindow.webContents.on('did-finish-load', () => {
     if (splashWindow && !splashWindow.isDestroyed()) {
-      splashWindow.webContents.send(IPC.BACKEND.STATUS, backend.getStatus())
+      splashWindow.webContents.send(IPC.BACKEND.STATUS, bootStatus)
     }
   })
-
   splashWindow.on('closed', () => {
     splashWindow = null
   })
@@ -60,9 +78,8 @@ function createWindow(): void {
     minHeight: 600,
     show: false,
     autoHideMenuBar: true,
-    /* Custom window chrome: hide the OS title bar so the app draws its own
-       40px topbar. macOS keeps the traffic lights inset (Linear/Notion style),
-       Windows/Linux go fully frameless and we render close/min/max controls. */
+    /* Custom window chrome: hide the OS title bar so the app draws its own. macOS
+       keeps the traffic lights inset; Windows/Linux go frameless. */
     ...(process.platform === 'darwin'
       ? { titleBarStyle: 'hiddenInset' as const, trafficLightPosition: { x: 14, y: 14 } }
       : { frame: false }),
@@ -76,9 +93,7 @@ function createWindow(): void {
   registerMainWindow(win)
 
   win.on('ready-to-show', () => {
-    if (splashWindow && !splashWindow.isDestroyed()) {
-      splashWindow.close()
-    }
+    if (splashWindow && !splashWindow.isDestroyed()) splashWindow.close()
     win.show()
   })
 
@@ -87,8 +102,6 @@ function createWindow(): void {
     return { action: 'deny' }
   })
 
-  // HMR for renderer base on electron-vite cli.
-  // Load the remote URL for development or the local html file for production.
   if (is.dev && process.env['ELECTRON_RENDERER_URL']) {
     win.loadURL(process.env['ELECTRON_RENDERER_URL'])
   } else {
@@ -96,75 +109,104 @@ function createWindow(): void {
   }
 }
 
-/** Bring the backend up (or attach to a running one), holding the splash until
-    it's healthy; only then open the main window. On failure the splash shows its
-    error state and waits for the user to retry or quit. */
-async function boot(restart = false): Promise<void> {
-  const ready = restart ? await backend.restart() : await backend.start()
-  if (ready && !getMainWindow()) {
-    createWindow()
+/** Bring the in-process services up (DB + migrations + TLS + LAN server + mDNS +
+    IPC), holding the splash until ready. On failure the splash shows its error
+    state and waits for retry/quit. Idempotent enough to retry safely. */
+async function bootstrap(): Promise<void> {
+  setStatus({ phase: 'starting' })
+  try {
+    const db = getDb()
+    runMigrations(db)
+
+    const activeRooms = rooms ?? (rooms = new Rooms())
+
+    const tls = await ensureSelfSignedCert()
+    trustedHostnames = new Set(['127.0.0.1', 'localhost', 'offlineclass.local', tls.lanIp])
+
+    if (!serverHandle) {
+      const preferredPort = Number(process.env['OFFLINECLASS_PORT'] ?? DEFAULT_PORT)
+      const port = await findFreePort(preferredPort)
+      serverHandle = await startServer(port, { db, rooms: activeRooms, tls })
+      console.log(
+        `[server] OfflineClass ouvindo em https://${tls.lanIp}:${serverHandle.port}` +
+          (serverHandle.port === preferredPort ? '' : ` (porta ${preferredPort} ocupada)`)
+      )
+    }
+
+    if (!mdnsHandle) mdnsHandle = await publishMdns(serverHandle.port)
+
+    if (!ipcRegistered) {
+      registerIpcHandlers({
+        auth: { db },
+        discovery: { port: serverHandle.port, mdnsName: mdnsHandle.name },
+        exams: { db },
+        questions: { db },
+        sessions: { db, rooms: activeRooms }
+      })
+      ipcRegistered = true
+    }
+
+    setStatus({ phase: 'ready' })
+    if (!getMainWindow()) createWindow()
+  } catch (err) {
+    setStatus({ phase: 'error', message: err instanceof Error ? err.message : String(err) })
   }
 }
 
-// This method will be called when Electron has finished
-// initialization and is ready to create browser windows.
-// Some APIs can only be used after this event occurs.
+// Electron blocks self-signed certs by default; trust ours for the hostnames we serve.
+function setupCertTrust(): void {
+  app.on('certificate-error', (event, _webContents, url, _error, _certificate, callback) => {
+    try {
+      if (trustedHostnames.has(new URL(url).hostname)) {
+        event.preventDefault()
+        callback(true)
+        return
+      }
+    } catch {
+      /* fall through */
+    }
+    callback(false)
+  })
+}
+
 app.whenReady().then(() => {
-  // Set app user model id for windows
   electronApp.setAppUserModelId('com.offlineclass.app')
 
-  // Override Electron's default dock icon during dev (macOS).
-  // Em produção o ícone vem do app bundle (.icns); essa chamada só afeta
-  // quando rodamos via `pnpm dev` e o binário é o Electron.app genérico.
   if (process.platform === 'darwin' && app.dock) {
     app.dock.setIcon(icon)
   }
 
-  // Default open or close DevTools by F12 in development
-  // and ignore CommandOrControl + R in production.
-  // see https://github.com/alex8088/electron-toolkit/tree/master/packages/utils
   app.on('browser-window-created', (_, window) => {
     optimizer.watchWindowShortcuts(window)
   })
 
-  registerIpcHandlers()
-
+  setupCertTrust()
   createSplashWindow()
 
-  // Push backend boot status to the splash (drives the "error" state).
-  backend.onStatus((status) => {
-    if (splashWindow && !splashWindow.isDestroyed()) {
-      splashWindow.webContents.send(IPC.BACKEND.STATUS, status)
-    }
-  })
-
-  // Splash controls, available only while startup is failing.
-  ipcMain.on(IPC.BACKEND.RETRY, () => void boot(true))
+  // Splash controls, available while startup is failing.
+  ipcMain.on(IPC.BACKEND.RETRY, () => void bootstrap())
   ipcMain.on(IPC.BACKEND.QUIT, () => app.quit())
 
-  void boot()
+  void bootstrap()
 
-  app.on('activate', function () {
-    // On macOS it's common to re-create a window in the app when the
-    // dock icon is clicked and there are no other windows open.
+  app.on('activate', () => {
     if (BrowserWindow.getAllWindows().length === 0) createWindow()
   })
 })
 
-// Quit when all windows are closed, except on macOS. There, it's common
-// for applications and their menu bar to stay active until the user quits
-// explicitly with Cmd + Q.
 app.on('window-all-closed', () => {
-  if (process.platform !== 'darwin') {
+  if (process.platform !== 'darwin') app.quit()
+})
+
+app.on('before-quit', async (event) => {
+  if (!serverHandle && !mdnsHandle) return
+  event.preventDefault()
+  try {
+    await mdnsHandle?.unpublish()
+    await serverHandle?.stop()
+  } finally {
+    serverHandle = null
+    mdnsHandle = null
     app.quit()
   }
 })
-
-// Tear down the spawned backend whenever the app actually quits (Cmd+Q,
-// last window closed on Win/Linux, or the splash "Sair" button).
-app.on('before-quit', () => {
-  backend.stop()
-})
-
-// In this file you can include the rest of your app's specific main process
-// code. You can also put them in separate files and require them here.

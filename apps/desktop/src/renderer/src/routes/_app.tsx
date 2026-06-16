@@ -1,4 +1,6 @@
-import { createFileRoute, Outlet } from '@tanstack/react-router'
+import { createFileRoute, Outlet, redirect } from '@tanstack/react-router'
+import { queryClient } from '@renderer/config/query-client'
+import { meQueryOptions } from '@renderer/modules/auth/queries'
 import { Sidebar } from '@renderer/shared/layouts/sidebar'
 import { AppToaster } from '@renderer/shared/layouts/app-toaster'
 import { ThemeProvider } from '@renderer/shared/hooks/theme-provider'
@@ -6,6 +8,11 @@ import { ThemeProvider } from '@renderer/shared/hooks/theme-provider'
 const noDragRegion = { WebkitAppRegion: 'no-drag' } as React.CSSProperties
 
 export const Route = createFileRoute('/_app')({
+  // Auth gate: every owner-scoped IPC handler needs a teacher session.
+  beforeLoad: async () => {
+    const me = await queryClient.fetchQuery(meQueryOptions)
+    if (!me) throw redirect({ to: '/auth' })
+  },
   component: AppLayout
 })
 
