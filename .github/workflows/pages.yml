@@ -1,0 +1,63 @@
+name: Deploy Landing to GitHub Pages
+
+# Builds apps/landing and publishes it to GitHub Pages whenever a push to main
+# touches the landing page (or this workflow). Can also be run manually.
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'apps/landing/**'
+      - '.github/workflows/pages.yml'
+  workflow_dispatch:
+
+# Least-privilege token: read the repo, write the Pages deployment.
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+# One live deployment at a time; let an in-progress run finish (don't cancel
+# a deploy mid-flight).
+concurrency:
+  group: pages
+  cancel-in-progress: false
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v4
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: pnpm
+
+      # Install only what the landing build needs; ignore lifecycle scripts of
+      # the heavy desktop/backend deps (electron, prisma, better-sqlite3).
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile --filter ./apps/landing...
+
+      - name: Build landing
+        run: pnpm build:landing
+
+      - name: Upload Pages artifact
+        uses: actions/upload-pages-artifact@v3
+        with:
+          path: apps/landing/dist
+
+  deploy:
+    needs: build
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - name: Deploy to GitHub Pages
+        id: deployment
+        uses: actions/deploy-pages@v4
