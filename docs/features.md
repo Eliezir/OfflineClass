@@ -259,6 +259,11 @@ Form builder é **extensível por design** — tipos adicionais (matemática/LaT
 
 ## 6. Backend cloud (`apps/cloud`)
 
+> **Status:** o clone `apps/cloud` (herdado do apresenta.ai) foi **removido**. A camada de
+> sync opcional será construída com **PowerSync** (tarefa futura, separada) — ainda não há
+> nada no repo. O PowerSync cuida da replicação e resolução de conflitos, então a stack
+> abaixo (Hono + Drizzle + Postgres com sync manual) será revista quando esse trabalho começar.
+
 ### 6.1 Stack
 - **[FEATURE]** Hono como HTTP server
 - **[FEATURE]** Drizzle ORM + Postgres

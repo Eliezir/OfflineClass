@@ -1,3 +1,4 @@
+import { useState, useEffect } from 'react'
 import { ArrowRight } from 'lucide-react'
 import { Link } from '@tanstack/react-router'
 import { Trans } from '@lingui/react/macro'
@@ -10,6 +11,28 @@ type LiveSessionBannerProps = {
 
 /** Featured strip shown when a session is running. Links to the live panel. */
 export function LiveSessionBanner({ session }: LiveSessionBannerProps): React.JSX.Element {
+  // 1. Mantemos o estado do cronômetro baseado nos minutos iniciais
+  const [minutesLeft, setMinutesLeft] = useState(session.minutesLeft)
+  const [prevMinutes, setPrevMinutes] = useState(session.minutesLeft)
+
+  // 2. Sincronização Inline Segura: Se a propriedade mudou lá fora (via WebSocket/Query),
+  // o React atualiza o estado imediatamente durante o fluxo atual de renderização.
+  if (session.minutesLeft !== prevMinutes) {
+    setMinutesLeft(session.minutesLeft)
+    setPrevMinutes(session.minutesLeft)
+  }
+
+  // 3. Efeito do temporizador regressivo (atualiza a cada 1 minuto)
+  useEffect(() => {
+    if (minutesLeft <= 0) return
+
+    const timer = setInterval(() => {
+      setMinutesLeft((prev) => Math.max(0, prev - 1))
+    }, 60000)
+
+    return () => clearInterval(timer)
+  }, [minutesLeft])
+
   return (
     <div className="mb-5 flex flex-wrap items-center gap-3 rounded-2xl bg-primary p-4 text-primary-foreground">
       <span
@@ -22,8 +45,7 @@ export function LiveSessionBanner({ session }: LiveSessionBannerProps): React.JS
         </div>
         <div className="text-sm font-semibold opacity-90">
           <Trans>
-            {session.groups} grupos · {session.students} alunos · {session.minutesLeft} min
-            restantes
+            {session.groups} grupos · {session.students} alunos · {minutesLeft} min restantes
           </Trans>
         </div>
       </div>

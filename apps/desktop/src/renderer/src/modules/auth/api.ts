@@ -1,4 +1,10 @@
-import type { LoginInput, RegisterInput, Teacher } from '@offlineclass/shared'
+import type {
+  ChangePasswordInput,
+  LoginInput,
+  RegisterInput,
+  Teacher,
+  UpdateProfileInput
+} from '@offlineclass/shared'
 
 /* Teacher auth over the domain IPC bridge (window.api.auth → main process).
    The session token is persisted in the main process (userData), so login is
@@ -18,4 +24,21 @@ export function register(input: RegisterInput): Promise<Teacher> {
 
 export function logout(): Promise<null> {
   return window.api.auth.logout()
+}
+
+/* TODO(backend): the offline-first backend doesn't expose profile mutations yet
+   (the auth bridge only has me/login/register/logout). These resolve locally so
+   the profile UI is complete; swap the bodies for `window.api.auth.*` calls once
+   the backend refactor lands — the queries/components stay unchanged. */
+
+export async function updateProfile(input: UpdateProfileInput): Promise<Teacher> {
+  const current = await getMe()
+  if (!current) throw new Error('Sessão expirada. Entre novamente.')
+  return { ...current, ...input }
+}
+
+export async function changePassword(_input: ChangePasswordInput): Promise<null> {
+  const current = await getMe()
+  if (!current) throw new Error('Sessão expirada. Entre novamente.')
+  return null
 }

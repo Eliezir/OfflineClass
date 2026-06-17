@@ -29,10 +29,7 @@ export default defineConfig(async () => {
     server: {
       host: '0.0.0.0',
       port,
-      strictPort: true,
-      proxy: {
-        '/api': 'http://localhost:8080'
-      }
+      strictPort: true
     }
   }
 })

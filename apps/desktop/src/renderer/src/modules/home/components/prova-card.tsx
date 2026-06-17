@@ -1,10 +1,11 @@
 import { ClipboardList, Play } from 'lucide-react'
 import { useLingui } from '@lingui/react/macro'
+import type { ExamSummary } from '@offlineclass/shared'
 import { Button } from '@renderer/shared/ui/button'
-import type { Prova } from '../types'
+import { formatRelativeTime } from '@renderer/shared/utils/format'
 
 type ProvaCardProps = {
-  prova: Prova
+  prova: ExamSummary
 }
 
 export function ProvaCard({ prova }: ProvaCardProps): React.JSX.Element {
@@ -22,7 +23,7 @@ export function ProvaCard({ prova }: ProvaCardProps): React.JSX.Element {
       <div className="min-w-0">
         <div className="line-clamp-2 text-sm font-bold leading-snug">{prova.title}</div>
         <div className="mt-1 text-xs font-semibold text-muted-foreground">
-          {prova.questionCount} {t`questões`} · {prova.updatedLabel}
+          {prova.questionsCount} {t`questões`} · {formatRelativeTime(prova.updatedAt)}
         </div>
       </div>
     </div>

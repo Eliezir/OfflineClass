@@ -1,5 +1,5 @@
 import { randomUUID } from 'node:crypto'
-import { and, asc, desc, eq, inArray, sql } from 'drizzle-orm'
+import { and, asc, desc, eq, inArray, isNotNull, sql } from 'drizzle-orm'
 import type {
   CodeLanguage,
   JoinInput,
@@ -11,6 +11,7 @@ import type {
   SessionDetail,
   SessionLobbyStudent,
   SessionPublic,
+  SessionResultSummary,
   SessionStatus,
   SessionSummary,
   StudentAnswerReview,
@@ -205,6 +206,76 @@ export function listSessionsForOwner(db: Db, ownerId: string): SessionSummary[] 
     startedAt: r.startedAt ? r.startedAt.getTime() : null,
     endedAt: r.endedAt ? r.endedAt.getTime() : null
   }))
+}
+
+/**
+ * Recent ended sessions for the teacher Home, each with a 0–10 average grade
+ * over its *submitted* students. Grading mirrors {@link loadStudentAnswers}:
+ * points-weighted — a student's grade is `(earnedPoints / maxPoints) * 10`.
+ */
+export function listRecentResultsForOwner(
+  db: Db,
+  ownerId: string,
+  limit = 5
+): SessionResultSummary[] {
+  const sessionRows = db
+    .select({
+      id: examSessions.id,
+      examId: examSessions.examId,
+      examTitle: exams.title,
+      endedAt: examSessions.endedAt
+    })
+    .from(examSessions)
+    .innerJoin(exams, eq(exams.id, examSessions.examId))
+    .where(and(eq(examSessions.ownerId, ownerId), eq(examSessions.status, 'ended')))
+    .orderBy(desc(examSessions.endedAt))
+    .limit(limit)
+    .all()
+
+  return sessionRows.map((s) => {
+    const qs = db
+      .select()
+      .from(questions)
+      .where(eq(questions.examId, s.examId))
+      .all()
+      .map(rowToQuestion)
+    const maxPoints = qs.reduce((acc, q) => acc + q.points, 0)
+
+    const submitted = db
+      .select({ id: students.id })
+      .from(students)
+      .where(and(eq(students.sessionId, s.id), isNotNull(students.submittedAt)))
+      .all()
+
+    let gradeSum = 0
+    for (const stu of submitted) {
+      const ansRows = db
+        .select({ questionId: answers.questionId, value: answers.value, score: answers.score })
+        .from(answers)
+        .where(eq(answers.studentId, stu.id))
+        .all()
+      const ansByQid = new Map(ansRows.map((a) => [a.questionId, a]))
+      // Points-weighted, mirroring loadStudentAnswers: auto kinds earn full points
+      // when correct; manual kinds earn their 0–1 fraction × points.
+      let earned = 0
+      for (const q of qs) {
+        const a = ansByQid.get(q.id) ?? null
+        const auto = autoGrade(q, a?.value ?? null)
+        earned += auto ? auto.score : (a?.score ?? 0) * q.points
+      }
+      gradeSum += maxPoints > 0 ? (earned / maxPoints) * 10 : 0
+    }
+
+    const studentCount = submitted.length
+    const averageScore = studentCount > 0 ? gradeSum / studentCount : 0
+    return {
+      id: s.id,
+      examTitle: s.examTitle,
+      studentCount,
+      averageScore: Math.round(averageScore * 10) / 10,
+      endedAt: s.endedAt ? s.endedAt.getTime() : null
+    }
+  })
 }
 
 export function findActiveSessionForOwner(db: Db, ownerId: string): SessionDetail | null {
@@ -609,8 +680,12 @@ export function loadStudentAnswers(
     return { question, value, correct, score }
   })
 
-  const totalScore = reviews.reduce((acc, r) => acc + (r.score ?? 0), 0)
-  // Max possible = sum of every question's points (the grade is points-weighted).
+  // Points-weighted: auto kinds (correct === non-null) already store the earned
+  // points; manual kinds store a 0–1 fraction, so they earn fraction × points.
+  const totalScore = reviews.reduce(
+    (acc, r) => acc + (r.correct !== null ? (r.score ?? 0) : (r.score ?? 0) * r.question.points),
+    0
+  )
   const maxScore = reviews.reduce((acc, r) => acc + r.question.points, 0)
 
   return {

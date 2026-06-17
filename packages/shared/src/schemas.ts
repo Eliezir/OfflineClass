@@ -30,6 +30,18 @@ export const LoginInput = z.object({
 })
 export type LoginInput = z.infer<typeof LoginInput>
 
+export const UpdateProfileInput = z.object({
+  name: z.string().min(2, 'Mínimo 2 caracteres').max(80),
+  email: z.string().email('E-mail inválido')
+})
+export type UpdateProfileInput = z.infer<typeof UpdateProfileInput>
+
+export const ChangePasswordInput = z.object({
+  currentPassword: z.string().min(1, 'Obrigatório'),
+  newPassword: z.string().min(8, 'Mínimo 8 caracteres').max(200)
+})
+export type ChangePasswordInput = z.infer<typeof ChangePasswordInput>
+
 // -- Exams & questions -----------------------------------------------------
 
 export const McqOption = z.object({
@@ -414,3 +426,15 @@ export const SessionSummary = z.object({
   endedAt: z.number().int().nullable()
 })
 export type SessionSummary = z.infer<typeof SessionSummary>
+
+// Graded outcome of an ended session, for the Home "recent results" list.
+export const SessionResultSummary = z.object({
+  id: z.string(),
+  examTitle: z.string(),
+  // Submitted students — the population the average is taken over.
+  studentCount: z.number().int().nonnegative(),
+  // Mean grade across submitted students, 0–10.
+  averageScore: z.number(),
+  endedAt: z.number().int().nullable()
+})
+export type SessionResultSummary = z.infer<typeof SessionResultSummary>

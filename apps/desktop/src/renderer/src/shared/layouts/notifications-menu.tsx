@@ -1,6 +1,6 @@
 import { useState } from 'react'
 import { Bell, CircleCheck, CircleX, Info, TriangleAlert, X, type LucideIcon } from 'lucide-react'
-import { msg, plural } from '@lingui/core/macro'
+import { plural } from '@lingui/core/macro'
 import { Plural, Trans, useLingui } from '@lingui/react/macro'
 import type { MessageDescriptor } from '@lingui/core'
 import { Button } from '@renderer/shared/ui/button'
@@ -28,58 +28,6 @@ const TONES: Record<Tone, { Icon: LucideIcon; className: string }> = {
   error: { Icon: CircleX, className: 'text-destructive' }
 }
 
-// Illustrative for now — no real notification system yet. Swap for live data later.
-const INITIAL_NOTIFICATIONS: AppNotification[] = [
-  {
-    id: '1',
-    title: msg`Sessão encerrada`,
-    description: msg`A sessão da “Prova de Redes” foi encerrada.`,
-    time: msg`agora`,
-    read: false,
-    tone: 'success'
-  },
-  {
-    id: '2',
-    title: msg`Resultados prontos`,
-    description: msg`As notas da Turma A já estão disponíveis.`,
-    time: msg`há 2 h`,
-    read: false,
-    tone: 'info'
-  },
-  {
-    id: '3',
-    title: msg`Aluno desconectado`,
-    description: msg`Maria saiu da sessão e pode ter perdido a conexão.`,
-    time: msg`há 3 h`,
-    read: false,
-    tone: 'warning'
-  },
-  {
-    id: '4',
-    title: msg`Falha ao exportar`,
-    description: msg`Não foi possível exportar o CSV. Tente novamente.`,
-    time: msg`ontem`,
-    read: true,
-    tone: 'error'
-  },
-  {
-    id: '5',
-    title: msg`Prova salva`,
-    description: msg`“Prova de SO” foi salva no seu computador.`,
-    time: msg`ontem`,
-    read: true,
-    tone: 'success'
-  },
-  {
-    id: '6',
-    title: msg`Nova versão disponível`,
-    description: msg`Atualize para a 1.2.0 para as últimas melhorias.`,
-    time: msg`2 dias`,
-    read: true,
-    tone: 'info'
-  }
-]
-
 const EXIT_MS = 220
 
 type PopoverContentProps = React.ComponentProps<typeof PopoverContent>
@@ -101,7 +49,8 @@ export function NotificationsMenu({
   alignOffset = 12
 }: NotificationsMenuProps = {}): React.JSX.Element {
   const { t, i18n } = useLingui()
-  const [items, setItems] = useState(INITIAL_NOTIFICATIONS)
+  // No real notification system yet — starts empty until live events land.
+  const [items, setItems] = useState<AppNotification[]>([])
   // Ids mid-exit: kept briefly so the row can collapse/fade before it's removed.
   const [removing, setRemoving] = useState<string[]>([])
   const unread = items.filter((n) => !n.read).length
