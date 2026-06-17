@@ -13,7 +13,12 @@ const EnvSchema = z.object({
   OFFLINECLASS_HOST: z.string().min(1).default('0.0.0.0'),
   // Socket.IO CORS origin. '*' suits the LAN — students load the SPA from the
   // same origin — tighten only if the server is ever exposed beyond the LAN.
-  OFFLINECLASS_CORS_ORIGIN: z.string().min(1).default('*')
+  OFFLINECLASS_CORS_ORIGIN: z.string().min(1).default('*'),
+  // TLS for the LAN server. 'on' serves HTTPS with a self-signed cert (default,
+  // preserves prior behavior). 'off' serves plain HTTP — recommended for the
+  // classroom LAN: no browser "not secure" warning, so students reach
+  // offlineclass.local:<port> with no friction. See docs/realtime-groups-discovery-rnd.md.
+  OFFLINECLASS_TLS: z.enum(['on', 'off']).default('on')
 })
 
 export interface BackendEnv {
@@ -21,14 +26,21 @@ export interface BackendEnv {
   port: number
   host: string
   corsOrigin: string
+  /** Whether the LAN server terminates TLS (HTTPS) or serves plain HTTP. */
+  tls: boolean
+  /** URL scheme implied by `tls` — 'https' or 'http'. */
+  scheme: 'https' | 'http'
 }
 
 function load(): BackendEnv {
   const parsed = EnvSchema.parse(process.env)
+  const tls = parsed.OFFLINECLASS_TLS === 'on'
   return {
     port: parsed.OFFLINECLASS_PORT,
     host: parsed.OFFLINECLASS_HOST,
-    corsOrigin: parsed.OFFLINECLASS_CORS_ORIGIN
+    corsOrigin: parsed.OFFLINECLASS_CORS_ORIGIN,
+    tls,
+    scheme: tls ? 'https' : 'http'
   }
 }
 

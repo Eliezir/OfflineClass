@@ -12,6 +12,7 @@ import { registerMainWindow, getMainWindow } from './windows'
 import { getDb } from './db/client'
 import { runMigrations } from './db/migrate'
 import { publishMdns, type MdnsHandle } from './discovery/mdns'
+import { getLanIp } from './discovery/ip'
 import { findFreePort } from './find-free-port'
 import { startServer, type ServerHandle } from './server'
 import { Rooms } from './sessions/rooms'
@@ -122,25 +123,28 @@ async function bootstrap(): Promise<void> {
 
     const activeRooms = rooms ?? (rooms = new Rooms())
 
-    const tls = await ensureSelfSignedCert()
-    trustedHostnames = new Set(['127.0.0.1', 'localhost', 'offlineclass.local', tls.lanIp])
+    // HTTPS (self-signed) by default; OFFLINECLASS_TLS=off serves plain HTTP so
+    // students avoid the "not secure" warning over offlineclass.local.
+    const tls = env.tls ? await ensureSelfSignedCert() : null
+    const lanIp = tls?.lanIp ?? getLanIp()
+    trustedHostnames = new Set(['127.0.0.1', 'localhost', 'offlineclass.local', lanIp])
 
     if (!serverHandle) {
       const preferredPort = env.port
       const port = await findFreePort(preferredPort)
-      serverHandle = await startServer(port, { db, rooms: activeRooms, tls })
+      serverHandle = await startServer(port, { db, rooms: activeRooms, tls: tls ?? undefined })
       console.log(
-        `[server] OfflineClass ouvindo em https://${tls.lanIp}:${serverHandle.port}` +
+        `[server] OfflineClass ouvindo em ${env.scheme}://${lanIp}:${serverHandle.port}` +
           (serverHandle.port === preferredPort ? '' : ` (porta ${preferredPort} ocupada)`)
       )
     }
 
-    if (!mdnsHandle) mdnsHandle = await publishMdns(serverHandle.port)
+    if (!mdnsHandle) mdnsHandle = await publishMdns(serverHandle.port, env.scheme)
 
     if (!ipcRegistered) {
       registerIpcHandlers({
         auth: { db },
-        discovery: { port: serverHandle.port, mdnsName: mdnsHandle.name },
+        discovery: { port: serverHandle.port, mdnsName: mdnsHandle.name, scheme: env.scheme },
         exams: { db },
         questions: { db },
         sessions: { db, rooms: activeRooms }

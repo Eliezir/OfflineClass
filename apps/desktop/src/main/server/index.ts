@@ -45,7 +45,8 @@ export interface ServerHandle {
 export interface ServerDeps {
   db: Db
   rooms: Rooms
-  tls: TlsBundle
+  /** When omitted, the server runs plain HTTP (OFFLINECLASS_TLS=off). */
+  tls?: TlsBundle
 }
 
 function extractBearer(c: Context): string | null {
@@ -216,17 +217,21 @@ export async function startServer(port: number, deps: ServerDeps): Promise<Serve
     return c.html(readFileSync(indexPath, 'utf-8'))
   })
 
-  const server = await new Promise<ServerType>((resolve) => {
-    const s = serve(
-      {
+  // HTTPS (self-signed) when a TLS bundle is provided, otherwise plain HTTP
+  // (OFFLINECLASS_TLS=off) — the @hono/node-server picks http when no
+  // createServer/serverOptions are passed.
+  const serveConfig = deps.tls
+    ? {
         fetch: app.fetch,
         port,
         hostname: env.host,
         createServer,
         serverOptions: { key: deps.tls.key, cert: deps.tls.cert }
-      },
-      () => resolve(s)
-    )
+      }
+    : { fetch: app.fetch, port, hostname: env.host }
+
+  const server = await new Promise<ServerType>((resolve) => {
+    const s = serve(serveConfig, () => resolve(s))
   })
 
   // ---- Socket.IO --------------------------------------------------------

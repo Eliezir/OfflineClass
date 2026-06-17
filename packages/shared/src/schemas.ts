@@ -4,7 +4,13 @@ export const DiscoveryStatus = z.object({
   lanIp: z.string(),
   port: z.number().int().positive(),
   mdnsName: z.string(),
-  qrDataUrl: z.string()
+  qrDataUrl: z.string(),
+  // Ready-to-display join targets. `url` is the IP-based URL the QR encodes
+  // (works on any device). `host` is the mDNS form, e.g. "offlineclass.local:8000",
+  // for students on PCs to type instead of an IP. `scheme` is 'https' | 'http'.
+  url: z.string(),
+  host: z.string(),
+  scheme: z.enum(['https', 'http'])
 })
 export type DiscoveryStatus = z.infer<typeof DiscoveryStatus>
 

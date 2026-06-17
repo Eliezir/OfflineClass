@@ -6,13 +6,15 @@ export interface MdnsHandle {
 }
 
 const SERVICE_NAME = 'offlineclass'
-// `_https._tcp` since the server now terminates TLS. Browsers don't actually
-// dispatch on this — they resolve the .local name and let the URL's scheme
-// pick the port — but tools like `dns-sd -B` enumerate by type, so picking
-// the right one keeps the announce honest.
-const SERVICE_TYPE = 'https'
+// `_https._tcp` / `_http._tcp` per the scheme the server actually serves.
+// Browsers don't dispatch on this — they resolve the .local name and let the
+// URL's scheme pick the port — but tools like `dns-sd -B` enumerate by type,
+// so matching the real scheme keeps the announce honest.
 
-export async function publishMdns(port: number): Promise<MdnsHandle> {
+export async function publishMdns(
+  port: number,
+  scheme: 'https' | 'http' = 'https'
+): Promise<MdnsHandle> {
   const bonjour = new Bonjour()
   // bonjour-service uses `service.host` verbatim as the name on the A record
   // (no `.local` is appended). The system mDNS resolver queries for the FQDN
@@ -20,7 +22,7 @@ export async function publishMdns(port: number): Promise<MdnsHandle> {
   const HOSTNAME_FQDN = `${SERVICE_NAME}.local`
   const service: Service = bonjour.publish({
     name: SERVICE_NAME,
-    type: SERVICE_TYPE,
+    type: scheme,
     port,
     host: HOSTNAME_FQDN,
     txt: { app: 'OfflineClass' }
