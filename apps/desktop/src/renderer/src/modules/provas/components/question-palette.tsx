@@ -65,7 +65,7 @@ export function QuestionPalette({ onAdd, disabled }: QuestionPaletteProps): Reac
             type="button"
             disabled={disabled}
             onClick={() => onAdd(type.kind)}
-            className="group flex w-full items-start gap-3 rounded-xl border border-border bg-card p-3 text-left transition-colors hover:border-primary/40 hover:bg-accent disabled:pointer-events-none disabled:opacity-50"
+            className="group flex w-full items-start gap-3 rounded-xl border border-border bg-card p-3 text-left transition-all duration-200 hover:-translate-y-0.5 hover:border-primary/40 hover:bg-accent hover:shadow-[var(--edge-soft),0_6px_16px_-6px_rgb(0_0_0_/_0.12)] active:translate-y-0 disabled:pointer-events-none disabled:opacity-50"
           >
             <span className="grid size-9 shrink-0 place-items-center rounded-lg bg-primary-soft text-primary transition-colors group-hover:bg-primary group-hover:text-primary-foreground [&_svg]:size-5">
               {type.icon}

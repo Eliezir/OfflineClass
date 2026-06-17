@@ -18,7 +18,7 @@ import { SessionEnded } from './session-ended'
 import { StatusPill } from './status-pill'
 import { LiveSessionManager } from './LiveSessionManager'
 
-export function SessaoPage(): React.JSX.Element {
+export function SessaoPage({ initialExamId }: { initialExamId?: string } = {}): React.JSX.Element {
   const { t } = useLingui()
   const navigate = useNavigate()
   const { data: active, isLoading } = useActiveSessionQuery()
@@ -109,6 +109,7 @@ export function SessaoPage(): React.JSX.Element {
       ) : phase === 'none' ? (
         <NoSession
           provas={exams.data ?? []}
+          defaultProvaId={initialExamId}
           loadingProvas={exams.isLoading}
           pending={create.isPending}
           error={

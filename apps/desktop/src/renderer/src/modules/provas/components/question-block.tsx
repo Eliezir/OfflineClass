@@ -9,9 +9,19 @@ import {
   type CodeLanguage,
   type Question
 } from '@offlineclass/shared'
+import { Badge } from '@renderer/shared/ui/badge'
 import { Button } from '@renderer/shared/ui/button'
+import { Checkbox } from '@renderer/shared/ui/checkbox'
 import { CodeEditor } from '@renderer/shared/ui/code-editor'
 import { Input } from '@renderer/shared/ui/input'
+import { RadioGroup, RadioGroupItem } from '@renderer/shared/ui/radio-group'
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue
+} from '@renderer/shared/ui/select'
 import { Textarea } from '@renderer/shared/ui/textarea'
 import { fileToDataUrl } from '@renderer/shared/utils/image'
 import { cn } from '@renderer/shared/utils'
@@ -169,13 +179,38 @@ export function QuestionBlock({
 
   const isChoice = question.kind === 'mcq' || question.kind === 'multi'
 
+  const optionRow = (o: Option, i: number, control: React.ReactNode): React.JSX.Element => (
+    <div key={o.id} className="flex items-center gap-2">
+      {control}
+      <Input
+        value={o.text}
+        onChange={(e) => setOptionText(o.id, e.target.value)}
+        onBlur={() => save()}
+        placeholder={t`Alternativa ${i + 1}`}
+      />
+      <Button
+        type="button"
+        size="icon-sm"
+        variant="ghost"
+        aria-label={t`Remover alternativa`}
+        disabled={options.length <= 2}
+        onClick={() => removeOption(o.id)}
+      >
+        <Trash2 />
+      </Button>
+    </div>
+  )
+
   return (
     <div
       ref={setNodeRef}
       style={{ transform: CSS.Transform.toString(transform), transition }}
       className={cn(
-        'rounded-2xl border border-border bg-card',
-        isDragging && 'relative z-10 opacity-80 shadow-[0_20px_40px_-12px_rgb(0_0_0_/_0.25)]'
+        'rounded-2xl border border-border bg-card transition-shadow duration-200',
+        'animate-in fade-in duration-300',
+        isDragging
+          ? 'relative z-10 opacity-80 shadow-[0_20px_40px_-12px_rgb(0_0_0_/_0.25)]'
+          : 'hover:shadow-[var(--edge-soft),0_2px_8px_-2px_rgb(0_0_0_/_0.08)]'
       )}
     >
       <div className="flex items-center gap-2 border-b border-border px-3 py-2.5">
@@ -191,11 +226,9 @@ export function QuestionBlock({
         <span className="grid size-6 place-items-center rounded-md bg-muted text-xs font-bold text-muted-foreground">
           {index + 1}
         </span>
-        <span className="rounded-full bg-primary-soft px-2 py-0.5 text-[11px] font-bold text-primary">
-          {KIND_LABEL[question.kind]}
-        </span>
+        <Badge>{KIND_LABEL[question.kind]}</Badge>
         {update.isPending && (
-          <span className="text-xs text-muted-foreground">
+          <span className="text-xs text-muted-foreground duration-200 animate-in fade-in">
             <Trans>Salvando…</Trans>
           </span>
         )}
@@ -228,7 +261,7 @@ export function QuestionBlock({
           onChange={pickImage}
         />
         {image ? (
-          <div className="relative w-fit">
+          <div className="relative w-fit duration-200 animate-in fade-in zoom-in-95">
             <img
               src={image}
               alt={t`Imagem da questão`}
@@ -257,40 +290,37 @@ export function QuestionBlock({
           </Button>
         )}
 
-        {/* Choice options (mcq / multi) */}
+        {/* Choice options (mcq = single correct via RadioGroup, multi = Checkbox) */}
         {isChoice && (
           <div className="space-y-2">
-            {options.map((o, i) => (
-              <div key={o.id} className="flex items-center gap-2">
-                <input
-                  type={question.kind === 'mcq' ? 'radio' : 'checkbox'}
-                  name={`correct-${question.id}`}
-                  aria-label={t`Marcar como correta`}
-                  checked={o.correct}
-                  onChange={() => toggleCorrect(o.id)}
-                  className={cn(
-                    'size-4 shrink-0 accent-primary',
-                    question.kind === 'multi' && 'rounded'
-                  )}
-                />
-                <Input
-                  value={o.text}
-                  onChange={(e) => setOptionText(o.id, e.target.value)}
-                  onBlur={() => save()}
-                  placeholder={t`Alternativa ${i + 1}`}
-                />
-                <Button
-                  type="button"
-                  size="icon-sm"
-                  variant="ghost"
-                  aria-label={t`Remover alternativa`}
-                  disabled={options.length <= 2}
-                  onClick={() => removeOption(o.id)}
-                >
-                  <Trash2 />
-                </Button>
+            {question.kind === 'mcq' ? (
+              <RadioGroup
+                value={options.find((o) => o.correct)?.id ?? ''}
+                onValueChange={(id) => toggleCorrect(id)}
+              >
+                {options.map((o, i) =>
+                  optionRow(
+                    o,
+                    i,
+                    <RadioGroupItem value={o.id} aria-label={t`Marcar como correta`} />
+                  )
+                )}
+              </RadioGroup>
+            ) : (
+              <div className="grid gap-2">
+                {options.map((o, i) =>
+                  optionRow(
+                    o,
+                    i,
+                    <Checkbox
+                      checked={o.correct}
+                      onCheckedChange={() => toggleCorrect(o.id)}
+                      aria-label={t`Marcar como correta`}
+                    />
+                  )
+                )}
               </div>
-            ))}
+            )}
             {options.length < 8 && (
               <Button type="button" variant="outline" size="sm" onClick={addOption}>
                 <Plus />
@@ -331,21 +361,25 @@ export function QuestionBlock({
               <span className="text-sm font-medium">
                 <Trans>Linguagem</Trans>
               </span>
-              <select
+              <Select
                 value={language}
-                onChange={(e) => {
-                  const lang = e.target.value as CodeLanguage
+                onValueChange={(v) => {
+                  const lang = v as CodeLanguage
                   setLanguage(lang)
                   save({ language: lang })
                 }}
-                className="h-9 rounded-[10px] border border-input-border bg-input px-2 text-sm outline-none focus-visible:border-ring focus-visible:ring-[3px] focus-visible:ring-ring/25"
               >
-                {CodeLanguages.map((lang) => (
-                  <option key={lang} value={lang}>
-                    {lang === 'plaintext' ? t`Texto` : lang}
-                  </option>
-                ))}
-              </select>
+                <SelectTrigger className="h-9 w-44">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  {CodeLanguages.map((lang) => (
+                    <SelectItem key={lang} value={lang}>
+                      {lang === 'plaintext' ? t`Texto` : lang}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
             </div>
             <CodeEditor
               value={starterCode}

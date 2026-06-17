@@ -20,6 +20,8 @@ type DurationOption = '30' | '45' | '60' | '90'
 
 type NoSessionProps = {
   provas: ExamSummary[]
+  /** Pre-selected prova (e.g. arriving from the builder's "Iniciar sessão"). */
+  defaultProvaId?: string
   loadingProvas: boolean
   pending: boolean
   error: string | null
@@ -29,13 +31,14 @@ type NoSessionProps = {
 /** Entry state: pick a prova + options and open the lobby. */
 export function NoSession({
   provas,
+  defaultProvaId,
   loadingProvas,
   pending,
   error,
   onOpen
 }: NoSessionProps): React.JSX.Element {
   const { t } = useLingui()
-  const [provaId, setProvaId] = useState('')
+  const [provaId, setProvaId] = useState(defaultProvaId ?? '')
   const [duration, setDuration] = useState<DurationOption>('60')
   const [allowLateJoin, setAllowLateJoin] = useState(false)
 

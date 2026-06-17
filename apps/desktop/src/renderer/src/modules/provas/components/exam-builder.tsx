@@ -1,5 +1,6 @@
 import { useState } from 'react'
-import { Link } from '@tanstack/react-router'
+import { Link, useNavigate } from '@tanstack/react-router'
+import { useIsMutating } from '@tanstack/react-query'
 import {
   DndContext,
   KeyboardSensor,
@@ -15,13 +16,23 @@ import {
   sortableKeyboardCoordinates,
   verticalListSortingStrategy
 } from '@dnd-kit/sortable'
-import { ArrowLeft, ClipboardList, ListChecks, Pencil } from 'lucide-react'
+import {
+  ArrowLeft,
+  Check,
+  CheckCircle2,
+  ClipboardList,
+  ListChecks,
+  Loader2,
+  Pencil
+} from 'lucide-react'
 import { Trans, useLingui } from '@lingui/react/macro'
 import type { ExamSummary, QuestionInput, QuestionKind } from '@offlineclass/shared'
 import { Button } from '@renderer/shared/ui/button'
 import { EmptyState } from '@renderer/shared/ui/empty-state'
 import { Skeleton } from '@renderer/shared/ui/skeleton'
+import { notify } from '@renderer/shared/services/toast'
 import { useAddQuestion, useDeleteQuestion, useExamQuery, useReorderQuestions } from '../queries'
+import { BuilderFinishDialog } from './builder-finish-dialog'
 import { BuilderSummary } from './builder-summary'
 import { ProvaFormDialog } from './prova-form-dialog'
 import { QuestionBlock } from './question-block'
@@ -58,13 +69,27 @@ function defaultQuestion(
 
 export function ExamBuilder({ examId }: { examId: string }): React.JSX.Element {
   const { t } = useLingui()
+  const navigate = useNavigate()
   const { data: exam, isLoading, isError } = useExamQuery(examId)
 
   const add = useAddQuestion(examId)
   const del = useDeleteQuestion(examId)
   const reorder = useReorderQuestions(examId)
+  // Any in-flight question/exam write → "Salvando…" in the header.
+  const saving = useIsMutating() > 0
 
   const [metaOpen, setMetaOpen] = useState(false)
+  const [finishOpen, setFinishOpen] = useState(false)
+
+  const handleFinish = (): void => {
+    setFinishOpen(false)
+    notify.success(t`Prova salva`)
+    void navigate({ to: '/provas' })
+  }
+  const handleStartSession = (): void => {
+    setFinishOpen(false)
+    void navigate({ to: '/sessao', search: { examId } })
+  }
 
   const sensors = useSensors(
     useSensor(PointerSensor, { activationConstraint: { distance: 4 } }),
@@ -135,6 +160,15 @@ export function ExamBuilder({ examId }: { examId: string }): React.JSX.Element {
     updatedAt: exam.updatedAt
   }
 
+  // Soft readiness warnings shown in the "Concluir" dialog (they don't block).
+  const warnings: string[] = []
+  if (exam.questions.length === 0) {
+    warnings.push(t`Adicione ao menos uma questão antes de aplicar.`)
+  }
+  const untitled = exam.questions.filter((q) => q.prompt.trim() === t`Pergunta sem título`).length
+  if (untitled === 1) warnings.push(t`1 questão ainda está com o título padrão.`)
+  else if (untitled > 1) warnings.push(t`${untitled} questões ainda estão com o título padrão.`)
+
   return (
     <div className="flex flex-1 overflow-hidden">
       <main className="scrollbar-subtle flex-1 overflow-y-auto px-6 pb-10">
@@ -162,10 +196,27 @@ export function ExamBuilder({ examId }: { examId: string }): React.JSX.Element {
                 </p>
               </div>
             </div>
-            <div style={noDragRegion}>
+            <div style={noDragRegion} className="flex items-center gap-2">
+              <span className="mr-1 flex items-center gap-1.5 text-xs font-semibold text-muted-foreground">
+                {saving ? (
+                  <>
+                    <Loader2 className="size-3.5 animate-spin" />
+                    <Trans>Salvando…</Trans>
+                  </>
+                ) : (
+                  <>
+                    <CheckCircle2 className="size-3.5 text-success" />
+                    <Trans>Salvo automaticamente</Trans>
+                  </>
+                )}
+              </span>
               <Button variant="outline" onClick={() => setMetaOpen(true)}>
                 <Pencil />
                 <Trans>Editar dados</Trans>
+              </Button>
+              <Button onClick={() => setFinishOpen(true)}>
+                <Check />
+                <Trans>Concluir</Trans>
               </Button>
             </div>
           </div>
@@ -210,6 +261,17 @@ export function ExamBuilder({ examId }: { examId: string }): React.JSX.Element {
       </aside>
 
       <ProvaFormDialog open={metaOpen} onOpenChange={setMetaOpen} prova={summary} />
+      <BuilderFinishDialog
+        open={finishOpen}
+        onOpenChange={setFinishOpen}
+        title={exam.title}
+        icon={exam.icon}
+        questionsCount={exam.questions.length}
+        totalPoints={totalPoints}
+        warnings={warnings}
+        onFinish={handleFinish}
+        onStartSession={handleStartSession}
+      />
     </div>
   )
 }
