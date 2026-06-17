@@ -15,6 +15,20 @@
       "when": 1779216903434,
       "tag": "0001_add_score_to_answers",
       "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "6",
+      "when": 1781645526813,
+      "tag": "0002_lovely_iron_monger",
+      "breakpoints": true
+    },
+    {
+      "idx": 3,
+      "version": "6",
+      "when": 1781674256777,
+      "tag": "0003_unusual_scalphunter",
+      "breakpoints": true
     }
   ]
 }

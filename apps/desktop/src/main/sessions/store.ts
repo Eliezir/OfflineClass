@@ -1,6 +1,7 @@
 import { randomUUID } from 'node:crypto'
 import { and, asc, desc, eq, inArray, sql } from 'drizzle-orm'
 import type {
+  CodeLanguage,
   JoinInput,
   JoinResult,
   McqOption,
@@ -20,6 +21,7 @@ import type {
 } from '@offlineclass/shared'
 
 import type { Db } from '../db/client'
+import { rowToQuestion } from '../db/questions-map'
 import { answers, exams, examSessions, questions, students } from '../db/schema'
 
 export class SessionError extends Error {
@@ -92,11 +94,7 @@ function loadDetailById(db: Db, sessionId: string): SessionDetail | null {
   }
 }
 
-export function createSession(
-  db: Db,
-  ownerId: string,
-  input: SessionCreateInput
-): SessionDetail {
+export function createSession(db: Db, ownerId: string, input: SessionCreateInput): SessionDetail {
   // Reject if any session is already active anywhere — keeps /api/session/active
   // unambiguous for students.
   const existing = db
@@ -214,10 +212,7 @@ export function findActiveSessionForOwner(db: Db, ownerId: string): SessionDetai
     .select({ id: examSessions.id })
     .from(examSessions)
     .where(
-      and(
-        eq(examSessions.ownerId, ownerId),
-        inArray(examSessions.status, [...ACTIVE_STATUSES])
-      )
+      and(eq(examSessions.ownerId, ownerId), inArray(examSessions.status, [...ACTIVE_STATUSES]))
     )
     .orderBy(desc(examSessions.createdAt))
     .get()
@@ -371,17 +366,29 @@ function loadStudentFull(db: Db, studentId: string): ResolvedStudent | null {
 }
 
 function questionRowToStudent(row: typeof questions.$inferSelect): StudentQuestion {
-  if (row.kind === 'mcq') {
+  const base = { id: row.id, position: row.position, prompt: row.prompt, image: row.image ?? null }
+  const studentOptions = (): { id: string; text: string }[] => {
     const opts = row.optionsJson ? (JSON.parse(row.optionsJson) as McqOption[]) : []
-    return {
-      kind: 'mcq',
-      id: row.id,
-      position: row.position,
-      prompt: row.prompt,
-      options: opts.map((o) => ({ id: o.id, text: o.text }))
-    }
+    return opts.map((o) => ({ id: o.id, text: o.text }))
   }
-  return { kind: 'essay', id: row.id, position: row.position, prompt: row.prompt }
+  switch (row.kind) {
+    case 'mcq':
+      return { kind: 'mcq', ...base, options: studentOptions() }
+    case 'multi':
+      return { kind: 'multi', ...base, options: studentOptions() }
+    case 'truefalse':
+      return { kind: 'truefalse', ...base }
+    case 'code':
+      return {
+        kind: 'code',
+        ...base,
+        language: (row.language ?? 'plaintext') as CodeLanguage,
+        starterCode: row.starterCode ?? ''
+      }
+    case 'essay':
+    default:
+      return { kind: 'essay', ...base }
+  }
 }
 
 export function getStudentExam(db: Db, studentId: string): StudentExam {
@@ -428,11 +435,7 @@ export function getStudentSessionState(db: Db, studentId: string): StudentSessio
     .where(eq(examSessions.id, student.sessionId))
     .get()
   if (!session) throw new SessionError('Sessão não encontrada', 'NOT_FOUND')
-  const answerRows = db
-    .select()
-    .from(answers)
-    .where(eq(answers.studentId, studentId))
-    .all()
+  const answerRows = db.select().from(answers).where(eq(answers.studentId, studentId)).all()
   const answerSnapshots: StudentAnswerSnapshot[] = answerRows.map((row) => ({
     questionId: row.questionId,
     value: row.value,
@@ -450,18 +453,10 @@ export function getStudentSessionState(db: Db, studentId: string): StudentSessio
 }
 
 export function recordHeartbeat(db: Db, studentId: string): void {
-  db.update(students)
-    .set({ lastSeenAt: new Date() })
-    .where(eq(students.id, studentId))
-    .run()
+  db.update(students).set({ lastSeenAt: new Date() }).where(eq(students.id, studentId)).run()
 }
 
-export function saveAnswer(
-  db: Db,
-  studentId: string,
-  questionId: string,
-  value: string
-): void {
+export function saveAnswer(db: Db, studentId: string, questionId: string, value: string): void {
   const student = loadStudentFull(db, studentId)
   if (!student) throw new SessionError('Aluno não encontrado', 'NOT_FOUND')
   if (student.submittedAt) {
@@ -529,18 +524,41 @@ export function getStudentSessionId(db: Db, studentId: string): string | null {
 
 // -- Teacher answer review -----------------------------------------------
 
-function rowToFullQuestion(row: typeof questions.$inferSelect): Question {
-  if (row.kind === 'mcq') {
-    const opts = row.optionsJson ? (JSON.parse(row.optionsJson) as McqOption[]) : []
-    return {
-      kind: 'mcq',
-      id: row.id,
-      position: row.position,
-      prompt: row.prompt,
-      options: opts
+/** Auto-grade an objective question. Returns null for manually-graded kinds
+    (essay/code). A correct answer is worth the question's full points. */
+function autoGrade(
+  question: Question,
+  value: string | null
+): { correct: boolean; score: number } | null {
+  switch (question.kind) {
+    case 'mcq': {
+      const correct =
+        value !== null && question.options.find((o) => o.id === value)?.correct === true
+      return { correct, score: correct ? question.points : 0 }
     }
+    case 'multi': {
+      const expected = new Set(question.options.filter((o) => o.correct).map((o) => o.id))
+      let picked: string[] = []
+      try {
+        const parsed = value ? (JSON.parse(value) as unknown) : []
+        if (Array.isArray(parsed)) picked = parsed.filter((v): v is string => typeof v === 'string')
+      } catch {
+        picked = []
+      }
+      const pickedSet = new Set(picked)
+      const correct =
+        value !== null &&
+        pickedSet.size === expected.size &&
+        [...expected].every((id) => pickedSet.has(id))
+      return { correct, score: correct ? question.points : 0 }
+    }
+    case 'truefalse': {
+      const correct = value !== null && (value === 'true') === question.answer
+      return { correct, score: correct ? question.points : 0 }
+    }
+    default:
+      return null
   }
-  return { kind: 'essay', id: row.id, position: row.position, prompt: row.prompt }
 }
 
 export function loadStudentAnswers(
@@ -576,37 +594,24 @@ export function loadStudentAnswers(
     .where(eq(questions.examId, sessionRow.examId))
     .orderBy(asc(questions.position))
     .all()
-  const answerRows = db
-    .select()
-    .from(answers)
-    .where(eq(answers.studentId, studentId))
-    .all()
+  const answerRows = db.select().from(answers).where(eq(answers.studentId, studentId)).all()
   const answerByQId = new Map(answerRows.map((a) => [a.questionId, a]))
 
   const reviews: StudentAnswerReview[] = questionRows.map((row) => {
-    const question = rowToFullQuestion(row)
+    const question = rowToQuestion(row)
     const ans = answerByQId.get(row.id) ?? null
     const value = ans?.value ?? null
-    let correct: boolean | null = null
-    let score: number | null = null
-    if (question.kind === 'mcq') {
-      if (value !== null) {
-        const opt = question.options.find((o) => o.id === value)
-        correct = opt?.correct === true
-        // MCQ is auto-graded — ignore any stored override and compute fresh
-        // so changing the correct flag in the form builder re-grades on
-        // the next read.
-        score = correct ? 1 : 0
-      }
-    } else {
-      // Essay: whatever the teacher saved (or null = not graded yet).
-      score = ans?.score ?? null
-    }
+    // Auto-graded kinds recompute fresh (so editing answers in the builder
+    // re-grades on the next read); manual kinds use the teacher's saved score.
+    const auto = autoGrade(question, value)
+    const correct = auto ? auto.correct : null
+    const score = auto ? auto.score : (ans?.score ?? null)
     return { question, value, correct, score }
   })
 
   const totalScore = reviews.reduce((acc, r) => acc + (r.score ?? 0), 0)
-  const maxScore = reviews.length
+  // Max possible = sum of every question's points (the grade is points-weighted).
+  const maxScore = reviews.reduce((acc, r) => acc + r.question.points, 0)
 
   return {
     sessionId,
@@ -662,10 +667,7 @@ export function gradeAnswer(
     .get()
   const now = new Date()
   if (existing) {
-    db.update(answers)
-      .set({ score, updatedAt: now })
-      .where(eq(answers.id, existing.id))
-      .run()
+    db.update(answers).set({ score, updatedAt: now }).where(eq(answers.id, existing.id)).run()
   } else {
     // Allow grading even when the student left the field blank — insert a
     // zero-value answer row so the score sticks.

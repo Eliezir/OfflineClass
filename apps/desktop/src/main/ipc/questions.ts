@@ -1,23 +1,16 @@
 import { randomUUID } from 'node:crypto'
 import { ipcMain } from 'electron'
 import { and, asc, eq, sql } from 'drizzle-orm'
-import { QuestionInput, type Question, type McqOption } from '@offlineclass/shared'
+import { QuestionInput, type Question } from '@offlineclass/shared'
 
 import { requireTeacherId } from './auth'
 import { DomainError } from './exams'
 import type { Db } from '../db/client'
 import { exams, questions } from '../db/schema'
+import { questionColumns, rowToQuestion } from '../db/questions-map'
 
 export interface QuestionsContext {
   db: Db
-}
-
-function rowToQuestion(row: typeof questions.$inferSelect): Question {
-  if (row.kind === 'mcq') {
-    const opts = row.optionsJson ? (JSON.parse(row.optionsJson) as McqOption[]) : []
-    return { kind: 'mcq', id: row.id, position: row.position, prompt: row.prompt, options: opts }
-  }
-  return { kind: 'essay', id: row.id, position: row.position, prompt: row.prompt }
 }
 
 function assertExamOwnership(db: Db, examId: string, ownerId: string): void {
@@ -29,7 +22,11 @@ function assertExamOwnership(db: Db, examId: string, ownerId: string): void {
   if (!exam) throw new DomainError('Prova não encontrada', 'NOT_FOUND')
 }
 
-function findQuestionWithOwner(db: Db, questionId: string, ownerId: string) {
+function findQuestionWithOwner(
+  db: Db,
+  questionId: string,
+  ownerId: string
+): { id: string; examId: string; ownerId: string } {
   const row = db
     .select({
       id: questions.id,
@@ -64,14 +61,7 @@ export function registerQuestionsHandlers(ctx: QuestionsContext): void {
     const id = randomUUID()
 
     db.insert(questions)
-      .values({
-        id,
-        examId,
-        position,
-        kind: input.kind,
-        prompt: input.prompt,
-        optionsJson: input.kind === 'mcq' ? JSON.stringify(input.options) : null
-      })
+      .values({ id, examId, position, ...questionColumns(input) })
       .run()
 
     db.update(exams).set({ updatedAt: new Date() }).where(eq(exams.id, examId)).run()
@@ -87,14 +77,7 @@ export function registerQuestionsHandlers(ctx: QuestionsContext): void {
     const input = QuestionInput.parse(rawInput)
     const found = findQuestionWithOwner(db, id, ownerId)
 
-    db.update(questions)
-      .set({
-        kind: input.kind,
-        prompt: input.prompt,
-        optionsJson: input.kind === 'mcq' ? JSON.stringify(input.options) : null
-      })
-      .where(eq(questions.id, id))
-      .run()
+    db.update(questions).set(questionColumns(input)).where(eq(questions.id, id)).run()
     db.update(exams).set({ updatedAt: new Date() }).where(eq(exams.id, found.examId)).run()
 
     const row = db.select().from(questions).where(eq(questions.id, id)).get()
@@ -117,6 +100,12 @@ export function registerQuestionsHandlers(ctx: QuestionsContext): void {
         .orderBy(asc(questions.position))
         .all()
       for (let i = 0; i < remaining.length; i++) {
+        tx.update(questions)
+          .set({ position: -1 - i })
+          .where(eq(questions.id, remaining[i].id))
+          .run()
+      }
+      for (let i = 0; i < remaining.length; i++) {
         tx.update(questions).set({ position: i }).where(eq(questions.id, remaining[i].id)).run()
       }
       tx.update(exams).set({ updatedAt: new Date() }).where(eq(exams.id, found.examId)).run()
@@ -124,41 +113,47 @@ export function registerQuestionsHandlers(ctx: QuestionsContext): void {
     return null
   })
 
-  ipcMain.handle(
-    'questions.reorder',
-    async (_event, rawExamId, rawIds): Promise<Question[]> => {
-      const ownerId = requireTeacherId(db)
-      const examId = typeof rawExamId === 'string' ? rawExamId : ''
-      const orderedIds = Array.isArray(rawIds) ? rawIds.filter((i): i is string => typeof i === 'string') : []
-      assertExamOwnership(db, examId, ownerId)
+  ipcMain.handle('questions.reorder', async (_event, rawExamId, rawIds): Promise<Question[]> => {
+    const ownerId = requireTeacherId(db)
+    const examId = typeof rawExamId === 'string' ? rawExamId : ''
+    const orderedIds = Array.isArray(rawIds)
+      ? rawIds.filter((i): i is string => typeof i === 'string')
+      : []
+    assertExamOwnership(db, examId, ownerId)
 
-      const current = db
-        .select({ id: questions.id })
-        .from(questions)
-        .where(eq(questions.examId, examId))
-        .all()
-      const currentIds = new Set(current.map((r) => r.id))
-      if (
-        orderedIds.length !== current.length ||
-        !orderedIds.every((id) => currentIds.has(id))
-      ) {
-        throw new DomainError('Ordem inválida', 'NOT_FOUND')
-      }
-
-      db.transaction((tx) => {
-        for (let i = 0; i < orderedIds.length; i++) {
-          tx.update(questions).set({ position: i }).where(eq(questions.id, orderedIds[i])).run()
-        }
-        tx.update(exams).set({ updatedAt: new Date() }).where(eq(exams.id, examId)).run()
-      })
-
-      const rows = db
-        .select()
-        .from(questions)
-        .where(eq(questions.examId, examId))
-        .orderBy(asc(questions.position))
-        .all()
-      return rows.map(rowToQuestion)
+    const current = db
+      .select({ id: questions.id })
+      .from(questions)
+      .where(eq(questions.examId, examId))
+      .all()
+    const currentIds = new Set(current.map((r) => r.id))
+    if (orderedIds.length !== current.length || !orderedIds.every((id) => currentIds.has(id))) {
+      throw new DomainError('Ordem inválida', 'NOT_FOUND')
     }
-  )
+
+    db.transaction((tx) => {
+      // Two-phase to dodge the (exam_id, position) UNIQUE constraint, which is
+      // checked per-statement: first park every row at a temporary negative
+      // position (can't collide with the 0..N-1 finals or each other), then
+      // assign the final positions.
+      for (let i = 0; i < orderedIds.length; i++) {
+        tx.update(questions)
+          .set({ position: -1 - i })
+          .where(eq(questions.id, orderedIds[i]))
+          .run()
+      }
+      for (let i = 0; i < orderedIds.length; i++) {
+        tx.update(questions).set({ position: i }).where(eq(questions.id, orderedIds[i])).run()
+      }
+      tx.update(exams).set({ updatedAt: new Date() }).where(eq(exams.id, examId)).run()
+    })
+
+    const rows = db
+      .select()
+      .from(questions)
+      .where(eq(questions.examId, examId))
+      .orderBy(asc(questions.position))
+      .all()
+    return rows.map(rowToQuestion)
+  })
 }

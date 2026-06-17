@@ -1,18 +1,12 @@
 import { randomUUID } from 'node:crypto'
 import { ipcMain } from 'electron'
 import { and, asc, eq, sql } from 'drizzle-orm'
-import {
-  Exam,
-  ExamInput,
-  ExamSummary,
-  ExamUpdate,
-  type McqOption,
-  type Question
-} from '@offlineclass/shared'
+import { Exam, ExamInput, ExamSummary, ExamUpdate } from '@offlineclass/shared'
 
 import { requireTeacherId } from './auth'
 import type { Db } from '../db/client'
 import { exams, questions } from '../db/schema'
+import { questionColumns, rowToQuestion } from '../db/questions-map'
 
 export interface ExamsContext {
   db: Db
@@ -24,25 +18,6 @@ export class DomainError extends Error {
     public code: 'NOT_FOUND' | 'FORBIDDEN'
   ) {
     super(message)
-  }
-}
-
-function rowToQuestion(row: typeof questions.$inferSelect): Question {
-  if (row.kind === 'mcq') {
-    const opts = row.optionsJson ? (JSON.parse(row.optionsJson) as McqOption[]) : []
-    return {
-      kind: 'mcq',
-      id: row.id,
-      position: row.position,
-      prompt: row.prompt,
-      options: opts
-    }
-  }
-  return {
-    kind: 'essay',
-    id: row.id,
-    position: row.position,
-    prompt: row.prompt
   }
 }
 
@@ -65,6 +40,9 @@ function loadExam(db: Db, examId: string, ownerId: string): Exam {
     id: exam.id,
     title: exam.title,
     description: exam.description,
+    subject: exam.subject,
+    gradeLevel: exam.gradeLevel,
+    icon: exam.icon,
     questions: rows.map(rowToQuestion),
     createdAt: exam.createdAt.getTime(),
     updatedAt: exam.updatedAt.getTime()
@@ -81,6 +59,9 @@ export function registerExamsHandlers(ctx: ExamsContext): void {
         id: exams.id,
         title: exams.title,
         description: exams.description,
+        subject: exams.subject,
+        gradeLevel: exams.gradeLevel,
+        icon: exams.icon,
         createdAt: exams.createdAt,
         updatedAt: exams.updatedAt,
         questionsCount: sql<number>`(
@@ -95,6 +76,9 @@ export function registerExamsHandlers(ctx: ExamsContext): void {
       id: r.id,
       title: r.title,
       description: r.description,
+      subject: r.subject,
+      gradeLevel: r.gradeLevel,
+      icon: r.icon,
       questionsCount: Number(r.questionsCount),
       createdAt: r.createdAt.getTime(),
       updatedAt: r.updatedAt.getTime()
@@ -116,7 +100,10 @@ export function registerExamsHandlers(ctx: ExamsContext): void {
         id,
         ownerId,
         title: input.title,
-        description: input.description ?? null
+        description: input.description ?? null,
+        subject: input.subject ?? null,
+        gradeLevel: input.gradeLevel ?? null,
+        icon: input.icon ?? null
       })
       .run()
     return loadExam(db, id, ownerId)
@@ -140,6 +127,9 @@ export function registerExamsHandlers(ctx: ExamsContext): void {
       .set({
         title: patch.title ?? existing.title,
         description: patch.description !== undefined ? patch.description : existing.description,
+        subject: patch.subject !== undefined ? patch.subject : existing.subject,
+        gradeLevel: patch.gradeLevel !== undefined ? patch.gradeLevel : existing.gradeLevel,
+        icon: patch.icon !== undefined ? patch.icon : existing.icon,
         updatedAt
       })
       .where(eq(exams.id, id))
@@ -169,19 +159,15 @@ export function registerExamsHandlers(ctx: ExamsContext): void {
           id: newId,
           ownerId,
           title: `${source.title} (cópia)`,
-          description: source.description
+          description: source.description,
+          subject: source.subject,
+          gradeLevel: source.gradeLevel,
+          icon: source.icon
         })
         .run()
       for (const q of source.questions) {
         tx.insert(questions)
-          .values({
-            id: randomUUID(),
-            examId: newId,
-            position: q.position,
-            kind: q.kind,
-            prompt: q.prompt,
-            optionsJson: q.kind === 'mcq' ? JSON.stringify(q.options) : null
-          })
+          .values({ id: randomUUID(), examId: newId, position: q.position, ...questionColumns(q) })
           .run()
       }
     })

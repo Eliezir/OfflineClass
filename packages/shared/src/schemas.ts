@@ -39,47 +39,128 @@ export const McqOption = z.object({
 })
 export type McqOption = z.infer<typeof McqOption>
 
+/** Weight of a question; total grade is the sum of correct questions' points. */
+export const QuestionPoints = z.number().positive('Maior que zero').max(1000)
+
+/** Optional image attached to a question, stored inline as a data URL (offline-first).
+    Capped to keep the exam payload reasonable (~3MB base64). */
+export const QuestionImage = z.string().max(4_500_000).nullable().optional()
+
+const QuestionPrompt = z.string().min(1, 'Enunciado obrigatório').max(2000)
+
+const ChoiceOptions = z.array(McqOption).min(2, 'Mínimo 2 opções').max(8, 'Máximo 8 opções')
+
+/** Multiple choice with exactly one correct answer. */
 export const McqInput = z.object({
   kind: z.literal('mcq'),
-  prompt: z.string().min(1, 'Enunciado obrigatório').max(2000),
-  options: z
-    .array(McqOption)
-    .min(2, 'Mínimo 2 opções')
-    .max(8, 'Máximo 8 opções')
-    .refine(
-      (opts) => opts.filter((o) => o.correct).length === 1,
-      'Exatamente uma opção correta'
-    )
+  prompt: QuestionPrompt,
+  points: QuestionPoints,
+  image: QuestionImage,
+  options: ChoiceOptions.refine(
+    (opts) => opts.filter((o) => o.correct).length === 1,
+    'Exatamente uma opção correta'
+  )
 })
 export type McqInput = z.infer<typeof McqInput>
 
+/** Multiple choice with one or more correct answers (all-or-nothing grading). */
+export const MultiInput = z.object({
+  kind: z.literal('multi'),
+  prompt: QuestionPrompt,
+  points: QuestionPoints,
+  image: QuestionImage,
+  options: ChoiceOptions.refine(
+    (opts) => opts.some((o) => o.correct),
+    'Marque ao menos uma correta'
+  )
+})
+export type MultiInput = z.infer<typeof MultiInput>
+
+/** True / false — `answer` is the correct value. */
+export const TrueFalseInput = z.object({
+  kind: z.literal('truefalse'),
+  prompt: QuestionPrompt,
+  points: QuestionPoints,
+  image: QuestionImage,
+  answer: z.boolean()
+})
+export type TrueFalseInput = z.infer<typeof TrueFalseInput>
+
+/** Open-ended written answer, graded manually. */
 export const EssayInput = z.object({
   kind: z.literal('essay'),
-  prompt: z.string().min(1, 'Enunciado obrigatório').max(2000)
+  prompt: QuestionPrompt,
+  points: QuestionPoints,
+  image: QuestionImage
 })
 export type EssayInput = z.infer<typeof EssayInput>
 
-export const QuestionInput = z.discriminatedUnion('kind', [McqInput, EssayInput])
-export type QuestionInput = z.infer<typeof QuestionInput>
+export const CodeLanguages = [
+  'plaintext',
+  'javascript',
+  'python',
+  'c',
+  'cpp',
+  'java',
+  'sql'
+] as const
+export const CodeLanguage = z.enum(CodeLanguages)
+export type CodeLanguage = z.infer<typeof CodeLanguage>
 
-export const McqQuestion = McqInput.extend({
-  id: z.string(),
-  position: z.number().int().nonnegative()
+/** Programming question — a starter template the student edits; graded manually. */
+export const CodeInput = z.object({
+  kind: z.literal('code'),
+  prompt: QuestionPrompt,
+  points: QuestionPoints,
+  image: QuestionImage,
+  language: CodeLanguage,
+  starterCode: z.string().max(20_000)
 })
+export type CodeInput = z.infer<typeof CodeInput>
+
+export const QuestionInput = z.discriminatedUnion('kind', [
+  McqInput,
+  MultiInput,
+  TrueFalseInput,
+  EssayInput,
+  CodeInput
+])
+export type QuestionInput = z.infer<typeof QuestionInput>
+export type QuestionKind = QuestionInput['kind']
+
+const withId = { id: z.string(), position: z.number().int().nonnegative() }
+
+export const McqQuestion = McqInput.extend(withId)
 export type McqQuestion = z.infer<typeof McqQuestion>
 
-export const EssayQuestion = EssayInput.extend({
-  id: z.string(),
-  position: z.number().int().nonnegative()
-})
+export const MultiQuestion = MultiInput.extend(withId)
+export type MultiQuestion = z.infer<typeof MultiQuestion>
+
+export const TrueFalseQuestion = TrueFalseInput.extend(withId)
+export type TrueFalseQuestion = z.infer<typeof TrueFalseQuestion>
+
+export const EssayQuestion = EssayInput.extend(withId)
 export type EssayQuestion = z.infer<typeof EssayQuestion>
 
-export const Question = z.discriminatedUnion('kind', [McqQuestion, EssayQuestion])
+export const CodeQuestion = CodeInput.extend(withId)
+export type CodeQuestion = z.infer<typeof CodeQuestion>
+
+export const Question = z.discriminatedUnion('kind', [
+  McqQuestion,
+  MultiQuestion,
+  TrueFalseQuestion,
+  EssayQuestion,
+  CodeQuestion
+])
 export type Question = z.infer<typeof Question>
 
 export const ExamInput = z.object({
   title: z.string().min(1, 'Título obrigatório').max(200),
-  description: z.string().max(2000).nullable().optional()
+  description: z.string().max(2000).nullable().optional(),
+  subject: z.string().max(120).nullable().optional(),
+  gradeLevel: z.string().max(120).nullable().optional(),
+  // A single emoji used as the prova's cover/visual identity.
+  icon: z.string().max(16).nullable().optional()
 })
 export type ExamInput = z.infer<typeof ExamInput>
 
@@ -90,6 +171,9 @@ export const ExamSummary = z.object({
   id: z.string(),
   title: z.string(),
   description: z.string().nullable(),
+  subject: z.string().nullable(),
+  gradeLevel: z.string().nullable(),
+  icon: z.string().nullable(),
   questionsCount: z.number().int().nonnegative(),
   createdAt: z.number().int(),
   updatedAt: z.number().int()
@@ -100,6 +184,9 @@ export const Exam = z.object({
   id: z.string(),
   title: z.string(),
   description: z.string().nullable(),
+  subject: z.string().nullable(),
+  gradeLevel: z.string().nullable(),
+  icon: z.string().nullable(),
   questions: z.array(Question),
   createdAt: z.number().int(),
   updatedAt: z.number().int()
@@ -194,32 +281,56 @@ export type WsServerEvent = z.infer<typeof WsServerEvent>
 
 // -- Student gameplay (Stage 6) -------------------------------------------
 
-// MCQ question as seen by a student — same as McqQuestion but each option
-// strips the `correct` flag so the student can't read it via DevTools.
+// Questions as seen by a student — the `correct`/`answer` flags are stripped so
+// they can't be read via DevTools. Image + prompt travel along.
 export const StudentMcqOption = z.object({
   id: z.string(),
   text: z.string()
 })
 export type StudentMcqOption = z.infer<typeof StudentMcqOption>
 
-export const StudentMcqQuestion = z.object({
-  kind: z.literal('mcq'),
+const studentBase = {
   id: z.string(),
   position: z.number().int().nonnegative(),
   prompt: z.string(),
+  image: z.string().nullable()
+}
+
+export const StudentMcqQuestion = z.object({
+  kind: z.literal('mcq'),
+  ...studentBase,
   options: z.array(StudentMcqOption)
+})
+
+export const StudentMultiQuestion = z.object({
+  kind: z.literal('multi'),
+  ...studentBase,
+  options: z.array(StudentMcqOption)
+})
+
+export const StudentTrueFalseQuestion = z.object({
+  kind: z.literal('truefalse'),
+  ...studentBase
 })
 
 export const StudentEssayQuestion = z.object({
   kind: z.literal('essay'),
-  id: z.string(),
-  position: z.number().int().nonnegative(),
-  prompt: z.string()
+  ...studentBase
+})
+
+export const StudentCodeQuestion = z.object({
+  kind: z.literal('code'),
+  ...studentBase,
+  language: CodeLanguage,
+  starterCode: z.string()
 })
 
 export const StudentQuestion = z.discriminatedUnion('kind', [
   StudentMcqQuestion,
-  StudentEssayQuestion
+  StudentMultiQuestion,
+  StudentTrueFalseQuestion,
+  StudentEssayQuestion,
+  StudentCodeQuestion
 ])
 export type StudentQuestion = z.infer<typeof StudentQuestion>
 
@@ -277,7 +388,8 @@ export const SessionAnswersReview = z.object({
   submittedAt: z.number().int().nullable(),
   answers: z.array(StudentAnswerReview),
   totalScore: z.number(),
-  maxScore: z.number().int().nonnegative()
+  // Points-weighted: sum of every question's points (may be fractional).
+  maxScore: z.number().nonnegative()
 })
 export type SessionAnswersReview = z.infer<typeof SessionAnswersReview>
 
