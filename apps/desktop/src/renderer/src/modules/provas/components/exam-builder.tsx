@@ -18,12 +18,12 @@ import {
 } from '@dnd-kit/sortable'
 import {
   ArrowLeft,
-  Check,
   CheckCircle2,
   ClipboardList,
   ListChecks,
   Loader2,
-  Pencil
+  Pencil,
+  Radio
 } from 'lucide-react'
 import { Trans, useLingui } from '@lingui/react/macro'
 import type { ExamSummary, QuestionInput, QuestionKind } from '@offlineclass/shared'
@@ -171,8 +171,11 @@ export function ExamBuilder({ examId }: { examId: string }): React.JSX.Element {
 
   return (
     <div className="flex flex-1 overflow-hidden">
-      <main className="scrollbar-subtle flex-1 overflow-y-auto px-6 pb-10">
-        <header className="mb-6 pt-6" style={dragRegion}>
+      <main className="scrollbar-subtle flex-1 overflow-y-auto px-6 pb-10 [scrollbar-gutter:stable]">
+        <header
+          className="sticky top-0 z-20 -mx-6 border-b border-border bg-background/90 px-6 pt-6 pb-4 backdrop-blur"
+          style={dragRegion}
+        >
           <div style={noDragRegion} className="w-fit">
             <Link
               to="/provas"
@@ -215,14 +218,14 @@ export function ExamBuilder({ examId }: { examId: string }): React.JSX.Element {
                 <Trans>Editar dados</Trans>
               </Button>
               <Button onClick={() => setFinishOpen(true)}>
-                <Check />
-                <Trans>Concluir</Trans>
+                <Radio />
+                <Trans>Iniciar sessão</Trans>
               </Button>
             </div>
           </div>
         </header>
 
-        <div className="mx-auto w-full max-w-2xl">
+        <div className="mx-auto mt-6 w-full max-w-2xl">
           {exam.questions.length === 0 ? (
             <EmptyState
               icon={<ListChecks />}

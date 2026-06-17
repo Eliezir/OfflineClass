@@ -41,12 +41,12 @@ export function BuilderFinishDialog({
       <DialogContent className="sm:max-w-md">
         <DialogHeader>
           <DialogTitle>
-            <Trans>Concluir edição</Trans>
+            <Trans>Iniciar sessão</Trans>
           </DialogTitle>
           <DialogDescription>
             <Trans>
-              Suas alterações já foram salvas automaticamente. Você pode voltar e editar esta prova
-              quando quiser.
+              Revise a prova e abra a sala para os alunos. Suas alterações já foram salvas
+              automaticamente.
             </Trans>
           </DialogDescription>
         </DialogHeader>
@@ -85,13 +85,13 @@ export function BuilderFinishDialog({
             <Trans>Continuar editando</Trans>
           </Button>
           <div className="flex gap-2">
-            <Button variant="outline" disabled={empty} onClick={onStartSession}>
-              <Radio />
-              <Trans>Iniciar sessão</Trans>
-            </Button>
-            <Button onClick={onFinish}>
+            <Button variant="outline" onClick={onFinish}>
               <Check />
               <Trans>Concluir</Trans>
+            </Button>
+            <Button disabled={empty} onClick={onStartSession}>
+              <Radio />
+              <Trans>Iniciar sessão</Trans>
             </Button>
           </div>
         </DialogFooter>
