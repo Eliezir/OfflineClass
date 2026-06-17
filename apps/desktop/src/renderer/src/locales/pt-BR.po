@@ -123,6 +123,9 @@ msgstr "A sessão da “Prova de Redes” foi encerrada."
 msgid "Abrir painel"
 msgstr "Abrir painel"
 
+msgid "Ações"
+msgstr "Ações"
+
 #~ msgid "Adicionar modelo"
 #~ msgstr "Adicionar modelo"
 
@@ -141,11 +144,17 @@ msgstr "Ajuste o OfflineClass do seu jeito."
 #~ msgid "Aldrin o acompanha minutos depois"
 #~ msgstr "Aldrin o acompanha minutos depois"
 
+msgid "Alterar senha"
+msgstr "Alterar senha"
+
 #~ msgid "Alternar estado de exemplo (dev)"
 #~ msgstr "Alternar estado de exemplo (dev)"
 
 #~ msgid "Alternar tema"
 #~ msgstr "Alternar tema"
+
+#~ msgid "Alternar tema claro escuro"
+#~ msgstr "Alternar tema claro escuro"
 
 msgid "Aluno desconectado"
 msgstr "Aluno desconectado"
@@ -159,8 +168,14 @@ msgstr "Alunos avaliados"
 #~ msgid "Animações"
 #~ msgstr "Animações"
 
+msgid "ao vivo"
+msgstr "ao vivo"
+
 msgid "Aparência"
 msgstr "Aparência"
+
+msgid "aplicar"
+msgstr "aplicar"
 
 msgid "Aplicar ao vivo"
 msgstr "Aplicar ao vivo"
@@ -207,11 +222,17 @@ msgstr "Aplique em grupo, ao vivo"
 msgid "As notas da Turma A já estão disponíveis."
 msgstr "As notas da Turma A já estão disponíveis."
 
+msgid "As senhas não coincidem."
+msgstr "As senhas não coincidem."
+
 #~ msgid "Assets do tema"
 #~ msgstr "Assets do tema"
 
 msgid "Atualize para a 1.2.0 para as últimas melhorias."
 msgstr "Atualize para a 1.2.0 para as últimas melhorias."
+
+msgid "avaliação"
+msgstr "avaliação"
 
 msgid "Avaliações sem internet, sincronizadas na sua rede local."
 msgstr "Avaliações sem internet, sincronizadas na sua rede local."
@@ -222,14 +243,23 @@ msgstr "Aviso"
 #~ msgid "Bandeira e placa comemorativa"
 #~ msgstr "Bandeira e placa comemorativa"
 
+msgid "Bem-vindo de volta"
+msgstr "Bem-vindo de volta"
+
 msgid "Bem-vindo de volta. Pronto para aplicar uma avaliação?"
 msgstr "Bem-vindo de volta. Pronto para aplicar uma avaliação?"
+
+msgid "Buscar páginas e ações…"
+msgstr "Buscar páginas e ações…"
 
 #~ msgid "Buscar projetos, templates…"
 #~ msgstr "Buscar projetos, templates…"
 
 msgid "Buscar…"
 msgstr "Buscar…"
+
+msgid "Busque páginas e ações"
+msgstr "Busque páginas e ações"
 
 #~ msgid "Buzz Aldrin — piloto do módulo lunar"
 #~ msgstr "Buzz Aldrin — piloto do módulo lunar"
@@ -240,8 +270,8 @@ msgstr "Buscar…"
 #~ msgid "cabo kennedy, flórida"
 #~ msgstr "cabo kennedy, flórida"
 
-#~ msgid "Cancelar"
-#~ msgstr "Cancelar"
+msgid "Cancelar"
+msgstr "Cancelar"
 
 msgid "Carregando"
 msgstr "Carregando"
@@ -258,8 +288,8 @@ msgstr "Centro esquerda"
 #~ msgid "Chat com a IA"
 #~ msgstr "Chat com a IA"
 
-#~ msgid "claro"
-#~ msgstr "claro"
+msgid "claro"
+msgstr "claro"
 
 msgid "Claro"
 msgstr "Claro"
@@ -285,6 +315,9 @@ msgstr "Começar"
 #~ msgid "Comece agora"
 #~ msgstr "Comece agora"
 
+msgid "Como devemos te chamar?"
+msgstr "Como devemos te chamar?"
+
 #~ msgid "Como funciona"
 #~ msgstr "Como funciona"
 
@@ -299,6 +332,12 @@ msgstr "Como os avisos (toasts) aparecem no aplicativo."
 
 msgid "Configurações"
 msgstr "Configurações"
+
+msgid "Confirmar nova senha"
+msgstr "Confirmar nova senha"
+
+msgid "Conta"
+msgstr "Conta"
 
 #~ msgid "Contexto"
 #~ msgstr "Contexto"
@@ -315,8 +354,23 @@ msgstr "Continuar"
 #~ msgid "Cosmos"
 #~ msgstr "Cosmos"
 
+msgid "criar"
+msgstr "criar"
+
 #~ msgid "Criar apresentação"
 #~ msgstr "Criar apresentação"
+
+msgid "Criar conta"
+msgstr "Criar conta"
+
+msgid "Criar prova"
+msgstr "Criar prova"
+
+msgid "Criar sua conta"
+msgstr "Criar sua conta"
+
+msgid "Crie e organize suas avaliações."
+msgstr "Crie e organize suas avaliações."
 
 msgid "Crie provas com vários tipos de questão e materiais de apoio. Tudo fica salvo no seu computador."
 msgstr "Crie provas com vários tipos de questão e materiais de apoio. Tudo fica salvo no seu computador."
@@ -339,11 +393,17 @@ msgstr "Crie sua conta de professor e comece a aplicar avaliações."
 msgid "Crie sua primeira prova para começar a aplicar avaliações."
 msgstr "Crie sua primeira prova para começar a aplicar avaliações."
 
+msgid "Dados inválidos."
+msgstr "Dados inválidos."
+
 #~ msgid "Dark"
 #~ msgstr "Dark"
 
 #~ msgid "Dashboard em construção."
 #~ msgstr "Dashboard em construção."
+
+msgid "Dê um título e uma descrição. As questões você adiciona depois."
+msgstr "Dê um título e uma descrição. As questões você adiciona depois."
 
 #~ msgid "Defina as cores"
 #~ msgstr "Defina as cores"
@@ -356,6 +416,9 @@ msgstr "Crie sua primeira prova para começar a aplicar avaliações."
 
 #~ msgid "deixa a seção do pouso em tópicos"
 #~ msgstr "deixa a seção do pouso em tópicos"
+
+msgid "Descrição"
+msgstr "Descrição"
 
 #~ msgid "Detectando o Claude Code…"
 #~ msgstr "Detectando o Claude Code…"
@@ -381,8 +444,17 @@ msgstr "Duração"
 msgid "Duração do toast"
 msgstr "Duração do toast"
 
+msgid "E-mail"
+msgstr "E-mail"
+
 #~ msgid "Eagle pousa no Mar da Tranquilidade"
 #~ msgstr "Eagle pousa no Mar da Tranquilidade"
+
+msgid "Editar"
+msgstr "Editar"
+
+msgid "Editar prova"
+msgstr "Editar prova"
 
 #~ msgid "Em 20 de julho de 1969 o módulo lunar Eagle pousou no Mar da Tranquilidade. Horas depois, Armstrong desceu e tornou-se o primeiro humano a pisar na Lua."
 #~ msgstr "Em 20 de julho de 1969 o módulo lunar Eagle pousou no Mar da Tranquilidade. Horas depois, Armstrong desceu e tornou-se o primeiro humano a pisar na Lua."
@@ -393,14 +465,20 @@ msgstr "Em breve"
 msgid "Em breve você poderá aplicar provas ao vivo e acompanhar os grupos aqui."
 msgstr "Em breve você poderá aplicar provas ao vivo e acompanhar os grupos aqui."
 
-msgid "Em breve você poderá criar e organizar suas provas aqui."
-msgstr "Em breve você poderá criar e organizar suas provas aqui."
+#~ msgid "Em breve você poderá criar e organizar suas provas aqui."
+#~ msgstr "Em breve você poderá criar e organizar suas provas aqui."
 
 msgid "Em breve você verá notas, correções e relatórios das sessões encerradas aqui."
 msgstr "Em breve você verá notas, correções e relatórios das sessões encerradas aqui."
 
 #~ msgid "Em construção."
 #~ msgstr "Em construção."
+
+msgid "encerrar"
+msgstr "encerrar"
+
+msgid "Entrar"
+msgstr "Entrar"
 
 msgid "Entrar no app"
 msgstr "Entrar no app"
@@ -435,8 +513,8 @@ msgstr "Escolha entre o tema claro e escuro do app."
 #~ msgid "Escreva ou cole"
 #~ msgstr "Escreva ou cole"
 
-#~ msgid "escuro"
-#~ msgstr "escuro"
+msgid "escuro"
+msgstr "escuro"
 
 msgid "Escuro"
 msgstr "Escuro"
@@ -453,6 +531,9 @@ msgstr "Escuro"
 #~ msgid "Estruture seus slides uma vez e reaproveite — a IA preenche o conteúdo."
 #~ msgstr "Estruture seus slides uma vez e reaproveite — a IA preenche o conteúdo."
 
+msgid "Ex: Prova de Redes — Camada de Transporte"
+msgstr "Ex: Prova de Redes — Camada de Transporte"
+
 #~ msgid "Excluir"
 #~ msgstr "Excluir"
 
@@ -464,6 +545,9 @@ msgstr "Escuro"
 
 #~ msgid "Excluir este slide?"
 #~ msgstr "Excluir este slide?"
+
+msgid "Excluir prova"
+msgstr "Excluir prova"
 
 msgid "Exemplo de como um aviso de atenção aparece."
 msgstr "Exemplo de como um aviso de atenção aparece."
@@ -522,6 +606,9 @@ msgstr "há 3 h"
 #~ msgid "Identidade visual"
 #~ msgstr "Identidade visual"
 
+msgid "idioma"
+msgstr "idioma"
+
 msgid "Idioma"
 msgstr "Idioma"
 
@@ -552,8 +639,20 @@ msgstr "Inferior esquerda"
 msgid "Informação"
 msgstr "Informação"
 
+msgid "Informações da sua conta no OfflineClass."
+msgstr "Informações da sua conta no OfflineClass."
+
+msgid "Informe a senha atual e escolha uma nova."
+msgstr "Informe a senha atual e escolha uma nova."
+
 msgid "Iniciar sessão"
 msgstr "Iniciar sessão"
+
+msgid "Iniciar sessão ao vivo"
+msgstr "Iniciar sessão ao vivo"
+
+#~ msgid "Iniciar sessão ao vivo aplicar"
+#~ msgstr "Iniciar sessão ao vivo aplicar"
 
 msgid "Início"
 msgstr "Início"
@@ -566,6 +665,9 @@ msgstr "Início"
 
 msgid "Introdução"
 msgstr "Introdução"
+
+msgid "Já tem conta?"
+msgstr "Já tem conta?"
 
 #~ msgid "Kennedy promete levar o homem à Lua até 1970"
 #~ msgstr "Kennedy promete levar o homem à Lua até 1970"
@@ -609,6 +711,9 @@ msgstr "Maximizar"
 msgid "Minimizar"
 msgstr "Minimizar"
 
+msgid "Mínimo 8 caracteres"
+msgstr "Mínimo 8 caracteres"
+
 #~ msgid "Modelo visual atualizado"
 #~ msgstr "Modelo visual atualizado"
 
@@ -633,8 +738,23 @@ msgstr "Minimizar"
 msgid "Monte suas provas"
 msgstr "Monte suas provas"
 
+msgid "Mostrar senha"
+msgstr "Mostrar senha"
+
 #~ msgid "Motor de IA"
 #~ msgstr "Motor de IA"
+
+msgid "Mudar idioma"
+msgstr "Mudar idioma"
+
+#~ msgid "Mudar idioma language"
+#~ msgstr "Mudar idioma language"
+
+msgid "Mudar para tema claro"
+msgstr "Mudar para tema claro"
+
+msgid "Mudar para tema escuro"
+msgstr "Mudar para tema escuro"
 
 #~ msgid "Na superfície"
 #~ msgstr "Na superfície"
@@ -642,11 +762,29 @@ msgstr "Monte suas provas"
 #~ msgid "Não encontramos o Claude Code na sua máquina."
 #~ msgstr "Não encontramos o Claude Code na sua máquina."
 
+msgid "Não foi possível alterar a senha."
+msgstr "Não foi possível alterar a senha."
+
+msgid "Não foi possível continuar."
+msgstr "Não foi possível continuar."
+
 msgid "Não foi possível exportar o CSV. Tente novamente."
 msgstr "Não foi possível exportar o CSV. Tente novamente."
 
 #~ msgid "Não foi possível exportar o PDF. Tente novamente."
 #~ msgstr "Não foi possível exportar o PDF. Tente novamente."
+
+msgid "Não foi possível salvar a prova."
+msgstr "Não foi possível salvar a prova."
+
+msgid "Não foi possível salvar."
+msgstr "Não foi possível salvar."
+
+msgid "Não tem conta?"
+msgstr "Não tem conta?"
+
+msgid "Navegação"
+msgstr "Navegação"
 
 #~ msgid "Neil Armstrong — comandante"
 #~ msgstr "Neil Armstrong — comandante"
@@ -656,6 +794,9 @@ msgstr "Não foi possível exportar o CSV. Tente novamente."
 
 #~ msgid "Nenhum modelo visual"
 #~ msgstr "Nenhum modelo visual"
+
+msgid "Nenhum resultado."
+msgstr "Nenhum resultado."
 
 #~ msgid "Nenhum tema ainda"
 #~ msgstr "Nenhum tema ainda"
@@ -671,6 +812,9 @@ msgstr "Nenhuma prova ainda"
 
 #~ msgid "No auge da Guerra Fria, EUA e URSS disputavam cada marco da exploração espacial."
 #~ msgstr "No auge da Guerra Fria, EUA e URSS disputavam cada marco da exploração espacial."
+
+msgid "Nome"
+msgstr "Nome"
 
 #~ msgid "Notas do apresentador"
 #~ msgstr "Notas do apresentador"
@@ -689,6 +833,12 @@ msgstr "Notificações ({unread, plural, one {# não lida} other {# não lidas}}
 
 msgid "Nova prova"
 msgstr "Nova prova"
+
+#~ msgid "Nova prova criar avaliação"
+#~ msgstr "Nova prova criar avaliação"
+
+msgid "Nova senha"
+msgstr "Nova senha"
 
 msgid "Nova versão disponível"
 msgstr "Nova versão disponível"
@@ -723,8 +873,14 @@ msgstr "Nova versão disponível"
 #~ msgid "O tema “Aurora” ganhou novos presets."
 #~ msgstr "O tema “Aurora” ganhou novos presets."
 
+msgid "Ocultar senha"
+msgstr "Ocultar senha"
+
 msgid "ontem"
 msgstr "ontem"
+
+msgid "Opcional"
+msgstr "Opcional"
 
 #~ msgid "Órbita"
 #~ msgstr "Órbita"
@@ -744,6 +900,9 @@ msgstr "Os resultados aparecem aqui depois que você encerra uma sessão."
 msgid "Painel inicial"
 msgstr "Painel inicial"
 
+msgid "Paleta de comandos"
+msgstr "Paleta de comandos"
+
 msgid "Passo {index} de {total}"
 msgstr "Passo {index} de {total}"
 
@@ -752,6 +911,12 @@ msgstr "Passo {index} de {total}"
 
 #~ msgid "Peça uma alteração…"
 #~ msgstr "Peça uma alteração…"
+
+msgid "Perfil"
+msgstr "Perfil"
+
+msgid "Perfil atualizado."
+msgstr "Perfil atualizado."
 
 msgid "Personalize a aparência do app."
 msgstr "Personalize a aparência do app."
@@ -774,6 +939,9 @@ msgstr "Preferências do app"
 msgid "Primeiros passos no OfflineClass."
 msgstr "Primeiros passos no OfflineClass."
 
+msgid "Professor · OfflineClass"
+msgstr "Professor · OfflineClass"
+
 #~ msgid "Projetos"
 #~ msgstr "Projetos"
 
@@ -791,6 +959,9 @@ msgstr "Prova salva"
 
 msgid "Provas"
 msgstr "Provas"
+
+msgid "Provas em grupo,<0/>ao vivo, sem internet."
+msgstr "Provas em grupo,<0/>ao vivo, sem internet."
 
 #~ msgid "Provedor"
 #~ msgstr "Provedor"
@@ -858,6 +1029,18 @@ msgstr "Resultados recentes"
 msgid "Reveja o tour de boas-vindas do OfflineClass."
 msgstr "Reveja o tour de boas-vindas do OfflineClass."
 
+msgid "Sair"
+msgstr "Sair"
+
+#~ msgid "Sair encerrar sessão logout"
+#~ msgstr "Sair encerrar sessão logout"
+
+msgid "Salvar"
+msgstr "Salvar"
+
+msgid "Salvar senha"
+msgstr "Salvar senha"
+
 #~ msgid "Salve como modelo"
 #~ msgstr "Salve como modelo"
 
@@ -867,6 +1050,9 @@ msgstr "Reveja o tour de boas-vindas do OfflineClass."
 #~ msgid "saturn V decolou em 16 jul 1969"
 #~ msgstr "saturn V decolou em 16 jul 1969"
 
+msgid "Selecionar idioma…"
+msgstr "Selecionar idioma…"
+
 #~ msgid "Sem chave, sem custo — troque quando quiser."
 #~ msgstr "Sem chave, sem custo — troque quando quiser."
 
@@ -875,6 +1061,15 @@ msgstr "Sem internet, sem problema"
 
 msgid "Sem resultados ainda"
 msgstr "Sem resultados ainda"
+
+msgid "Senha"
+msgstr "Senha"
+
+msgid "Senha alterada."
+msgstr "Senha alterada."
+
+msgid "Senha atual"
+msgstr "Senha atual"
 
 msgid "Sessão"
 msgstr "Sessão"
@@ -891,6 +1086,15 @@ msgstr "Sessões aplicadas"
 msgid "Seu computador vira o servidor da sala. Os alunos entram pela Wi-Fi local — nada depende da internet."
 msgstr "Seu computador vira o servidor da sala. Os alunos entram pela Wi-Fi local — nada depende da internet."
 
+msgid "Seu nome"
+msgstr "Seu nome"
+
+msgid "Seus dados de professor"
+msgstr "Seus dados de professor"
+
+msgid "Seus dados de professor."
+msgstr "Seus dados de professor."
+
 #~ msgid "Solar"
 #~ msgstr "Solar"
 
@@ -902,6 +1106,9 @@ msgstr "Som ao aparecer"
 
 #~ msgid "Sua biblioteca está vazia"
 #~ msgstr "Sua biblioteca está vazia"
+
+msgid "Sua senha"
+msgstr "Sua senha"
 
 #~ msgid "Suas apresentações"
 #~ msgstr "Suas apresentações"
@@ -933,6 +1140,9 @@ msgstr "Superior esquerda"
 #~ msgid "Suporta tema {themeNames}"
 #~ msgstr "Suporta tema {themeNames}"
 
+msgid "tema"
+msgstr "tema"
+
 msgid "Tema"
 msgstr "Tema"
 
@@ -956,6 +1166,9 @@ msgstr "Tema"
 
 msgid "Testar notificação"
 msgstr "Testar notificação"
+
+msgid "Título"
+msgstr "Título"
 
 msgid "Toast de teste — aviso"
 msgstr "Toast de teste — aviso"

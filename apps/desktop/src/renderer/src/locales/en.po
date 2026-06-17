@@ -123,6 +123,9 @@ msgstr ""
 msgid "Abrir painel"
 msgstr ""
 
+msgid "Ações"
+msgstr "Actions"
+
 #~ msgid "Adicionar modelo"
 #~ msgstr "Add a model"
 
@@ -141,11 +144,17 @@ msgstr ""
 #~ msgid "Aldrin o acompanha minutos depois"
 #~ msgstr "Aldrin joins him minutes later"
 
+msgid "Alterar senha"
+msgstr ""
+
 #~ msgid "Alternar estado de exemplo (dev)"
 #~ msgstr "Toggle example state (dev)"
 
 #~ msgid "Alternar tema"
 #~ msgstr "Theme toggle"
+
+#~ msgid "Alternar tema claro escuro"
+#~ msgstr "Toggle theme light dark"
 
 msgid "Aluno desconectado"
 msgstr ""
@@ -159,8 +168,14 @@ msgstr ""
 #~ msgid "Animações"
 #~ msgstr "Animations"
 
+msgid "ao vivo"
+msgstr "live"
+
 msgid "Aparência"
 msgstr "Appearance"
+
+msgid "aplicar"
+msgstr "apply"
 
 msgid "Aplicar ao vivo"
 msgstr ""
@@ -207,11 +222,17 @@ msgstr ""
 msgid "As notas da Turma A já estão disponíveis."
 msgstr ""
 
+msgid "As senhas não coincidem."
+msgstr ""
+
 #~ msgid "Assets do tema"
 #~ msgstr "Theme assets"
 
 msgid "Atualize para a 1.2.0 para as últimas melhorias."
 msgstr "Update to 1.2.0 for the latest improvements."
+
+msgid "avaliação"
+msgstr "assessment"
 
 msgid "Avaliações sem internet, sincronizadas na sua rede local."
 msgstr ""
@@ -222,14 +243,23 @@ msgstr "Warning"
 #~ msgid "Bandeira e placa comemorativa"
 #~ msgstr "Flag and commemorative plaque"
 
+msgid "Bem-vindo de volta"
+msgstr ""
+
 msgid "Bem-vindo de volta. Pronto para aplicar uma avaliação?"
 msgstr ""
+
+msgid "Buscar páginas e ações…"
+msgstr "Search pages and actions…"
 
 #~ msgid "Buscar projetos, templates…"
 #~ msgstr "Search projects, templates…"
 
 msgid "Buscar…"
 msgstr ""
+
+msgid "Busque páginas e ações"
+msgstr "Search pages and actions"
 
 #~ msgid "Buzz Aldrin — piloto do módulo lunar"
 #~ msgstr "Buzz Aldrin — lunar module pilot"
@@ -240,8 +270,8 @@ msgstr ""
 #~ msgid "cabo kennedy, flórida"
 #~ msgstr "cape kennedy, florida"
 
-#~ msgid "Cancelar"
-#~ msgstr "Cancel"
+msgid "Cancelar"
+msgstr "Cancel"
 
 msgid "Carregando"
 msgstr "Loading"
@@ -258,8 +288,8 @@ msgstr "Center left"
 #~ msgid "Chat com a IA"
 #~ msgstr "Chat with the AI"
 
-#~ msgid "claro"
-#~ msgstr "light"
+msgid "claro"
+msgstr "light"
 
 msgid "Claro"
 msgstr "Light"
@@ -285,6 +315,9 @@ msgstr "Get started"
 #~ msgid "Comece agora"
 #~ msgstr "Start now"
 
+msgid "Como devemos te chamar?"
+msgstr ""
+
 #~ msgid "Como funciona"
 #~ msgstr "How it works"
 
@@ -299,6 +332,12 @@ msgstr "How notifications (toasts) appear in the app."
 
 msgid "Configurações"
 msgstr "Settings"
+
+msgid "Confirmar nova senha"
+msgstr ""
+
+msgid "Conta"
+msgstr ""
 
 #~ msgid "Contexto"
 #~ msgstr "Context"
@@ -315,8 +354,23 @@ msgstr "Continue"
 #~ msgid "Cosmos"
 #~ msgstr "Cosmos"
 
+msgid "criar"
+msgstr "create"
+
 #~ msgid "Criar apresentação"
 #~ msgstr "Create presentation"
+
+msgid "Criar conta"
+msgstr ""
+
+msgid "Criar prova"
+msgstr ""
+
+msgid "Criar sua conta"
+msgstr ""
+
+msgid "Crie e organize suas avaliações."
+msgstr ""
 
 msgid "Crie provas com vários tipos de questão e materiais de apoio. Tudo fica salvo no seu computador."
 msgstr ""
@@ -339,11 +393,17 @@ msgstr ""
 msgid "Crie sua primeira prova para começar a aplicar avaliações."
 msgstr ""
 
+msgid "Dados inválidos."
+msgstr ""
+
 #~ msgid "Dark"
 #~ msgstr "Dark"
 
 #~ msgid "Dashboard em construção."
 #~ msgstr "Dashboard under construction."
+
+msgid "Dê um título e uma descrição. As questões você adiciona depois."
+msgstr ""
 
 #~ msgid "Defina as cores"
 #~ msgstr "Set the colors"
@@ -356,6 +416,9 @@ msgstr ""
 
 #~ msgid "deixa a seção do pouso em tópicos"
 #~ msgstr "break the landing section into bullet points"
+
+msgid "Descrição"
+msgstr ""
 
 #~ msgid "Detectando o Claude Code…"
 #~ msgstr "Detecting Claude Code…"
@@ -381,8 +444,17 @@ msgstr "Duration"
 msgid "Duração do toast"
 msgstr "Toast duration"
 
+msgid "E-mail"
+msgstr ""
+
 #~ msgid "Eagle pousa no Mar da Tranquilidade"
 #~ msgstr "Eagle lands in the Sea of Tranquility"
+
+msgid "Editar"
+msgstr ""
+
+msgid "Editar prova"
+msgstr ""
 
 #~ msgid "Em 20 de julho de 1969 o módulo lunar Eagle pousou no Mar da Tranquilidade. Horas depois, Armstrong desceu e tornou-se o primeiro humano a pisar na Lua."
 #~ msgstr "On July 20, 1969, the lunar module Eagle landed in the Sea of Tranquility. Hours later, Armstrong stepped down and became the first human to set foot on the Moon."
@@ -393,14 +465,20 @@ msgstr ""
 msgid "Em breve você poderá aplicar provas ao vivo e acompanhar os grupos aqui."
 msgstr ""
 
-msgid "Em breve você poderá criar e organizar suas provas aqui."
-msgstr ""
+#~ msgid "Em breve você poderá criar e organizar suas provas aqui."
+#~ msgstr ""
 
 msgid "Em breve você verá notas, correções e relatórios das sessões encerradas aqui."
 msgstr ""
 
 #~ msgid "Em construção."
 #~ msgstr "Under construction."
+
+msgid "encerrar"
+msgstr "end"
+
+msgid "Entrar"
+msgstr ""
 
 msgid "Entrar no app"
 msgstr "Enter the app"
@@ -435,8 +513,8 @@ msgstr "Choose between the app's light and dark theme."
 #~ msgid "Escreva ou cole"
 #~ msgstr "Write or paste"
 
-#~ msgid "escuro"
-#~ msgstr "dark"
+msgid "escuro"
+msgstr "dark"
 
 msgid "Escuro"
 msgstr "Dark"
@@ -453,6 +531,9 @@ msgstr "Dark"
 #~ msgid "Estruture seus slides uma vez e reaproveite — a IA preenche o conteúdo."
 #~ msgstr "Structure your slides once and reuse them — the AI fills in the content."
 
+msgid "Ex: Prova de Redes — Camada de Transporte"
+msgstr ""
+
 #~ msgid "Excluir"
 #~ msgstr "Delete"
 
@@ -464,6 +545,9 @@ msgstr "Dark"
 
 #~ msgid "Excluir este slide?"
 #~ msgstr "Delete this slide?"
+
+msgid "Excluir prova"
+msgstr ""
 
 msgid "Exemplo de como um aviso de atenção aparece."
 msgstr "Example of how a warning notification appears."
@@ -522,6 +606,9 @@ msgstr "3h ago"
 #~ msgid "Identidade visual"
 #~ msgstr "Visual identity"
 
+msgid "idioma"
+msgstr "language"
+
 msgid "Idioma"
 msgstr "Language"
 
@@ -552,8 +639,20 @@ msgstr "Bottom left"
 msgid "Informação"
 msgstr "Information"
 
+msgid "Informações da sua conta no OfflineClass."
+msgstr ""
+
+msgid "Informe a senha atual e escolha uma nova."
+msgstr ""
+
 msgid "Iniciar sessão"
 msgstr ""
+
+msgid "Iniciar sessão ao vivo"
+msgstr "Start live session"
+
+#~ msgid "Iniciar sessão ao vivo aplicar"
+#~ msgstr "Start live session apply"
 
 msgid "Início"
 msgstr "Home"
@@ -566,6 +665,9 @@ msgstr "Home"
 
 msgid "Introdução"
 msgstr "Introduction"
+
+msgid "Já tem conta?"
+msgstr ""
 
 #~ msgid "Kennedy promete levar o homem à Lua até 1970"
 #~ msgstr "Kennedy promises to put a man on the Moon by 1970"
@@ -609,6 +711,9 @@ msgstr "Maximize"
 msgid "Minimizar"
 msgstr "Minimize"
 
+msgid "Mínimo 8 caracteres"
+msgstr ""
+
 #~ msgid "Modelo visual atualizado"
 #~ msgstr "Visual model updated"
 
@@ -633,8 +738,23 @@ msgstr "Minimize"
 msgid "Monte suas provas"
 msgstr ""
 
+msgid "Mostrar senha"
+msgstr ""
+
 #~ msgid "Motor de IA"
 #~ msgstr "AI engine"
+
+msgid "Mudar idioma"
+msgstr "Change language"
+
+#~ msgid "Mudar idioma language"
+#~ msgstr "Change language idioma"
+
+msgid "Mudar para tema claro"
+msgstr "Switch to light theme"
+
+msgid "Mudar para tema escuro"
+msgstr "Switch to dark theme"
 
 #~ msgid "Na superfície"
 #~ msgstr "On the surface"
@@ -642,11 +762,29 @@ msgstr ""
 #~ msgid "Não encontramos o Claude Code na sua máquina."
 #~ msgstr "We couldn't find Claude Code on your machine."
 
+msgid "Não foi possível alterar a senha."
+msgstr ""
+
+msgid "Não foi possível continuar."
+msgstr ""
+
 msgid "Não foi possível exportar o CSV. Tente novamente."
 msgstr ""
 
 #~ msgid "Não foi possível exportar o PDF. Tente novamente."
 #~ msgstr "Couldn't export the PDF. Please try again."
+
+msgid "Não foi possível salvar a prova."
+msgstr ""
+
+msgid "Não foi possível salvar."
+msgstr ""
+
+msgid "Não tem conta?"
+msgstr ""
+
+msgid "Navegação"
+msgstr "Navigation"
 
 #~ msgid "Neil Armstrong — comandante"
 #~ msgstr "Neil Armstrong — commander"
@@ -656,6 +794,9 @@ msgstr ""
 
 #~ msgid "Nenhum modelo visual"
 #~ msgstr "No visual models"
+
+msgid "Nenhum resultado."
+msgstr "No results."
 
 #~ msgid "Nenhum tema ainda"
 #~ msgstr "No themes yet"
@@ -671,6 +812,9 @@ msgstr ""
 
 #~ msgid "No auge da Guerra Fria, EUA e URSS disputavam cada marco da exploração espacial."
 #~ msgstr "At the height of the Cold War, the USA and USSR competed for every milestone in space exploration."
+
+msgid "Nome"
+msgstr ""
 
 #~ msgid "Notas do apresentador"
 #~ msgstr "Presenter notes"
@@ -688,6 +832,12 @@ msgstr "Notifications ({unread, plural, one {# unread} other {# unread}})"
 #~ msgstr "New presentation"
 
 msgid "Nova prova"
+msgstr ""
+
+#~ msgid "Nova prova criar avaliação"
+#~ msgstr "New exam create assessment"
+
+msgid "Nova senha"
 msgstr ""
 
 msgid "Nova versão disponível"
@@ -723,8 +873,14 @@ msgstr "New version available"
 #~ msgid "O tema “Aurora” ganhou novos presets."
 #~ msgstr "The “Aurora” theme got new presets."
 
+msgid "Ocultar senha"
+msgstr ""
+
 msgid "ontem"
 msgstr "yesterday"
+
+msgid "Opcional"
+msgstr ""
 
 #~ msgid "Órbita"
 #~ msgstr "Orbit"
@@ -744,6 +900,9 @@ msgstr ""
 msgid "Painel inicial"
 msgstr "Home dashboard"
 
+msgid "Paleta de comandos"
+msgstr "Command palette"
+
 msgid "Passo {index} de {total}"
 msgstr ""
 
@@ -752,6 +911,12 @@ msgstr ""
 
 #~ msgid "Peça uma alteração…"
 #~ msgstr "Ask for a change…"
+
+msgid "Perfil"
+msgstr ""
+
+msgid "Perfil atualizado."
+msgstr ""
 
 msgid "Personalize a aparência do app."
 msgstr "Customize the app's appearance."
@@ -774,6 +939,9 @@ msgstr "App preferences"
 msgid "Primeiros passos no OfflineClass."
 msgstr ""
 
+msgid "Professor · OfflineClass"
+msgstr ""
+
 #~ msgid "Projetos"
 #~ msgstr "Projects"
 
@@ -790,6 +958,9 @@ msgid "Prova salva"
 msgstr ""
 
 msgid "Provas"
+msgstr ""
+
+msgid "Provas em grupo,<0/>ao vivo, sem internet."
 msgstr ""
 
 #~ msgid "Provedor"
@@ -858,6 +1029,18 @@ msgstr ""
 msgid "Reveja o tour de boas-vindas do OfflineClass."
 msgstr ""
 
+msgid "Sair"
+msgstr ""
+
+#~ msgid "Sair encerrar sessão logout"
+#~ msgstr "Log out sign out session"
+
+msgid "Salvar"
+msgstr ""
+
+msgid "Salvar senha"
+msgstr ""
+
 #~ msgid "Salve como modelo"
 #~ msgstr "Save as a model"
 
@@ -867,6 +1050,9 @@ msgstr ""
 #~ msgid "saturn V decolou em 16 jul 1969"
 #~ msgstr "saturn V lifted off on jul 16 1969"
 
+msgid "Selecionar idioma…"
+msgstr "Select language…"
+
 #~ msgid "Sem chave, sem custo — troque quando quiser."
 #~ msgstr "No key, no cost — switch whenever you want."
 
@@ -874,6 +1060,15 @@ msgid "Sem internet, sem problema"
 msgstr ""
 
 msgid "Sem resultados ainda"
+msgstr ""
+
+msgid "Senha"
+msgstr ""
+
+msgid "Senha alterada."
+msgstr ""
+
+msgid "Senha atual"
 msgstr ""
 
 msgid "Sessão"
@@ -891,6 +1086,15 @@ msgstr ""
 msgid "Seu computador vira o servidor da sala. Os alunos entram pela Wi-Fi local — nada depende da internet."
 msgstr ""
 
+msgid "Seu nome"
+msgstr ""
+
+msgid "Seus dados de professor"
+msgstr ""
+
+msgid "Seus dados de professor."
+msgstr ""
+
 #~ msgid "Solar"
 #~ msgstr "Solar"
 
@@ -902,6 +1106,9 @@ msgstr "Sound on appearance"
 
 #~ msgid "Sua biblioteca está vazia"
 #~ msgstr "Your library is empty"
+
+msgid "Sua senha"
+msgstr ""
 
 #~ msgid "Suas apresentações"
 #~ msgstr "Your presentations"
@@ -933,6 +1140,9 @@ msgstr "Top left"
 #~ msgid "Suporta tema {themeNames}"
 #~ msgstr "Supports {themeNames} theme"
 
+msgid "tema"
+msgstr "theme"
+
 msgid "Tema"
 msgstr "Theme"
 
@@ -956,6 +1166,9 @@ msgstr "Theme"
 
 msgid "Testar notificação"
 msgstr "Test notification"
+
+msgid "Título"
+msgstr ""
 
 msgid "Toast de teste — aviso"
 msgstr "Test toast — warning"
