@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { FlaskConical, Loader2, Play, Square } from 'lucide-react'
+import { Loader2, Play, Square } from 'lucide-react'
 import { useNavigate } from '@tanstack/react-router'
 import { Trans, useLingui } from '@lingui/react/macro'
 import type { SessionCreateInput } from '@offlineclass/shared'
@@ -18,13 +18,7 @@ import { SessionEnded } from './session-ended'
 import { StatusPill } from './status-pill'
 import { LiveSessionManager } from './LiveSessionManager'
 
-type SessaoPageProps = {
-  /** DEV-only: render the dashboard with sample students (driven by `?mock`). */
-  mockMode: boolean
-  onToggleMock: () => void
-}
-
-export function SessaoPage({ mockMode, onToggleMock }: SessaoPageProps): React.JSX.Element {
+export function SessaoPage(): React.JSX.Element {
   const { t } = useLingui()
   const navigate = useNavigate()
   const { data: active, isLoading } = useActiveSessionQuery()
@@ -36,13 +30,10 @@ export function SessaoPage({ mockMode, onToggleMock }: SessaoPageProps): React.J
   // After a running session ends we keep its detail locally to show the summary
   // (the active query goes null once it's no longer lobby/running).
   const [endedDetail, setEndedDetail] = useState<SessionDetail | null>(null)
-  const { now, mockSession } = useSessaoClock()
+  const { now } = useSessaoClock()
 
-  const realSession = endedDetail ?? active ?? null
-  const realPhase = endedDetail ? 'ended' : (active?.status ?? 'none')
-
-  const session = mockMode ? mockSession : realSession
-  const phase = mockMode ? 'running' : realPhase
+  const session = endedDetail ?? active ?? null
+  const phase = endedDetail ? 'ended' : (active?.status ?? 'none')
 
   function handleOpen(input: SessionCreateInput): void {
     setEndedDetail(null)
@@ -62,15 +53,11 @@ export function SessaoPage({ mockMode, onToggleMock }: SessaoPageProps): React.J
     setEndedDetail(null)
   }
   function openStudent(studentId: string): void {
-    navigate({
-      to: '/sessao/$studentId',
-      params: { studentId },
-      search: mockMode ? { mock: true } : {}
-    })
+    navigate({ to: '/sessao/$studentId', params: { studentId } })
   }
 
   const ending = end.isPending
-  const showLoading = !mockMode && isLoading
+  const showLoading = isLoading
 
   return (
     <main className="flex flex-1 flex-col overflow-hidden px-6 pb-6">
@@ -94,13 +81,7 @@ export function SessaoPage({ mockMode, onToggleMock }: SessaoPageProps): React.J
         }
         actions={
           <>
-            {import.meta.env.DEV && (
-              <Button variant={mockMode ? 'default' : 'outline'} onClick={onToggleMock}>
-                <FlaskConical />
-                <Trans>Dados de teste</Trans>
-              </Button>
-            )}
-            {!mockMode && realPhase === 'lobby' && (
+            {phase === 'lobby' && (
               <>
                 <Button variant="ghost" onClick={handleCancel} disabled={ending}>
                   <Trans>Cancelar</Trans>
@@ -111,7 +92,7 @@ export function SessaoPage({ mockMode, onToggleMock }: SessaoPageProps): React.J
                 </Button>
               </>
             )}
-            {!mockMode && realPhase === 'running' && (
+            {phase === 'running' && (
               <Button variant="outline-primary" onClick={handleEnd} disabled={ending}>
                 <Square />
                 <Trans>Encerrar sessão</Trans>
@@ -144,7 +125,7 @@ export function SessaoPage({ mockMode, onToggleMock }: SessaoPageProps): React.J
       ) : phase === 'ended' && session ? (
         <SessionEnded session={session} onNew={() => setEndedDetail(null)} />
       ) : null}
-      {active && !mockMode && <LiveSessionManager sessionId={active.id} />}
+      {active && <LiveSessionManager sessionId={active.id} />}
     </main>
   )
 }

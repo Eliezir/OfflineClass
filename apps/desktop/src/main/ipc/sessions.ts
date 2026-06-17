@@ -4,6 +4,7 @@ import {
   SessionCreateInput,
   type SessionAnswersReview,
   type SessionDetail,
+  type SessionResultSummary,
   type SessionSummary,
   type WsServerEvent
 } from '@offlineclass/shared'
@@ -17,6 +18,7 @@ import {
   getSession,
   gradeAnswer,
   listLobbyStudents,
+  listRecentResultsForOwner,
   listSessionsForOwner,
   loadStudentAnswers,
   startSession
@@ -51,6 +53,11 @@ export function registerSessionsHandlers(ctx: SessionsContext): void {
   ipcMain.handle('sessions.active', async (): Promise<SessionDetail | null> => {
     const ownerId = requireTeacherId(db)
     return findActiveSessionForOwner(db, ownerId)
+  })
+
+  ipcMain.handle('sessions.recentResults', async (): Promise<SessionResultSummary[]> => {
+    const ownerId = requireTeacherId(db)
+    return listRecentResultsForOwner(db, ownerId)
   })
 
   ipcMain.handle('sessions.start', async (_event, rawId): Promise<SessionDetail> => {

@@ -314,3 +314,15 @@ export const SessionSummary = z.object({
   endedAt: z.number().int().nullable()
 })
 export type SessionSummary = z.infer<typeof SessionSummary>
+
+// Graded outcome of an ended session, for the Home "recent results" list.
+export const SessionResultSummary = z.object({
+  id: z.string(),
+  examTitle: z.string(),
+  // Submitted students — the population the average is taken over.
+  studentCount: z.number().int().nonnegative(),
+  // Mean grade across submitted students, 0–10.
+  averageScore: z.number(),
+  endedAt: z.number().int().nullable()
+})
+export type SessionResultSummary = z.infer<typeof SessionResultSummary>

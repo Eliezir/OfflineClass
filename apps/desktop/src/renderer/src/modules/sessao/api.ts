@@ -2,7 +2,9 @@ import type {
   DiscoveryStatus,
   SessionAnswersReview,
   SessionCreateInput,
-  SessionDetail
+  SessionDetail,
+  SessionResultSummary,
+  SessionSummary
 } from '@offlineclass/shared'
 
 /* Teacher session lifecycle over the domain IPC bridge (window.api.sessions →
@@ -11,6 +13,14 @@ import type {
 
 export function getActiveSession(): Promise<SessionDetail | null> {
   return window.api.sessions.active()
+}
+
+export function listSessions(): Promise<SessionSummary[]> {
+  return window.api.sessions.list()
+}
+
+export function getRecentResults(): Promise<SessionResultSummary[]> {
+  return window.api.sessions.recentResults()
 }
 
 export function createSession(input: SessionCreateInput): Promise<SessionDetail> {

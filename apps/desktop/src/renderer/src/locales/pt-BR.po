@@ -13,151 +13,76 @@ msgstr ""
 "Language-Team: \n"
 "Plural-Forms: \n"
 
-#~ msgid " e "
-#~ msgstr " e "
-
-#~ msgid "“Apollo 11” foi gerada com sucesso."
-#~ msgstr "“Apollo 11” foi gerada com sucesso."
-
-msgid "“Prova de SO” foi salva no seu computador."
-msgstr "“Prova de SO” foi salva no seu computador."
-
-#~ msgid "“rascunho.md” foi salvo na sua biblioteca."
-#~ msgstr "“rascunho.md” foi salvo na sua biblioteca."
-
-#. placeholder {0}: model.assets
-#~ msgid "{0, plural, one {# asset} other {# assets}}"
-#~ msgstr "{0, plural, one {# asset} other {# assets}}"
-
-#. placeholder {0}: m.slides
-#~ msgid "{0, plural, one {# slide} other {# slides}}"
-#~ msgstr "{0, plural, one {# slide} other {# slides}}"
-
 #. placeholder {0}: session.groups
 #. placeholder {1}: session.students
-#. placeholder {2}: session.minutesLeft
-msgid "{0} grupos · {1} alunos · {2} min restantes"
-msgstr "{0} grupos · {1} alunos · {2} min restantes"
+msgid "{0} grupos · {1} alunos · {minutesLeft} min restantes"
+msgstr "{0} grupos · {1} alunos · {minutesLeft} min restantes"
 
-#~ msgid "{total, plural, one {# asset} other {# assets}}"
-#~ msgstr "{total, plural, one {# asset} other {# assets}}"
-
-#~ msgid "{totalAssets, plural, one {# recurso} other {# recursos}}"
-#~ msgstr "{totalAssets, plural, one {# recurso} other {# recursos}}"
+msgid "{submitted} de {total} alunos entregaram"
+msgstr "{submitted} de {total} alunos entregaram"
 
 msgid "{unread, plural, one {# nova} other {# novas}}"
 msgstr "{unread, plural, one {# nova} other {# novas}}"
 
-msgid "+18 esta semana"
-msgstr "+18 esta semana"
-
-msgid "+3 esta semana"
-msgstr "+3 esta semana"
-
-#~ msgid "≈ 2h de caminhada e coleta de amostras"
-#~ msgstr "≈ 2h de caminhada e coleta de amostras"
-
 msgid "10 s"
 msgstr "10 s"
-
-#~ msgid "1957 sputnik / 1961 gagarin"
-#~ msgstr "1957 sputnik / 1961 gagarin"
-
-#~ msgid "1957: a URSS lança o Sputnik"
-#~ msgstr "1957: a URSS lança o Sputnik"
-
-#~ msgid "1961: Gagarin, o primeiro humano em órbita"
-#~ msgstr "1961: Gagarin, o primeiro humano em órbita"
-
-#~ msgid "1969 · Missão à Lua"
-#~ msgstr "1969 · Missão à Lua"
-
-#~ msgid "1969 · Missão tripulada à Lua"
-#~ msgstr "1969 · Missão tripulada à Lua"
-
-msgid "2 dias"
-msgstr "2 dias"
-
-#~ msgid "20 jul: módulo eagle pousa"
-#~ msgstr "20 jul: módulo eagle pousa"
-
-#~ msgid "21,5 kg de amostras lunares trazidas à Terra"
-#~ msgstr "21,5 kg de amostras lunares trazidas à Terra"
-
-#~ msgid "3 dias até a órbita lunar"
-#~ msgstr "3 dias até a órbita lunar"
 
 msgid "3 s"
 msgstr "3 s"
 
-msgid "5 este mês"
-msgstr "5 este mês"
-
 msgid "5 s"
 msgstr "5 s"
 
-#~ msgid "8 slides · interativo"
-#~ msgstr "8 slides · interativo"
+msgid "a corrigir"
+msgstr "a corrigir"
 
-#~ msgid "A apresentação <0>“{label}”</0> será removida permanentemente. Slides e histórico associados serão perdidos."
-#~ msgstr "A apresentação <0>“{label}”</0> será removida permanentemente. Slides e histórico associados serão perdidos."
-
-#~ msgid "A IA vira roteiro"
-#~ msgstr "A IA vira roteiro"
+msgid "A corrigir"
+msgstr "A corrigir"
 
 msgid "A interface será exibida no idioma selecionado."
 msgstr "A interface será exibida no idioma selecionado."
 
-msgid "A sessão da “Prova de Redes” foi encerrada."
-msgstr "A sessão da “Prova de Redes” foi encerrada."
-
-#~ msgid "A Terra vista do espaço · NASA"
-#~ msgstr "A Terra vista do espaço · NASA"
-
-#~ msgid "A tripulação"
-#~ msgstr "A tripulação"
-
-#~ msgid "A viagem"
-#~ msgstr "A viagem"
-
 msgid "Abrir painel"
 msgstr "Abrir painel"
 
-#~ msgid "Adicionar modelo"
-#~ msgstr "Adicionar modelo"
+msgid "Abrir sala"
+msgstr "Abrir sala"
 
-#~ msgid "Adicione assets"
-#~ msgstr "Adicione assets"
+msgid "Acertos (objetivas)"
+msgstr "Acertos (objetivas)"
 
-msgid "agora"
-msgstr "agora"
-
-#~ msgid "Ajuste a tipografia"
-#~ msgstr "Ajuste a tipografia"
+msgid "Aguardando alunos"
+msgstr "Aguardando alunos"
 
 msgid "Ajuste o OfflineClass do seu jeito."
 msgstr "Ajuste o OfflineClass do seu jeito."
 
-#~ msgid "Aldrin o acompanha minutos depois"
-#~ msgstr "Aldrin o acompanha minutos depois"
+msgid "Alterar senha"
+msgstr "Alterar senha"
 
-#~ msgid "Alternar estado de exemplo (dev)"
-#~ msgstr "Alternar estado de exemplo (dev)"
+msgid "Aluno"
+msgstr "Aluno"
 
-#~ msgid "Alternar tema"
-#~ msgstr "Alternar tema"
-
-msgid "Aluno desconectado"
-msgstr "Aluno desconectado"
+msgid "Aluno não encontrado"
+msgstr "Aluno não encontrado"
 
 msgid "alunos"
 msgstr "alunos"
 
+msgid "Alunos"
+msgstr "Alunos"
+
+msgid "Alunos atrasados ainda conseguem entrar."
+msgstr "Alunos atrasados ainda conseguem entrar."
+
 msgid "Alunos avaliados"
 msgstr "Alunos avaliados"
 
-#~ msgid "Animações"
-#~ msgstr "Animações"
+msgid "Alunos na sala"
+msgstr "Alunos na sala"
+
+msgid "Ao vivo"
+msgstr "Ao vivo"
 
 msgid "Aparência"
 msgstr "Aparência"
@@ -165,86 +90,52 @@ msgstr "Aparência"
 msgid "Aplicar ao vivo"
 msgstr "Aplicar ao vivo"
 
-#~ msgid "Aplique aos slides"
-#~ msgstr "Aplique aos slides"
-
 msgid "Aplique em grupo, ao vivo"
 msgstr "Aplique em grupo, ao vivo"
 
-#~ msgid "apollo 11 — chegada à lua"
-#~ msgstr "apollo 11 — chegada à lua"
+msgid "Aplique uma prova ao vivo para a turma."
+msgstr "Aplique uma prova ao vivo para a turma."
 
-#~ msgid "Apollo 11 · A Chegada à Lua"
-#~ msgstr "Apollo 11 · A Chegada à Lua"
+msgid "As senhas não coincidem."
+msgstr "As senhas não coincidem."
 
-#~ msgid "Apollo 11: A Chegada à Lua"
-#~ msgstr "Apollo 11: A Chegada à Lua"
+msgid "Atividade"
+msgstr "Atividade"
 
-#~ msgid "Apollo 11<0/>A Chegada à Lua"
-#~ msgstr "Apollo 11<0/>A Chegada à Lua"
+msgid "ativo"
+msgstr "ativo"
 
-#~ msgid "Apresenta.AI — <0>{file}</0>"
-#~ msgstr "Apresenta.AI — <0>{file}</0>"
+#. placeholder {0}: formatRelativeTime(student.lastSeenAt)
+msgid "ativo {0}"
+msgstr "ativo {0}"
 
-#~ msgid "Apresentação"
-#~ msgstr "Apresentação"
-
-#~ msgid "Apresentação gerada"
-#~ msgstr "Apresentação gerada"
-
-#~ msgid "Apresentações"
-#~ msgstr "Apresentações"
-
-#~ msgid "aprox 2h na superfície"
-#~ msgstr "aprox 2h na superfície"
-
-#~ msgid "Armstrong, o primeiro a pisar na Lua"
-#~ msgstr "Armstrong, o primeiro a pisar na Lua"
-
-#~ msgid "armstrong: \"um pequeno passo...\""
-#~ msgstr "armstrong: \"um pequeno passo...\""
-
-msgid "As notas da Turma A já estão disponíveis."
-msgstr "As notas da Turma A já estão disponíveis."
-
-#~ msgid "Assets do tema"
-#~ msgstr "Assets do tema"
-
-msgid "Atualize para a 1.2.0 para as últimas melhorias."
-msgstr "Atualize para a 1.2.0 para as últimas melhorias."
+msgid "Atribuir nota (0.0 a 1.0):"
+msgstr "Atribuir nota (0.0 a 1.0):"
 
 msgid "Avaliações sem internet, sincronizadas na sua rede local."
 msgstr "Avaliações sem internet, sincronizadas na sua rede local."
 
+#. placeholder {0}: score.toFixed(1)
+msgid "avaliada ({0})"
+msgstr "avaliada ({0})"
+
 msgid "Aviso"
 msgstr "Aviso"
 
-#~ msgid "Bandeira e placa comemorativa"
-#~ msgstr "Bandeira e placa comemorativa"
+msgid "Bem-vindo de volta"
+msgstr "Bem-vindo de volta"
 
 msgid "Bem-vindo de volta. Pronto para aplicar uma avaliação?"
 msgstr "Bem-vindo de volta. Pronto para aplicar uma avaliação?"
 
-#~ msgid "Buscar projetos, templates…"
-#~ msgstr "Buscar projetos, templates…"
-
 msgid "Buscar…"
 msgstr "Buscar…"
 
-#~ msgid "Buzz Aldrin — piloto do módulo lunar"
-#~ msgstr "Buzz Aldrin — piloto do módulo lunar"
+msgid "Cancelar"
+msgstr "Cancelar"
 
-#~ msgid "Buzz Aldrin na Lua · NASA, 1969"
-#~ msgstr "Buzz Aldrin na Lua · NASA, 1969"
-
-#~ msgid "cabo kennedy, flórida"
-#~ msgstr "cabo kennedy, flórida"
-
-#~ msgid "Cancelar"
-#~ msgstr "Cancelar"
-
-msgid "Carregando"
-msgstr "Carregando"
+msgid "caracteres"
+msgstr "caracteres"
 
 msgid "Centro direita"
 msgstr "Centro direita"
@@ -252,116 +143,74 @@ msgstr "Centro direita"
 msgid "Centro esquerda"
 msgstr "Centro esquerda"
 
-#~ msgid "Cerca de 600 milhões assistiram ao vivo"
-#~ msgstr "Cerca de 600 milhões assistiram ao vivo"
-
-#~ msgid "Chat com a IA"
-#~ msgstr "Chat com a IA"
-
-#~ msgid "claro"
-#~ msgstr "claro"
-
 msgid "Claro"
 msgstr "Claro"
-
-#~ msgid "Claude Code conectado."
-#~ msgstr "Claude Code conectado."
-
-#~ msgid "Cole anotações, um texto corrido ou tópicos soltos — a IA entende e organiza em um roteiro."
-#~ msgstr "Cole anotações, um texto corrido ou tópicos soltos — a IA entende e organiza em um roteiro."
-
-#~ msgid "Cole qualquer conteúdo — a IA estrutura em Markdown e gera uma apresentação interativa."
-#~ msgstr "Cole qualquer conteúdo — a IA estrutura em Markdown e gera uma apresentação interativa."
-
-#~ msgid "Cole seu material e veja a IA estruturar tudo em Markdown."
-#~ msgstr "Cole seu material e veja a IA estruturar tudo em Markdown."
-
-msgid "Com dados"
-msgstr "Com dados"
 
 msgid "Começar"
 msgstr "Começar"
 
-#~ msgid "Comece agora"
-#~ msgstr "Comece agora"
+msgid "Como devemos te chamar?"
+msgstr "Como devemos te chamar?"
 
-#~ msgid "Como funciona"
-#~ msgstr "Como funciona"
+msgid "Como os alunos entram"
+msgstr "Como os alunos entram"
 
 msgid "Como os avisos (toasts) aparecem no aplicativo."
 msgstr "Como os avisos (toasts) aparecem no aplicativo."
 
-#~ msgid "Como os avisos (toasts) aparecem. Ainda não conectado — apenas a interface."
-#~ msgstr "Como os avisos (toasts) aparecem. Ainda não conectado — apenas a interface."
-
-#~ msgid "Conexões de IA"
-#~ msgstr "Conexões de IA"
-
 msgid "Configurações"
 msgstr "Configurações"
 
-#~ msgid "Contexto"
-#~ msgstr "Contexto"
+msgid "Confirmar nova senha"
+msgstr "Confirmar nova senha"
+
+msgid "Conta"
+msgstr "Conta"
 
 msgid "Continuar"
 msgstr "Continuar"
 
-#~ msgid "Cores, fontes e tom"
-#~ msgstr "Cores, fontes e tom"
+msgid "Copiar endereço"
+msgstr "Copiar endereço"
 
-#~ msgid "corrida espacial: eua x urss"
-#~ msgstr "corrida espacial: eua x urss"
+msgid "correta"
+msgstr "correta"
 
-#~ msgid "Cosmos"
-#~ msgstr "Cosmos"
+msgid "Correta:"
+msgstr "Correta:"
 
-#~ msgid "Criar apresentação"
-#~ msgstr "Criar apresentação"
+msgid "Criar conta"
+msgstr "Criar conta"
+
+msgid "Criar prova"
+msgstr "Criar prova"
+
+msgid "Criar sua conta"
+msgstr "Criar sua conta"
+
+msgid "Crie e organize suas avaliações."
+msgstr "Crie e organize suas avaliações."
 
 msgid "Crie provas com vários tipos de questão e materiais de apoio. Tudo fica salvo no seu computador."
 msgstr "Crie provas com vários tipos de questão e materiais de apoio. Tudo fica salvo no seu computador."
 
-#~ msgid "Crie seu primeiro modelo de slides"
-#~ msgstr "Crie seu primeiro modelo de slides"
-
-#~ msgid "Crie seu primeiro modelo visual"
-#~ msgstr "Crie seu primeiro modelo visual"
-
-#~ msgid "Crie seu primeiro tema"
-#~ msgstr "Crie seu primeiro tema"
-
 msgid "Crie sua conta de professor e comece a aplicar avaliações."
 msgstr "Crie sua conta de professor e comece a aplicar avaliações."
-
-#~ msgid "Crie sua primeira apresentação"
-#~ msgstr "Crie sua primeira apresentação"
 
 msgid "Crie sua primeira prova para começar a aplicar avaliações."
 msgstr "Crie sua primeira prova para começar a aplicar avaliações."
 
-#~ msgid "Dark"
-#~ msgstr "Dark"
+msgid "Crie uma prova antes de aplicar uma sessão."
+msgstr "Crie uma prova antes de aplicar uma sessão."
 
-#~ msgid "Dashboard em construção."
-#~ msgstr "Dashboard em construção."
+msgid "Dados inválidos."
+msgstr "Dados inválidos."
 
-#~ msgid "Defina as cores"
-#~ msgstr "Defina as cores"
+msgid "Dê um título e uma descrição. As questões você adiciona depois."
+msgstr "Dê um título e uma descrição. As questões você adiciona depois."
 
-#~ msgid "Defina cores, tipografia e tom — a IA aplica o estilo em todas as apresentações."
-#~ msgstr "Defina cores, tipografia e tom — a IA aplica o estilo em todas as apresentações."
-
-#~ msgid "Defina cores, tipografia e tom — a IA usa isso para montar seus slides."
-#~ msgstr "Defina cores, tipografia e tom — a IA usa isso para montar seus slides."
-
-#~ msgid "deixa a seção do pouso em tópicos"
-#~ msgstr "deixa a seção do pouso em tópicos"
-
-#~ msgid "Detectando o Claude Code…"
-#~ msgstr "Detectando o Claude Code…"
-
-#~ msgid "Diminui animações e transições da interface."
-#~ msgstr "Diminui animações e transições da interface."
+msgid "Descrição"
+msgstr "Descrição"
 
 msgid "Dispare um toast de exemplo para conferir suas preferências."
 msgstr "Dispare um toast de exemplo para conferir suas preferências."
@@ -372,98 +221,108 @@ msgstr "Dispensar automaticamente"
 msgid "Dispensar notificação"
 msgstr "Dispensar notificação"
 
-#~ msgid "Do texto à apresentação interativa em HTML, gerada por IA."
-#~ msgstr "Do texto à apresentação interativa em HTML, gerada por IA."
+msgid "Dissertativa"
+msgstr "Dissertativa"
+
+msgid "duração"
+msgstr "duração"
 
 msgid "Duração"
 msgstr "Duração"
 
+msgid "Duração da prova"
+msgstr "Duração da prova"
+
 msgid "Duração do toast"
 msgstr "Duração do toast"
 
-#~ msgid "Eagle pousa no Mar da Tranquilidade"
-#~ msgstr "Eagle pousa no Mar da Tranquilidade"
+msgid "E-mail"
+msgstr "E-mail"
 
-#~ msgid "Em 20 de julho de 1969 o módulo lunar Eagle pousou no Mar da Tranquilidade. Horas depois, Armstrong desceu e tornou-se o primeiro humano a pisar na Lua."
-#~ msgstr "Em 20 de julho de 1969 o módulo lunar Eagle pousou no Mar da Tranquilidade. Horas depois, Armstrong desceu e tornou-se o primeiro humano a pisar na Lua."
+msgid "Editar"
+msgstr "Editar"
+
+msgid "Editar prova"
+msgstr "Editar prova"
 
 msgid "Em breve"
 msgstr "Em breve"
 
-msgid "Em breve você poderá aplicar provas ao vivo e acompanhar os grupos aqui."
-msgstr "Em breve você poderá aplicar provas ao vivo e acompanhar os grupos aqui."
+msgid "Em curso"
+msgstr "Em curso"
 
-msgid "Em breve você poderá criar e organizar suas provas aqui."
-msgstr "Em breve você poderá criar e organizar suas provas aqui."
+msgid "encerrada"
+msgstr "encerrada"
 
-msgid "Em breve você verá notas, correções e relatórios das sessões encerradas aqui."
-msgstr "Em breve você verá notas, correções e relatórios das sessões encerradas aqui."
+msgid "Encerrada"
+msgstr "Encerrada"
 
-#~ msgid "Em construção."
-#~ msgstr "Em construção."
+msgid "Encerrar sessão"
+msgstr "Encerrar sessão"
+
+msgid "Endereço na rede"
+msgstr "Endereço na rede"
+
+msgid "Entrada tardia: não"
+msgstr "Entrada tardia: não"
+
+msgid "Entrada tardia: sim"
+msgstr "Entrada tardia: sim"
+
+msgid "Entrar"
+msgstr "Entrar"
 
 msgid "Entrar no app"
 msgstr "Entrar no app"
 
+msgid "entregaram"
+msgstr "entregaram"
+
+msgid "entregue"
+msgstr "entregue"
+
+msgid "Entregue"
+msgstr "Entregue"
+
+msgid "entregues"
+msgstr "entregues"
+
+msgid "Entregues"
+msgstr "Entregues"
+
+#. placeholder {0}: formatRelativeTime(student.joinedAt)
+msgid "entrou {0}"
+msgstr "entrou {0}"
+
 msgid "Erro"
 msgstr "Erro"
 
-#~ msgid "Escolha as fontes"
-#~ msgstr "Escolha as fontes"
+msgid "escolha do aluno"
+msgstr "escolha do aluno"
 
 msgid "Escolha entre o tema claro e escuro do app."
 msgstr "Escolha entre o tema claro e escuro do app."
 
-#~ msgid "Escolha o motor de IA"
-#~ msgstr "Escolha o motor de IA"
-
-#~ msgid "Escolha um modelo visual"
-#~ msgstr "Escolha um modelo visual"
-
-#~ msgid "Escolha um modelo visual e gere uma apresentação em HTML real, com transições e interação."
-#~ msgstr "Escolha um modelo visual e gere uma apresentação em HTML real, com transições e interação."
-
-#~ msgid "Escolha um tema"
-#~ msgstr "Escolha um tema"
-
-#~ msgid "Escolher de uma apresentação"
-#~ msgstr "Escolher de uma apresentação"
-
-#~ msgid "Escreva do seu jeito"
-#~ msgstr "Escreva do seu jeito"
-
-#~ msgid "Escreva ou cole"
-#~ msgstr "Escreva ou cole"
-
-#~ msgid "escuro"
-#~ msgstr "escuro"
+msgid "Escolha uma prova e abra a sala para os alunos entrarem pela rede."
+msgstr "Escolha uma prova e abra a sala para os alunos entrarem pela rede."
 
 msgid "Escuro"
 msgstr "Escuro"
 
-#~ msgid "Escuro técnico · ciano"
-#~ msgstr "Escuro técnico · ciano"
+msgid "Esta sessão não teve alunos com respostas."
+msgstr "Esta sessão não teve alunos com respostas."
 
-#~ msgid "Estrutura reutilizável"
-#~ msgstr "Estrutura reutilizável"
+msgid "Estado"
+msgstr "Estado"
 
-#~ msgid "Estruturas de slides"
-#~ msgstr "Estruturas de slides"
+msgid "Este aluno não faz parte da sessão ativa ou a sessão foi encerrada."
+msgstr "Este aluno não faz parte da sessão ativa ou a sessão foi encerrada."
 
-#~ msgid "Estruture seus slides uma vez e reaproveite — a IA preenche o conteúdo."
-#~ msgstr "Estruture seus slides uma vez e reaproveite — a IA preenche o conteúdo."
+msgid "Ex: Prova de Redes — Camada de Transporte"
+msgstr "Ex: Prova de Redes — Camada de Transporte"
 
-#~ msgid "Excluir"
-#~ msgstr "Excluir"
-
-#~ msgid "Excluir esta apresentação?"
-#~ msgstr "Excluir esta apresentação?"
-
-#~ msgid "Excluir este modelo visual?"
-#~ msgstr "Excluir este modelo visual?"
-
-#~ msgid "Excluir este slide?"
-#~ msgstr "Excluir este slide?"
+msgid "Excluir prova"
+msgstr "Excluir prova"
 
 msgid "Exemplo de como um aviso de atenção aparece."
 msgstr "Exemplo de como um aviso de atenção aparece."
@@ -477,50 +336,11 @@ msgstr "Exemplo de como um aviso de sucesso aparece."
 msgid "Exemplo de como um aviso informativo aparece."
 msgstr "Exemplo de como um aviso informativo aparece."
 
-#~ msgid "EXPLORAÇÃO ESPACIAL"
-#~ msgstr "EXPLORAÇÃO ESPACIAL"
-
-msgid "Falha ao exportar"
-msgstr "Falha ao exportar"
-
 msgid "Fecha o toast sozinho após a duração."
 msgstr "Fecha o toast sozinho após a duração."
 
 msgid "Fechar"
 msgstr "Fechar"
-
-#~ msgid "Funcionalidades"
-#~ msgstr "Funcionalidades"
-
-#~ msgid "Fundo claro · âmbar"
-#~ msgstr "Fundo claro · âmbar"
-
-#~ msgid "Fundo estelar · dourado"
-#~ msgstr "Fundo estelar · dourado"
-
-#~ msgid "Geração rápida"
-#~ msgstr "Geração rápida"
-
-#~ msgid "Gerando HTML…"
-#~ msgstr "Gerando HTML…"
-
-#~ msgid "Gere em HTML"
-#~ msgstr "Gere em HTML"
-
-msgid "há 2 h"
-msgstr "há 2 h"
-
-msgid "há 3 h"
-msgstr "há 3 h"
-
-#~ msgid "Home"
-#~ msgstr "Home"
-
-#~ msgid "HTML interativo"
-#~ msgstr "HTML interativo"
-
-#~ msgid "Identidade visual"
-#~ msgstr "Identidade visual"
 
 msgid "Idioma"
 msgstr "Idioma"
@@ -528,17 +348,8 @@ msgstr "Idioma"
 msgid "Idioma do app"
 msgstr "Idioma do app"
 
-#~ msgid "Importar"
-#~ msgstr "Importar"
-
-#~ msgid "Importe ou gere slides"
-#~ msgstr "Importe ou gere slides"
-
-#~ msgid "Importe um modelo ou salve a estrutura de uma apresentação que você já gerou."
-#~ msgstr "Importe um modelo ou salve a estrutura de uma apresentação que você já gerou."
-
-#~ msgid "Importe um modelo ou salve a partir de uma apresentação."
-#~ msgstr "Importe um modelo ou salve a partir de uma apresentação."
+msgid "incorreta"
+msgstr "incorreta"
 
 msgid "Inferior centro"
 msgstr "Inferior centro"
@@ -552,116 +363,86 @@ msgstr "Inferior esquerda"
 msgid "Informação"
 msgstr "Informação"
 
+msgid "Informações da sua conta no OfflineClass."
+msgstr "Informações da sua conta no OfflineClass."
+
+msgid "Informe a senha atual e escolha uma nova."
+msgstr "Informe a senha atual e escolha uma nova."
+
+msgid "Iniciar prova"
+msgstr "Iniciar prova"
+
 msgid "Iniciar sessão"
 msgstr "Iniciar sessão"
 
 msgid "Início"
 msgstr "Início"
 
-#~ msgid "Instalação de experimentos científicos"
-#~ msgstr "Instalação de experimentos científicos"
-
-#~ msgid "Instalar Claude Code"
-#~ msgstr "Instalar Claude Code"
-
 msgid "Introdução"
 msgstr "Introdução"
 
-#~ msgid "Kennedy promete levar o homem à Lua até 1970"
-#~ msgstr "Kennedy promete levar o homem à Lua até 1970"
-
-#~ msgid "kennedy prometeu ir à lua"
-#~ msgstr "kennedy prometeu ir à lua"
-
-#~ msgid "Lançada em 16 de julho de 1969, do Cabo Kennedy"
-#~ msgstr "Lançada em 16 de julho de 1969, do Cabo Kennedy"
-
-#~ msgid "Legado"
-#~ msgstr "Legado"
-
-#~ msgid "Light"
-#~ msgstr "Light"
-
-#~ msgid "Limite de uso próximo"
-#~ msgstr "Limite de uso próximo"
+msgid "Já tem conta?"
+msgstr "Já tem conta?"
 
 msgid "Limpar tudo"
 msgstr "Limpar tudo"
 
-#~ msgid "mar da tranquilidade"
-#~ msgstr "mar da tranquilidade"
-
-#~ msgid "Mar da Tranquilidade · Lua"
-#~ msgstr "Mar da Tranquilidade · Lua"
-
-#~ msgid "Marco da corrida espacial"
-#~ msgstr "Marco da corrida espacial"
-
-msgid "Maria saiu da sessão e pode ter perdido a conexão."
-msgstr "Maria saiu da sessão e pode ter perdido a conexão."
+msgid "Lobby"
+msgstr "Lobby"
 
 msgid "Maximizar"
 msgstr "Maximizar"
 
-#~ msgid "Michael Collins — piloto do módulo de comando"
-#~ msgstr "Michael Collins — piloto do módulo de comando"
+msgid "Média da turma"
+msgstr "Média da turma"
 
 msgid "Minimizar"
 msgstr "Minimizar"
 
-#~ msgid "Modelo visual atualizado"
-#~ msgstr "Modelo visual atualizado"
-
-#~ msgid "Modelos de roteiro"
-#~ msgstr "Modelos de roteiro"
-
-#~ msgid "Modelos de Slides"
-#~ msgstr "Modelos de Slides"
-
-#~ msgid "Modelos visuais"
-#~ msgstr "Modelos visuais"
-
-#~ msgid "Modelos Visuais"
-#~ msgstr "Modelos Visuais"
-
-#~ msgid "Monte a estrutura"
-#~ msgstr "Monte a estrutura"
-
-#~ msgid "Monte a sequência de slides uma vez e reaproveite — a IA preenche o conteúdo."
-#~ msgstr "Monte a sequência de slides uma vez e reaproveite — a IA preenche o conteúdo."
+msgid "Mínimo 8 caracteres"
+msgstr "Mínimo 8 caracteres"
 
 msgid "Monte suas provas"
 msgstr "Monte suas provas"
 
-#~ msgid "Motor de IA"
-#~ msgstr "Motor de IA"
+msgid "Mostrar senha"
+msgstr "Mostrar senha"
 
-#~ msgid "Na superfície"
-#~ msgstr "Na superfície"
+msgid "Múltipla escolha"
+msgstr "Múltipla escolha"
 
-#~ msgid "Não encontramos o Claude Code na sua máquina."
-#~ msgstr "Não encontramos o Claude Code na sua máquina."
+msgid "na sala"
+msgstr "na sala"
 
-msgid "Não foi possível exportar o CSV. Tente novamente."
-msgstr "Não foi possível exportar o CSV. Tente novamente."
+msgid "Não foi possível abrir a sessão."
+msgstr "Não foi possível abrir a sessão."
 
-#~ msgid "Não foi possível exportar o PDF. Tente novamente."
-#~ msgstr "Não foi possível exportar o PDF. Tente novamente."
+msgid "Não foi possível alterar a senha."
+msgstr "Não foi possível alterar a senha."
 
-#~ msgid "Neil Armstrong — comandante"
-#~ msgstr "Neil Armstrong — comandante"
+msgid "Não foi possível carregar as respostas."
+msgstr "Não foi possível carregar as respostas."
 
-#~ msgid "Nenhum modelo de slides"
-#~ msgstr "Nenhum modelo de slides"
+msgid "Não foi possível continuar."
+msgstr "Não foi possível continuar."
 
-#~ msgid "Nenhum modelo visual"
-#~ msgstr "Nenhum modelo visual"
+msgid "Não foi possível salvar a prova."
+msgstr "Não foi possível salvar a prova."
 
-#~ msgid "Nenhum tema ainda"
-#~ msgstr "Nenhum tema ainda"
+msgid "Não foi possível salvar."
+msgstr "Não foi possível salvar."
 
-#~ msgid "Nenhum template ainda"
-#~ msgstr "Nenhum template ainda"
+msgid "não respondida"
+msgstr "não respondida"
+
+msgid "Não respondida"
+msgstr "Não respondida"
+
+msgid "Não tem conta?"
+msgstr "Não tem conta?"
+
+msgid "Nenhum aluno"
+msgstr "Nenhum aluno"
 
 msgid "Nenhuma notificação"
 msgstr "Nenhuma notificação"
@@ -669,11 +450,23 @@ msgstr "Nenhuma notificação"
 msgid "Nenhuma prova ainda"
 msgstr "Nenhuma prova ainda"
 
-#~ msgid "No auge da Guerra Fria, EUA e URSS disputavam cada marco da exploração espacial."
-#~ msgstr "No auge da Guerra Fria, EUA e URSS disputavam cada marco da exploração espacial."
+msgid "Nenhuma sessão ativa"
+msgstr "Nenhuma sessão ativa"
 
-#~ msgid "Notas do apresentador"
-#~ msgstr "Notas do apresentador"
+msgid "Nenhuma sessão encerrada"
+msgstr "Nenhuma sessão encerrada"
+
+msgid "Nome"
+msgstr "Nome"
+
+msgid "nota"
+msgstr "nota"
+
+msgid "Nota da questão"
+msgstr "Nota da questão"
+
+msgid "Notas e correção das sessões encerradas."
+msgstr "Notas e correção das sessões encerradas."
 
 msgid "Notas e relatórios"
 msgstr "Notas e relatórios"
@@ -684,56 +477,26 @@ msgstr "Notificações"
 msgid "Notificações ({unread, plural, one {# não lida} other {# não lidas}})"
 msgstr "Notificações ({unread, plural, one {# não lida} other {# não lidas}})"
 
-#~ msgid "Nova apresentação"
-#~ msgstr "Nova apresentação"
-
 msgid "Nova prova"
 msgstr "Nova prova"
 
-msgid "Nova versão disponível"
-msgstr "Nova versão disponível"
+msgid "Nova senha"
+msgstr "Nova senha"
 
-#~ msgid "Novo modelo"
-#~ msgstr "Novo modelo"
+msgid "Nova sessão"
+msgstr "Nova sessão"
 
-#~ msgid "Novo modelo de slides"
-#~ msgstr "Novo modelo de slides"
+msgid "ocioso"
+msgstr "ocioso"
 
-#~ msgid "Novo tema"
-#~ msgstr "Novo tema"
+msgid "Ocultar senha"
+msgstr "Ocultar senha"
 
-#~ msgid "Novo template"
-#~ msgstr "Novo template"
+msgid "Opcional"
+msgstr "Opcional"
 
-#~ msgid "O Claude Code usa o login local da sua máquina; o Mock gera exemplos."
-#~ msgstr "O Claude Code usa o login local da sua máquina; o Mock gera exemplos."
-
-#~ msgid "O foguete Saturn V impulsionou a nave rumo à Lua"
-#~ msgstr "O foguete Saturn V impulsionou a nave rumo à Lua"
-
-#~ msgid "O modelo <0>“{label}”</0> será excluído da sua biblioteca. Apresentações que já o utilizam mantêm o visual atual."
-#~ msgstr "O modelo <0>“{label}”</0> será excluído da sua biblioteca. Apresentações que já o utilizam mantêm o visual atual."
-
-#~ msgid "O pouso na Lua"
-#~ msgstr "O pouso na Lua"
-
-#~ msgid "O slide <0>{label}</0> será removido da apresentação."
-#~ msgstr "O slide <0>{label}</0> será removido da apresentação."
-
-#~ msgid "O tema “Aurora” ganhou novos presets."
-#~ msgstr "O tema “Aurora” ganhou novos presets."
-
-msgid "ontem"
-msgstr "ontem"
-
-#~ msgid "Órbita"
-#~ msgstr "Órbita"
-
-#~ msgid "Organizado pela IA"
-#~ msgstr "Organizado pela IA"
-
-#~ msgid "Organize os blocos"
-#~ msgstr "Organize os blocos"
+msgid "Os alunos aparecem aqui assim que entram pela rede."
+msgstr "Os alunos aparecem aqui assim que entram pela rede."
 
 msgid "Os alunos entram por QR code e respondem em grupo, com tudo sincronizado em tempo real."
 msgstr "Os alunos entram por QR code e respondem em grupo, com tudo sincronizado em tempo real."
@@ -747,11 +510,17 @@ msgstr "Painel inicial"
 msgid "Passo {index} de {total}"
 msgstr "Passo {index} de {total}"
 
-#~ msgid "Pausar"
-#~ msgstr "Pausar"
+msgid "pendente de nota"
+msgstr "pendente de nota"
 
-#~ msgid "Peça uma alteração…"
-#~ msgstr "Peça uma alteração…"
+msgid "Perfil"
+msgstr "Perfil"
+
+msgid "Perfil atualizado."
+msgstr "Perfil atualizado."
+
+msgid "Permitir entrada após o início"
+msgstr "Permitir entrada após o início"
 
 msgid "Personalize a aparência do app."
 msgstr "Personalize a aparência do app."
@@ -765,71 +534,56 @@ msgstr "Posição do toast"
 msgid "Preferências do app"
 msgstr "Preferências do app"
 
-#~ msgid "Preferências do Apresenta.AI."
-#~ msgstr "Preferências do Apresenta.AI."
-
-#~ msgid "Primeiros passos no Apresenta.AI."
-#~ msgstr "Primeiros passos no Apresenta.AI."
-
 msgid "Primeiros passos no OfflineClass."
 msgstr "Primeiros passos no OfflineClass."
 
-#~ msgid "Projetos"
-#~ msgstr "Projetos"
+msgid "Professor · OfflineClass"
+msgstr "Professor · OfflineClass"
 
-#~ msgid "Pronto"
-#~ msgstr "Pronto"
+msgid "Progresso"
+msgstr "Progresso"
 
-#~ msgid "Pronto — gera conteúdo de exemplo, sem credencial."
-#~ msgstr "Pronto — gera conteúdo de exemplo, sem credencial."
-
-#~ msgid "Pronto — virou tópicos"
-#~ msgstr "Pronto — virou tópicos"
-
-msgid "Prova salva"
-msgstr "Prova salva"
+msgid "Prova"
+msgstr "Prova"
 
 msgid "Provas"
 msgstr "Provas"
 
-#~ msgid "Provedor"
-#~ msgstr "Provedor"
+msgid "Provas em grupo,<0/>ao vivo, sem internet."
+msgstr "Provas em grupo,<0/>ao vivo, sem internet."
 
-#~ msgid "Provedor de IA"
-#~ msgstr "Provedor de IA"
+msgid "pts"
+msgstr "pts"
 
-#~ msgid "Provedores"
-#~ msgstr "Provedores"
+msgid "QR code para entrar na sessão"
+msgstr "QR code para entrar na sessão"
 
-#~ msgid "Qual IA gera o conteúdo das apresentações."
-#~ msgstr "Qual IA gera o conteúdo das apresentações."
+msgid "QR indisponível"
+msgstr "QR indisponível"
 
 msgid "questões"
 msgstr "questões"
 
-#~ msgid "Quizzes"
-#~ msgstr "Quizzes"
-
-#~ msgid "Reaproveite"
-#~ msgstr "Reaproveite"
+msgid "Questões"
+msgstr "Questões"
 
 msgid "Recentes · toque ▶ para aplicar"
 msgstr "Recentes · toque ▶ para aplicar"
 
-#~ msgid "Recursos do modelo"
-#~ msgstr "Recursos do modelo"
-
-#~ msgid "Reduzir movimento"
-#~ msgstr "Reduzir movimento"
-
 msgid "Refazer introdução"
 msgstr "Refazer introdução"
 
-#~ msgid "Refine conversando: peça mais exemplos, transforme parágrafos em tópicos, ajuste o tom."
-#~ msgstr "Refine conversando: peça mais exemplos, transforme parágrafos em tópicos, ajuste o tom."
+msgid "Respondendo"
+msgstr "Respondendo"
 
-#~ msgid "Reproduzir"
-#~ msgstr "Reproduzir"
+msgid "Respondidas"
+msgstr "Respondidas"
+
+msgid "resposta correta"
+msgstr "resposta correta"
+
+msgid "Respostas"
+msgstr "Respostas"
 
 msgid "Restaurar"
 msgstr "Restaurar"
@@ -837,44 +591,41 @@ msgstr "Restaurar"
 msgid "Resultados"
 msgstr "Resultados"
 
-msgid "Resultados prontos"
-msgstr "Resultados prontos"
-
 msgid "Resultados recentes"
 msgstr "Resultados recentes"
-
-#~ msgid "Resumo"
-#~ msgstr "Resumo"
-
-#~ msgid "Reúna cores, fontes e assets — a IA aplica o estilo em todas as apresentações."
-#~ msgstr "Reúna cores, fontes e assets — a IA aplica o estilo em todas as apresentações."
-
-#~ msgid "Reutilize seus slides"
-#~ msgstr "Reutilize seus slides"
-
-#~ msgid "Reveja o tour de boas-vindas do Apresenta.AI."
-#~ msgstr "Reveja o tour de boas-vindas do Apresenta.AI."
 
 msgid "Reveja o tour de boas-vindas do OfflineClass."
 msgstr "Reveja o tour de boas-vindas do OfflineClass."
 
-#~ msgid "Salve como modelo"
-#~ msgstr "Salve como modelo"
+msgid "Sair"
+msgstr "Sair"
 
-#~ msgid "Salve seu primeiro modelo de slides"
-#~ msgstr "Salve seu primeiro modelo de slides"
+msgid "Salvando..."
+msgstr "Salvando..."
 
-#~ msgid "saturn V decolou em 16 jul 1969"
-#~ msgstr "saturn V decolou em 16 jul 1969"
+msgid "Salvar"
+msgstr "Salvar"
 
-#~ msgid "Sem chave, sem custo — troque quando quiser."
-#~ msgstr "Sem chave, sem custo — troque quando quiser."
+msgid "Salvar senha"
+msgstr "Salvar senha"
+
+msgid "Selecione uma prova"
+msgstr "Selecione uma prova"
 
 msgid "Sem internet, sem problema"
 msgstr "Sem internet, sem problema"
 
 msgid "Sem resultados ainda"
 msgstr "Sem resultados ainda"
+
+msgid "Senha"
+msgstr "Senha"
+
+msgid "Senha alterada."
+msgstr "Senha alterada."
+
+msgid "Senha atual"
+msgstr "Senha atual"
 
 msgid "Sessão"
 msgstr "Sessão"
@@ -891,8 +642,14 @@ msgstr "Sessões aplicadas"
 msgid "Seu computador vira o servidor da sala. Os alunos entram pela Wi-Fi local — nada depende da internet."
 msgstr "Seu computador vira o servidor da sala. Os alunos entram pela Wi-Fi local — nada depende da internet."
 
-#~ msgid "Solar"
-#~ msgstr "Solar"
+msgid "Seu nome"
+msgstr "Seu nome"
+
+msgid "Seus dados de professor"
+msgstr "Seus dados de professor"
+
+msgid "Seus dados de professor."
+msgstr "Seus dados de professor."
 
 msgid "Som"
 msgstr "Som"
@@ -900,11 +657,11 @@ msgstr "Som"
 msgid "Som ao aparecer"
 msgstr "Som ao aparecer"
 
-#~ msgid "Sua biblioteca está vazia"
-#~ msgstr "Sua biblioteca está vazia"
+msgid "Status"
+msgstr "Status"
 
-#~ msgid "Suas apresentações"
-#~ msgstr "Suas apresentações"
+msgid "Sua senha"
+msgstr "Sua senha"
 
 msgid "Suas avaliações"
 msgstr "Suas avaliações"
@@ -915,9 +672,6 @@ msgstr "Suas provas"
 msgid "Sucesso"
 msgstr "Sucesso"
 
-#~ msgid "SUMÁRIO"
-#~ msgstr "SUMÁRIO"
-
 msgid "Superior centro"
 msgstr "Superior centro"
 
@@ -927,35 +681,14 @@ msgstr "Superior direita"
 msgid "Superior esquerda"
 msgstr "Superior esquerda"
 
-#~ msgid "Suporta tema {label}"
-#~ msgstr "Suporta tema {label}"
-
-#~ msgid "Suporta tema {themeNames}"
-#~ msgstr "Suporta tema {themeNames}"
-
 msgid "Tema"
 msgstr "Tema"
 
-#~ msgid "Temas"
-#~ msgstr "Temas"
-
-#~ msgid "Temas e estilos"
-#~ msgstr "Temas e estilos"
-
-#~ msgid "Template salvo"
-#~ msgstr "Template salvo"
-
-#~ msgid "Templates"
-#~ msgstr "Templates"
-
-#~ msgid "Templates Markdown"
-#~ msgstr "Templates Markdown"
-
-#~ msgid "Tentar de novo"
-#~ msgstr "Tentar de novo"
-
 msgid "Testar notificação"
 msgstr "Testar notificação"
+
+msgid "Título"
+msgstr "Título"
 
 msgid "Toast de teste — aviso"
 msgstr "Toast de teste — aviso"
@@ -972,26 +705,11 @@ msgstr "Toast de teste — sucesso"
 msgid "Toca um som ao aparecer."
 msgstr "Toca um som ao aparecer."
 
-#~ msgid "Tradução"
-#~ msgstr "Tradução"
-
-#~ msgid "Três dias de viagem até a órbita lunar"
-#~ msgstr "Três dias de viagem até a órbita lunar"
-
 msgid "Trilha de navegação"
 msgstr "Trilha de navegação"
 
-#~ msgid "tripulação: armstrong, aldrin, collins"
-#~ msgstr "tripulação: armstrong, aldrin, collins"
-
-#~ msgid "trouxeram amostras da lua"
-#~ msgstr "trouxeram amostras da lua"
-
 msgid "Tudo em dia — avisaremos quando algo novo chegar."
 msgstr "Tudo em dia — avisaremos quando algo novo chegar."
-
-#~ msgid "Tudo o que você cria com o apresenta.ai, num só lugar."
-#~ msgstr "Tudo o que você cria com o apresenta.ai, num só lugar."
 
 msgid "Tudo pronto!"
 msgstr "Tudo pronto!"
@@ -1002,53 +720,17 @@ msgstr "Tutorial"
 msgid "Últimas sessões encerradas"
 msgstr "Últimas sessões encerradas"
 
-#~ msgid "Último passo"
-#~ msgstr "Último passo"
-
-#~ msgid "Usar Mock"
-#~ msgstr "Usar Mock"
-
-msgid "Vazio"
-msgstr "Vazio"
-
-#~ msgid "Ver exemplos"
-#~ msgstr "Ver exemplos"
-
-#~ msgid "Ver predefinições"
-#~ msgstr "Ver predefinições"
+msgid "Ver resultados"
+msgstr "Ver resultados"
 
 msgid "Ver todas"
 msgstr "Ver todas"
 
-#~ msgid "Ver tudo"
-#~ msgstr "Ver tudo"
-
-#~ msgid "Vira apresentação de verdade"
-#~ msgstr "Vira apresentação de verdade"
-
-#~ msgid "Você ainda não criou nenhum tema próprio."
-#~ msgstr "Você ainda não criou nenhum tema próprio."
-
-#~ msgid "Você ainda não criou nenhum template."
-#~ msgstr "Você ainda não criou nenhum template."
-
-#~ msgid "Você ainda não criou nenhuma apresentação. Escolha um template ou comece do zero com a IA."
-#~ msgstr "Você ainda não criou nenhuma apresentação. Escolha um template ou comece do zero com a IA."
-
-#~ msgid "Você ainda não salvou temas ou estilos próprios."
-#~ msgstr "Você ainda não salvou temas ou estilos próprios."
-
-#~ msgid "Você já usou 80% das gerações do mês."
-#~ msgstr "Você já usou 80% das gerações do mês."
-
 msgid "Voltar"
 msgstr "Voltar"
 
-#~ msgid "voltaram à terra em 24 jul"
-#~ msgstr "voltaram à terra em 24 jul"
+msgid "Voltar para a sessão"
+msgstr "Voltar para a sessão"
 
 msgid "Workspace"
 msgstr "Workspace"
-
-#~ msgid "Zoom"
-#~ msgstr "Zoom"

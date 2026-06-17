@@ -1,5 +1,5 @@
 import { randomUUID } from 'node:crypto'
-import { and, asc, desc, eq, inArray, sql } from 'drizzle-orm'
+import { and, asc, desc, eq, inArray, isNotNull, sql } from 'drizzle-orm'
 import type {
   JoinInput,
   JoinResult,
@@ -10,6 +10,7 @@ import type {
   SessionDetail,
   SessionLobbyStudent,
   SessionPublic,
+  SessionResultSummary,
   SessionStatus,
   SessionSummary,
   StudentAnswerReview,
@@ -207,6 +208,86 @@ export function listSessionsForOwner(db: Db, ownerId: string): SessionSummary[] 
     startedAt: r.startedAt ? r.startedAt.getTime() : null,
     endedAt: r.endedAt ? r.endedAt.getTime() : null
   }))
+}
+
+/**
+ * Recent ended sessions for the teacher Home, each with a 0–10 average grade
+ * over its *submitted* students. Grading mirrors {@link loadStudentAnswers}:
+ * every question is worth 1 (MCQ correct = 1, essay = the manual 0–1 score),
+ * so a student's grade is `(raw / questionCount) * 10`.
+ */
+export function listRecentResultsForOwner(
+  db: Db,
+  ownerId: string,
+  limit = 5
+): SessionResultSummary[] {
+  const sessionRows = db
+    .select({
+      id: examSessions.id,
+      examId: examSessions.examId,
+      examTitle: exams.title,
+      endedAt: examSessions.endedAt
+    })
+    .from(examSessions)
+    .innerJoin(exams, eq(exams.id, examSessions.examId))
+    .where(and(eq(examSessions.ownerId, ownerId), eq(examSessions.status, 'ended')))
+    .orderBy(desc(examSessions.endedAt))
+    .limit(limit)
+    .all()
+
+  return sessionRows.map((s) => {
+    const qRows = db
+      .select({ id: questions.id, kind: questions.kind, optionsJson: questions.optionsJson })
+      .from(questions)
+      .where(eq(questions.examId, s.examId))
+      .all()
+    const questionCount = qRows.length
+    // The correct option id for each MCQ (auto-graded fresh from the builder).
+    const correctByQid = new Map<string, string | null>()
+    for (const q of qRows) {
+      if (q.kind === 'mcq') {
+        const opts = q.optionsJson ? (JSON.parse(q.optionsJson) as McqOption[]) : []
+        correctByQid.set(q.id, opts.find((o) => o.correct)?.id ?? null)
+      }
+    }
+
+    const submitted = db
+      .select({ id: students.id })
+      .from(students)
+      .where(and(eq(students.sessionId, s.id), isNotNull(students.submittedAt)))
+      .all()
+
+    let gradeSum = 0
+    for (const stu of submitted) {
+      const ansRows = db
+        .select({ questionId: answers.questionId, value: answers.value, score: answers.score })
+        .from(answers)
+        .where(eq(answers.studentId, stu.id))
+        .all()
+      const ansByQid = new Map(ansRows.map((a) => [a.questionId, a]))
+      let raw = 0
+      for (const q of qRows) {
+        const a = ansByQid.get(q.id)
+        if (!a) continue
+        if (q.kind === 'mcq') {
+          if (a.value && a.value === correctByQid.get(q.id)) raw += 1
+        } else {
+          raw += a.score ?? 0
+        }
+      }
+      gradeSum += questionCount > 0 ? (raw / questionCount) * 10 : 0
+    }
+
+    const studentCount = submitted.length
+    const averageScore = studentCount > 0 ? gradeSum / studentCount : 0
+    return {
+      id: s.id,
+      examTitle: s.examTitle,
+      studentCount,
+      averageScore: Math.round(averageScore * 10) / 10,
+      endedAt: s.endedAt ? s.endedAt.getTime() : null
+    }
+  })
 }
 
 export function findActiveSessionForOwner(db: Db, ownerId: string): SessionDetail | null {

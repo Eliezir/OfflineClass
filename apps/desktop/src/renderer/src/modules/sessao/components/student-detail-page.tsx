@@ -5,7 +5,6 @@ import type { SessionAnswersReview, SessionLobbyStudent } from '@offlineclass/sh
 import { Button } from '@renderer/shared/ui/button'
 import { EmptyState } from '@renderer/shared/ui/empty-state'
 import { formatRelativeTime } from '@renderer/shared/utils/format'
-import { buildMockReview } from '../mock-data'
 import { useActiveSessionQuery, useStudentAnswersQuery } from '../queries'
 import { useSessaoClock } from '../use-sessao-clock'
 import { deriveStudentStatus } from '../student-status'
@@ -18,28 +17,26 @@ import { StudentStatusBadge } from './student-status-badge'
 
 type StudentDetailPageProps = {
   studentId: string
-  mock: boolean
 }
 
-export function StudentDetailPage({ studentId, mock }: StudentDetailPageProps): React.JSX.Element {
+export function StudentDetailPage({ studentId }: StudentDetailPageProps): React.JSX.Element {
   const { t } = useLingui()
-  const { now, mockSession } = useSessaoClock()
+  const { now } = useSessaoClock()
   const active = useActiveSessionQuery()
 
-  const session = mock ? mockSession : (active.data ?? null)
+  const session = active.data ?? null
   const student = session?.students.find((s) => s.id === studentId) ?? null
 
-  const answersQuery = useStudentAnswersQuery(session?.id, studentId, !mock)
-  const review = mock ? (student ? buildMockReview(student) : null) : (answersQuery.data ?? null)
+  const answersQuery = useStudentAnswersQuery(session?.id, studentId, true)
+  const review = answersQuery.data ?? null
 
-  const loading = !mock && (active.isLoading || answersQuery.isLoading)
-  const backSearch = mock ? { mock: true } : {}
+  const loading = active.isLoading || answersQuery.isLoading
 
   return (
     <main className="scrollbar-subtle flex flex-1 flex-col overflow-y-auto px-6 pb-6">
       <div className="flex items-center justify-between gap-3 pt-6">
         <Button asChild variant="ghost" size="sm">
-          <Link to="/sessao" search={backSearch}>
+          <Link to="/sessao">
             <ArrowLeft />
             <Trans>Voltar para a sessão</Trans>
           </Link>
@@ -67,7 +64,7 @@ export function StudentDetailPage({ studentId, mock }: StudentDetailPageProps): 
           }
           action={
             <Button asChild>
-              <Link to="/sessao" search={backSearch}>
+              <Link to="/sessao">
                 <ArrowLeft />
                 <Trans>Voltar para a sessão</Trans>
               </Link>
@@ -82,7 +79,6 @@ export function StudentDetailPage({ studentId, mock }: StudentDetailPageProps): 
           now={now}
           sessionId={session?.id ?? ''}
           studentId={studentId}
-          mockMode={mock}
         />
       )}
     </main>
@@ -95,8 +91,7 @@ function StudentDetail({
   review,
   now,
   sessionId,
-  studentId,
-  mockMode
+  studentId
 }: {
   student: SessionLobbyStudent
   questionsCount: number
@@ -104,7 +99,6 @@ function StudentDetail({
   now: number
   sessionId: string
   studentId: string
-  mockMode: boolean
 }): React.JSX.Element {
   const status = deriveStudentStatus(student, now)
   const answered = student.answeredCount
@@ -174,7 +168,6 @@ function StudentDetail({
               review={r}
               sessionId={sessionId}
               studentId={studentId}
-              mockMode={mockMode}
             />
           ))}
         </div>

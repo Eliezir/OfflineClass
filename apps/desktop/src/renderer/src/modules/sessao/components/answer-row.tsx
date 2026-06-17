@@ -10,7 +10,6 @@ type AnswerRowProps = {
   review: StudentAnswerReview
   sessionId: string
   studentId: string
-  mockMode: boolean
 }
 
 /** One question on the student detail page: prompt + the student's full answer.
@@ -19,8 +18,7 @@ export function AnswerRow({
   index,
   review,
   sessionId,
-  studentId,
-  mockMode
+  studentId
 }: AnswerRowProps): React.JSX.Element {
   const { question, value, correct, score } = review
   const answered = value !== null
@@ -38,7 +36,6 @@ export function AnswerRow({
   const gradeMutation = useGradeAnswerMutation(sessionId, studentId)
 
   function handleBlurScore(): void {
-    if (mockMode) return
     const parsed = localScore === '' ? null : Number(localScore)
 
     // Guard constraints: score must be a number between 0 and 1, or null
@@ -99,7 +96,7 @@ export function AnswerRow({
               min="0"
               max="1"
               step="0.1"
-              disabled={mockMode || gradeMutation.isPending}
+              disabled={gradeMutation.isPending}
               value={localScore}
               onChange={(e) => setLocalScore(e.target.value)}
               onBlur={handleBlurScore}
