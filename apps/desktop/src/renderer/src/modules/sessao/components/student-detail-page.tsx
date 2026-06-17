@@ -80,6 +80,9 @@ export function StudentDetailPage({ studentId, mock }: StudentDetailPageProps): 
           questionsCount={session?.questionsCount ?? review?.answers.length ?? 0}
           review={review}
           now={now}
+          sessionId={session?.id ?? ''}
+          studentId={studentId}
+          mockMode={mock}
         />
       )}
     </main>
@@ -90,12 +93,18 @@ function StudentDetail({
   student,
   questionsCount,
   review,
-  now
+  now,
+  sessionId,
+  studentId,
+  mockMode
 }: {
   student: SessionLobbyStudent
   questionsCount: number
   review: SessionAnswersReview | null
   now: number
+  sessionId: string
+  studentId: string
+  mockMode: boolean
 }): React.JSX.Element {
   const status = deriveStudentStatus(student, now)
   const answered = student.answeredCount
@@ -159,7 +168,14 @@ function StudentDetail({
       {review ? (
         <div className="space-y-3">
           {review.answers.map((r, i) => (
-            <AnswerRow key={r.question.id} index={i} review={r} />
+            <AnswerRow
+              key={r.question.id}
+              index={i}
+              review={r}
+              sessionId={sessionId}
+              studentId={studentId}
+              mockMode={mockMode}
+            />
           ))}
         </div>
       ) : (
