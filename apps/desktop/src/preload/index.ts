@@ -22,6 +22,7 @@ import type {
   SessionAnswersReview,
   SessionCreateInput,
   SessionDetail,
+  SessionResultSummary,
   SessionSummary,
   Teacher
 } from '@offlineclass/shared'
@@ -79,6 +80,8 @@ const domain = {
       ipcRenderer.invoke('sessions.create', input),
     get: (id: string): Promise<SessionDetail> => ipcRenderer.invoke('sessions.get', id),
     active: (): Promise<SessionDetail | null> => ipcRenderer.invoke('sessions.active'),
+    recentResults: (): Promise<SessionResultSummary[]> =>
+      ipcRenderer.invoke('sessions.recentResults'),
     start: (id: string): Promise<SessionDetail> => ipcRenderer.invoke('sessions.start', id),
     end: (id: string): Promise<SessionDetail> => ipcRenderer.invoke('sessions.end', id),
     broadcastLobby: (id: string): Promise<null> =>

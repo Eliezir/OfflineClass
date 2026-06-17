@@ -9,21 +9,27 @@ import type {
   DiscoveryStatus,
   SessionAnswersReview,
   SessionCreateInput,
-  SessionDetail
+  SessionDetail,
+  SessionResultSummary,
+  SessionSummary
 } from '@offlineclass/shared'
 import {
   createSession,
   endSession,
   getActiveSession,
   getDiscoveryStatus,
+  getRecentResults,
   getStudentAnswers,
+  listSessions,
   startSession,
   gradeStudentAnswer
 } from './api'
 
 export const sessionKeys = {
   all: ['sessions'] as const,
+  list: () => [...sessionKeys.all, 'list'] as const,
   active: () => [...sessionKeys.all, 'active'] as const,
+  recentResults: () => [...sessionKeys.all, 'recentResults'] as const,
   studentAnswers: (sessionId: string, studentId: string) =>
     [...sessionKeys.all, 'studentAnswers', sessionId, studentId] as const
 }
@@ -41,6 +47,14 @@ export function useActiveSessionQuery(): UseQueryResult<SessionDetail | null, Er
       return status === 'lobby' || status === 'running' ? LIVE_POLL_MS : false
     }
   })
+}
+
+export function useSessionsQuery(): UseQueryResult<SessionSummary[], Error> {
+  return useQuery({ queryKey: sessionKeys.list(), queryFn: listSessions })
+}
+
+export function useRecentResultsQuery(): UseQueryResult<SessionResultSummary[], Error> {
+  return useQuery({ queryKey: sessionKeys.recentResults(), queryFn: getRecentResults })
 }
 
 export function useStudentAnswersQuery(

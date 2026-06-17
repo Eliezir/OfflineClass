@@ -1,15 +1,12 @@
-import { useState } from 'react'
-import { ChartColumn, ClipboardList, Database, FileText, Plus, Radio, Users } from 'lucide-react'
+import { ChartColumn, ClipboardList, FileText, Plus, Radio, Users } from 'lucide-react'
 import { Link } from '@tanstack/react-router'
-import { msg } from '@lingui/core/macro'
 import { Trans, useLingui } from '@lingui/react/macro'
-import type { MessageDescriptor } from '@lingui/core'
 import { Button } from '@renderer/shared/ui/button'
 import { EmptyState } from '@renderer/shared/ui/empty-state'
 import { PageHeader } from '@renderer/shared/components/page-header'
 import { useDelayedLoading } from '@renderer/shared/hooks/use-delayed-loading'
-import { useActiveSessionQuery } from '../sessao/queries'
-import { homeStats, recentProvas, recentResults } from './mock-data'
+import { useExamsQuery } from '../provas/queries'
+import { useActiveSessionQuery, useRecentResultsQuery, useSessionsQuery } from '../sessao/queries'
 import { LiveSessionBanner } from './components/live-session-banner'
 import { ProvaCard } from './components/prova-card'
 import { ResultRow } from './components/result-row'
@@ -17,15 +14,7 @@ import { SectionPanel } from './components/section-panel'
 import { StatCard } from './components/stat-card'
 import { ProvaCardSkeleton, ResultRowSkeleton, StatCardSkeleton } from './components/home-skeletons'
 
-type DemoState = 'data' | 'empty' | 'loading'
-const DEMO_LABEL: Record<DemoState, MessageDescriptor> = {
-  data: msg`Com dados mockados`,
-  empty: msg`Dados reais (Vazio)`,
-  loading: msg`Carregando`
-}
-const NEXT_DEMO: Record<DemoState, DemoState> = { data: 'empty', empty: 'loading', loading: 'data' }
-
-const EMPTY_STATS = { provas: 0, sessions: 0, studentsGraded: 0 }
+const RECENT_PROVAS_LIMIT = 6
 
 function SeeAll({ to }: { to: '/provas' | '/resultados' }): React.JSX.Element {
   return (
@@ -38,19 +27,32 @@ function SeeAll({ to }: { to: '/provas' | '/resultados' }): React.JSX.Element {
 }
 
 export function HomePage(): React.JSX.Element {
-  const { t, i18n } = useLingui()
-  const [demo, setDemo] = useState<DemoState>('data')
-  const loading = useDelayedLoading(demo === 'loading')
+  const { t } = useLingui()
 
-  // BUSCA REAL: Consulta o Electron/SQLite em tempo real
+  // Real reads against the in-process SQLite store (window.api → main).
   const { data: activeSession, isLoading: isSessionLoading } = useActiveSessionQuery()
+  const examsQuery = useExamsQuery()
+  const sessionsQuery = useSessionsQuery()
+  const resultsQuery = useRecentResultsQuery()
 
-  const isData = demo === 'data'
-  const stats = demo === 'empty' ? EMPTY_STATS : homeStats
-  const provas = isData ? recentProvas : []
-  const results = isData ? recentResults : []
+  const exams = examsQuery.data ?? []
+  const sessions = sessionsQuery.data ?? []
+  const results = resultsQuery.data ?? []
 
-  // MAPEAMENTO REAL: Traduz a estrutura da tabela SessionDetail para a assinatura do Banner
+  const stats = {
+    provas: exams.length,
+    // "Applied" = sessions that have actually run (started), not just drafted.
+    sessions: sessions.filter((s) => s.startedAt !== null).length,
+    studentsGraded: sessions.reduce((acc, s) => acc + s.submittedCount, 0)
+  }
+  const recentProvas = exams.slice(0, RECENT_PROVAS_LIMIT)
+
+  // Delay skeletons so fast local reads don't flash them.
+  const statsLoading = useDelayedLoading(examsQuery.isLoading || sessionsQuery.isLoading)
+  const provasLoading = useDelayedLoading(examsQuery.isLoading)
+  const resultsLoading = useDelayedLoading(resultsQuery.isLoading)
+
+  // Map the live session row to the banner's shape.
   const live = activeSession
     ? {
         provaTitle: activeSession.examTitle,
@@ -67,12 +69,6 @@ export function HomePage(): React.JSX.Element {
         subtitle={<Trans>Bem-vindo de volta. Pronto para aplicar uma avaliação?</Trans>}
         actions={
           <>
-            {import.meta.env.DEV && (
-              <Button variant="outline" onClick={() => setDemo((d) => NEXT_DEMO[d])}>
-                <Database />
-                {i18n._(DEMO_LABEL[demo])}
-              </Button>
-            )}
             <Button asChild variant="outline">
               <Link to="/sessao">
                 <Radio />
@@ -89,7 +85,6 @@ export function HomePage(): React.JSX.Element {
         }
       />
 
-      {/* RENDERIZAÇÃO ISOLADA: Mostra a barra se houver sessão ativa real, ignorando o botão demo */}
       {isSessionLoading ? (
         <div className="mb-5 h-20 animate-pulse rounded-2xl bg-muted/40" />
       ) : activeSession && live ? (
@@ -97,7 +92,7 @@ export function HomePage(): React.JSX.Element {
       ) : null}
 
       <div className="mb-5 grid shrink-0 grid-cols-1 gap-4 sm:grid-cols-3">
-        {loading ? (
+        {statsLoading ? (
           <>
             <StatCardSkeleton />
             <StatCardSkeleton />
@@ -110,21 +105,18 @@ export function HomePage(): React.JSX.Element {
               icon={<ClipboardList />}
               value={stats.provas}
               label={<Trans>Provas</Trans>}
-              hint={isData ? <Trans>+3 esta semana</Trans> : undefined}
             />
             <StatCard
               tone="tertiary"
               icon={<FileText />}
               value={stats.sessions}
               label={<Trans>Sessões aplicadas</Trans>}
-              hint={isData ? <Trans>5 este mês</Trans> : undefined}
             />
             <StatCard
               tone="secondary"
               icon={<Users />}
               value={stats.studentsGraded}
               label={<Trans>Alunos avaliados</Trans>}
-              hint={isData ? <Trans>+18 esta semana</Trans> : undefined}
             />
           </>
         )}
@@ -137,15 +129,15 @@ export function HomePage(): React.JSX.Element {
           subtitle={<Trans>Recentes · toque ▶ para aplicar</Trans>}
           action={<SeeAll to="/provas" />}
         >
-          {loading ? (
+          {provasLoading ? (
             <div className="grid gap-3 sm:grid-cols-2">
               {Array.from({ length: 4 }).map((_, i) => (
                 <ProvaCardSkeleton key={i} />
               ))}
             </div>
-          ) : provas.length > 0 ? (
+          ) : recentProvas.length > 0 ? (
             <div className="grid gap-3 sm:grid-cols-2">
-              {provas.map((p) => (
+              {recentProvas.map((p) => (
                 <ProvaCard key={p.id} prova={p} />
               ))}
             </div>
@@ -174,7 +166,7 @@ export function HomePage(): React.JSX.Element {
           subtitle={<Trans>Últimas sessões encerradas</Trans>}
           action={<SeeAll to="/resultados" />}
         >
-          {loading ? (
+          {resultsLoading ? (
             <>
               {Array.from({ length: 4 }).map((_, i) => (
                 <ResultRowSkeleton key={i} />
