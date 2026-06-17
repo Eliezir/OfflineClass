@@ -6,7 +6,7 @@ import type { SessionDetail } from '../types'
 
 type SessionEndedProps = {
   session: SessionDetail
-  /** Start a fresh session (mock — returns the screen to the entry state). */
+  /** Return the screen to the entry state to open a fresh session. */
   onNew: () => void
 }
 

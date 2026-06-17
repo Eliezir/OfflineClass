@@ -1,8 +1,7 @@
 import type { SessionDetail, SessionLobbyStudent, SessionStatus } from '@offlineclass/shared'
 
-// The session screen is typed against the same shapes the backend IPC will
-// return (`SessionDetail` + `SessionLobbyStudent`), so swapping mock data for
-// real queries later is a drop-in. Re-exported here for ergonomic imports.
+// The session screen is typed against the shapes the backend IPC returns
+// (`SessionDetail` + `SessionLobbyStudent`). Re-exported here for ergonomic imports.
 export type { SessionDetail, SessionLobbyStudent, SessionStatus }
 
 /** Lifecycle phase the screen renders. `none` = no active session yet. */
