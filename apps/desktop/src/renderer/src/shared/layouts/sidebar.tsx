@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { ChartColumn, ClipboardList, House, Radio, Search, Settings } from 'lucide-react'
+import { ChartColumn, ClipboardList, House, Radio, Search, Settings, UserRound } from 'lucide-react'
 import { Link, useNavigate, useRouterState } from '@tanstack/react-router'
 import { msg } from '@lingui/core/macro'
 import { Trans, useLingui } from '@lingui/react/macro'
@@ -11,7 +11,7 @@ import { WindowControls } from '@renderer/shared/layouts/window-controls'
 import { SidebarUser } from '@renderer/modules/auth/components/sidebar-user'
 import { NotificationsMenu } from './notifications-menu'
 
-type NavTo = '/home' | '/provas' | '/sessao' | '/resultados' | '/settings'
+type NavTo = '/home' | '/provas' | '/sessao' | '/resultados' | '/profile' | '/settings'
 
 type NavItem = {
   label: MessageDescriptor
@@ -26,6 +26,13 @@ const primaryNav: NavItem[] = [
   { label: msg`Sessão`, caption: msg`Aplicar ao vivo`, icon: Radio, to: '/sessao' },
   { label: msg`Resultados`, caption: msg`Notas e relatórios`, icon: ChartColumn, to: '/resultados' }
 ]
+
+const profileNav: NavItem = {
+  label: msg`Perfil`,
+  caption: msg`Seus dados de professor`,
+  icon: UserRound,
+  to: '/profile'
+}
 
 const settingsNav: NavItem = {
   label: msg`Configurações`,
@@ -42,7 +49,7 @@ function SearchPopover(): React.JSX.Element {
   const navigate = useNavigate()
   const { t, i18n } = useLingui()
 
-  const pages: NavItem[] = [...primaryNav, settingsNav]
+  const pages: NavItem[] = [...primaryNav, profileNav, settingsNav]
 
   const go = (to: NavTo): void => {
     setOpen(false)

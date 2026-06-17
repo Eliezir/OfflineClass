@@ -8,24 +8,19 @@ import { Button } from '@renderer/shared/ui/button'
 import { EmptyState } from '@renderer/shared/ui/empty-state'
 import { PageHeader } from '@renderer/shared/components/page-header'
 import { useDelayedLoading } from '@renderer/shared/hooks/use-delayed-loading'
-import { homeStats, liveSession, recentProvas, recentResults } from './mock-data'
+import { useActiveSessionQuery } from '../sessao/queries'
+import { homeStats, recentProvas, recentResults } from './mock-data'
 import { LiveSessionBanner } from './components/live-session-banner'
 import { ProvaCard } from './components/prova-card'
 import { ResultRow } from './components/result-row'
 import { SectionPanel } from './components/section-panel'
 import { StatCard } from './components/stat-card'
-import {
-  ProvaCardSkeleton,
-  ResultRowSkeleton,
-  StatCardSkeleton
-} from './components/home-skeletons'
+import { ProvaCardSkeleton, ResultRowSkeleton, StatCardSkeleton } from './components/home-skeletons'
 
-// Dev-only preview toggle so we can exercise data / empty / loading states
-// without a backend. Stripped from production builds.
 type DemoState = 'data' | 'empty' | 'loading'
 const DEMO_LABEL: Record<DemoState, MessageDescriptor> = {
-  data: msg`Com dados`,
-  empty: msg`Vazio`,
+  data: msg`Com dados mockados`,
+  empty: msg`Dados reais (Vazio)`,
   loading: msg`Carregando`
 }
 const NEXT_DEMO: Record<DemoState, DemoState> = { data: 'empty', empty: 'loading', loading: 'data' }
@@ -47,11 +42,23 @@ export function HomePage(): React.JSX.Element {
   const [demo, setDemo] = useState<DemoState>('data')
   const loading = useDelayedLoading(demo === 'loading')
 
+  // BUSCA REAL: Consulta o Electron/SQLite em tempo real
+  const { data: activeSession, isLoading: isSessionLoading } = useActiveSessionQuery()
+
   const isData = demo === 'data'
   const stats = demo === 'empty' ? EMPTY_STATS : homeStats
   const provas = isData ? recentProvas : []
   const results = isData ? recentResults : []
-  const live = isData ? liveSession : null
+
+  // MAPEAMENTO REAL: Traduz a estrutura da tabela SessionDetail para a assinatura do Banner
+  const live = activeSession
+    ? {
+        provaTitle: activeSession.examTitle,
+        groups: 1,
+        students: activeSession.students?.length ?? 0,
+        minutesLeft: activeSession.durationMinutes
+      }
+    : null
 
   return (
     <main className="scrollbar-subtle flex flex-1 flex-col overflow-y-auto px-6 pb-6 tall:overflow-hidden">
@@ -82,7 +89,12 @@ export function HomePage(): React.JSX.Element {
         }
       />
 
-      {live && <LiveSessionBanner session={live} />}
+      {/* RENDERIZAÇÃO ISOLADA: Mostra a barra se houver sessão ativa real, ignorando o botão demo */}
+      {isSessionLoading ? (
+        <div className="mb-5 h-20 animate-pulse rounded-2xl bg-muted/40" />
+      ) : activeSession && live ? (
+        <LiveSessionBanner session={live} />
+      ) : null}
 
       <div className="mb-5 grid shrink-0 grid-cols-1 gap-4 sm:grid-cols-3">
         {loading ? (

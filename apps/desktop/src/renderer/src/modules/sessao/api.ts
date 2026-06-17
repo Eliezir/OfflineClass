@@ -35,3 +35,16 @@ export function getStudentAnswers(
 ): Promise<SessionAnswersReview> {
   return window.api.sessions.studentAnswers(sessionId, studentId)
 }
+
+export function gradeStudentAnswer(
+  sessionId: string,
+  studentId: string,
+  questionId: string,
+  score: number | null
+): Promise<SessionAnswersReview> {
+  return window.api.sessions.gradeAnswer(sessionId, {
+    studentId,
+    questionId,
+    score: score ?? 0
+  })
+}

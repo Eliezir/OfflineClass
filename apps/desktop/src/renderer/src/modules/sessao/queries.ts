@@ -17,7 +17,8 @@ import {
   getActiveSession,
   getDiscoveryStatus,
   getStudentAnswers,
-  startSession
+  startSession,
+  gradeStudentAnswer
 } from './api'
 
 export const sessionKeys = {
@@ -92,5 +93,27 @@ export function useEndSession(): UseMutationResult<SessionDetail, Error, string>
     mutationFn: endSession,
     // The session is no longer active — drop it so `active()` reads as null.
     onSuccess: () => qc.setQueryData<SessionDetail | null>(sessionKeys.active(), null)
+  })
+}
+
+/**
+ * Mutation hook to dynamically submit manual scores for essay questions.
+ * Directly re-hydrates the specific student dashboard query cache upon success.
+ */
+export function useGradeAnswerMutation(
+  sessionId: string,
+  studentId: string
+): UseMutationResult<SessionAnswersReview, Error, { questionId: string; score: number | null }> {
+  const qc = useQueryClient()
+  return useMutation({
+    mutationFn: ({ questionId, score }) =>
+      gradeStudentAnswer(sessionId, studentId, questionId, score),
+    onSuccess: (updatedReview) => {
+      // Optimistic cache replacement with the structural payload returned from the SQLite channel
+      qc.setQueryData(sessionKeys.studentAnswers(sessionId, studentId), updatedReview)
+
+      // Enforce synchronization across layout tables
+      qc.invalidateQueries({ queryKey: sessionKeys.studentAnswers(sessionId, studentId) })
+    }
   })
 }

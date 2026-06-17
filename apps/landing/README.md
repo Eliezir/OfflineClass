@@ -53,7 +53,7 @@ em `site.json → repo`. Uma única requisição é compartilhada via `ReleasesP
 
 ## Deploy
 
-`.github/workflows/pages.yml` builda esta pasta e publica `landing/dist` no GitHub
-Pages a cada push em **`develop`** que toque em `landing/**`. O `base: './'` do Vite
-mantém os caminhos relativos, então funciona no subpath do Pages do projeto.
+`.github/workflows/pages.yml` builda esta pasta e publica `apps/landing/dist` no
+GitHub Pages a cada push em **`main`** que toque em `apps/landing/**`. O Vite usa
+`base: '/OfflineClass/'` no build, então funciona no subpath do Pages do projeto.
 ```

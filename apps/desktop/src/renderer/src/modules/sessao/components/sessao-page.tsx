@@ -16,6 +16,7 @@ import { LobbyPanel } from './lobby-panel'
 import { NoSession } from './no-session'
 import { SessionEnded } from './session-ended'
 import { StatusPill } from './status-pill'
+import { LiveSessionManager } from './LiveSessionManager'
 
 type SessaoPageProps = {
   /** DEV-only: render the dashboard with sample students (driven by `?mock`). */
@@ -143,6 +144,7 @@ export function SessaoPage({ mockMode, onToggleMock }: SessaoPageProps): React.J
       ) : phase === 'ended' && session ? (
         <SessionEnded session={session} onNew={() => setEndedDetail(null)} />
       ) : null}
+      {active && !mockMode && <LiveSessionManager sessionId={active.id} />}
     </main>
   )
 }
