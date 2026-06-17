@@ -1,18 +1,51 @@
-import { Check, Circle, X } from 'lucide-react'
+import { useState } from 'react'
+import { Check, Circle, X, Award } from 'lucide-react'
 import { Trans } from '@lingui/react/macro'
 import type { McqOption, StudentAnswerReview } from '@offlineclass/shared'
 import { cn } from '@renderer/shared/utils'
+import { useGradeAnswerMutation } from '../queries'
 
 type AnswerRowProps = {
   index: number
   review: StudentAnswerReview
+  sessionId: string
+  studentId: string
+  mockMode: boolean
 }
 
 /** One question on the student detail page: prompt + the student's full answer.
     MCQ shows every alternative (chosen + correct marked); essays show full text. */
-export function AnswerRow({ index, review }: AnswerRowProps): React.JSX.Element {
-  const { question, value, correct } = review
+export function AnswerRow({
+  index,
+  review,
+  sessionId,
+  studentId,
+  mockMode
+}: AnswerRowProps): React.JSX.Element {
+  const { question, value, correct, score } = review
   const answered = value !== null
+
+  // Tracks the last score received from the backend to safely watch for external updates
+  const [prevScore, setPrevScore] = useState<number | null>(score)
+  const [localScore, setLocalScore] = useState<string>(score !== null ? String(score) : '')
+
+  // Safe inline state synchronization during render phase (avoids useEffect cascading renders)
+  if (score !== prevScore) {
+    setPrevScore(score)
+    setLocalScore(score !== null ? String(score) : '')
+  }
+
+  const gradeMutation = useGradeAnswerMutation(sessionId, studentId)
+
+  function handleBlurScore(): void {
+    if (mockMode) return
+    const parsed = localScore === '' ? null : Number(localScore)
+
+    // Guard constraints: score must be a number between 0 and 1, or null
+    if (parsed !== null && (isNaN(parsed) || parsed < 0 || parsed > 1)) return
+
+    gradeMutation.mutate({ questionId: question.id, score: parsed })
+  }
 
   return (
     <article className="rounded-2xl border border-border bg-card p-5">
@@ -29,7 +62,7 @@ export function AnswerRow({ index, review }: AnswerRowProps): React.JSX.Element 
             )}
           </span>
         </div>
-        <QuestionStatus answered={answered} kind={question.kind} correct={correct} />
+        <QuestionStatus answered={answered} kind={question.kind} correct={correct} score={score} />
       </header>
 
       <p className="mt-3 text-sm font-semibold leading-snug">{question.prompt}</p>
@@ -45,13 +78,40 @@ export function AnswerRow({ index, review }: AnswerRowProps): React.JSX.Element 
           ))}
         </ul>
       ) : (
-        <div className="mt-3">
-          <p className="rounded-xl bg-muted/50 px-4 py-3 text-sm leading-relaxed whitespace-pre-wrap text-foreground">
-            {value}
-          </p>
-          <p className="mt-1.5 text-xs font-semibold text-muted-foreground">
-            {value.length} <Trans>caracteres</Trans>
-          </p>
+        <div className="mt-3 space-y-4">
+          <div>
+            <p className="rounded-xl bg-muted/50 px-4 py-3 text-sm leading-relaxed whitespace-pre-wrap text-foreground">
+              {value}
+            </p>
+            <p className="mt-1.5 text-xs font-semibold text-muted-foreground">
+              {value.length} <Trans>caracteres</Trans>
+            </p>
+          </div>
+
+          {/* Teacher Manual Grading Suite Panel */}
+          <div className="flex items-center gap-3 border-t border-border/50 pt-4">
+            <span className="flex items-center gap-1.5 text-xs font-bold text-muted-foreground">
+              <Award className="size-4 text-primary" />
+              <Trans>Atribuir nota (0.0 a 1.0):</Trans>
+            </span>
+            <input
+              type="number"
+              min="0"
+              max="1"
+              step="0.1"
+              disabled={mockMode || gradeMutation.isPending}
+              value={localScore}
+              onChange={(e) => setLocalScore(e.target.value)}
+              onBlur={handleBlurScore}
+              className="w-20 rounded-xl border border-border bg-muted/50 px-3 py-1.5 text-center text-sm font-bold text-foreground focus:border-primary focus:outline-none disabled:opacity-50"
+              placeholder="null"
+            />
+            {gradeMutation.isPending && (
+              <span className="text-xs text-muted-foreground animate-pulse">
+                <Trans>Salvando...</Trans>
+              </span>
+            )}
+          </div>
         </div>
       )}
     </article>
@@ -61,11 +121,13 @@ export function AnswerRow({ index, review }: AnswerRowProps): React.JSX.Element 
 function QuestionStatus({
   answered,
   kind,
-  correct
+  correct,
+  score
 }: {
   answered: boolean
   kind: 'mcq' | 'essay'
   correct: boolean | null
+  score: number | null
 }): React.JSX.Element {
   if (!answered) {
     return (
@@ -76,8 +138,12 @@ function QuestionStatus({
   }
   if (kind === 'essay') {
     return (
-      <span className="text-xs font-bold text-primary">
-        <Trans>respondida</Trans>
+      <span className={cn('text-xs font-bold', score !== null ? 'text-success' : 'text-primary')}>
+        {score !== null ? (
+          <Trans>avaliada ({score.toFixed(1)})</Trans>
+        ) : (
+          <Trans>pendente de nota</Trans>
+        )}
       </span>
     )
   }
