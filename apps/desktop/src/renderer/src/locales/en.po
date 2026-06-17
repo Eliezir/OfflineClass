@@ -13,9 +13,6 @@ msgstr ""
 "Language-Team: \n"
 "Plural-Forms: \n"
 
-msgid "“Prova de SO” foi salva no seu computador."
-msgstr "“Prova de SO” was saved to your computer."
-
 #. placeholder {0}: session.groups
 #. placeholder {1}: session.students
 msgid "{0} grupos · {1} alunos · {minutesLeft} min restantes"
@@ -29,9 +26,6 @@ msgstr "{unread, plural, one {# new} other {# new}}"
 
 msgid "10 s"
 msgstr "10 s"
-
-msgid "2 dias"
-msgstr "2 days"
 
 msgid "3 s"
 msgstr "3 s"
@@ -48,9 +42,6 @@ msgstr "To grade"
 msgid "A interface será exibida no idioma selecionado."
 msgstr "The interface will be shown in the selected language."
 
-msgid "A sessão da “Prova de Redes” foi encerrada."
-msgstr "The “Prova de Redes” session has ended."
-
 msgid "Abrir painel"
 msgstr "Open panel"
 
@@ -59,9 +50,6 @@ msgstr "Open room"
 
 msgid "Acertos (objetivas)"
 msgstr "Correct (multiple choice)"
-
-msgid "agora"
-msgstr "now"
 
 msgid "Aguardando alunos"
 msgstr "Waiting for students"
@@ -74,9 +62,6 @@ msgstr "Change password"
 
 msgid "Aluno"
 msgstr "Student"
-
-msgid "Aluno desconectado"
-msgstr "Student disconnected"
 
 msgid "Aluno não encontrado"
 msgstr "Student not found"
@@ -111,9 +96,6 @@ msgstr "Run in groups, live"
 msgid "Aplique uma prova ao vivo para a turma."
 msgstr "Run an exam live for the class."
 
-msgid "As notas da Turma A já estão disponíveis."
-msgstr "Class A's grades are now available."
-
 msgid "As senhas não coincidem."
 msgstr "The passwords don't match."
 
@@ -129,9 +111,6 @@ msgstr "active {0}"
 
 msgid "Atribuir nota (0.0 a 1.0):"
 msgstr "Assign grade (0.0 to 1.0):"
-
-msgid "Atualize para a 1.2.0 para as últimas melhorias."
-msgstr "Update to 1.2.0 for the latest improvements."
 
 msgid "Avaliações sem internet, sincronizadas na sua rede local."
 msgstr "Internet-free assessments, synced over your local network."
@@ -357,20 +336,11 @@ msgstr "Example of how a success notification appears."
 msgid "Exemplo de como um aviso informativo aparece."
 msgstr "Example of how an info notification appears."
 
-msgid "Falha ao exportar"
-msgstr "Export failed"
-
 msgid "Fecha o toast sozinho após a duração."
 msgstr "Closes the toast on its own after the duration."
 
 msgid "Fechar"
 msgstr "Close"
-
-msgid "há 2 h"
-msgstr "2h ago"
-
-msgid "há 3 h"
-msgstr "3h ago"
 
 msgid "Idioma"
 msgstr "Language"
@@ -420,9 +390,6 @@ msgstr "Clear all"
 msgid "Lobby"
 msgstr "Lobby"
 
-msgid "Maria saiu da sessão e pode ter perdido a conexão."
-msgstr "Maria left the session and may have lost connection."
-
 msgid "Maximizar"
 msgstr "Maximize"
 
@@ -458,9 +425,6 @@ msgstr "Couldn't load the answers."
 
 msgid "Não foi possível continuar."
 msgstr "Couldn't continue."
-
-msgid "Não foi possível exportar o CSV. Tente novamente."
-msgstr "Couldn't export the CSV. Please try again."
 
 msgid "Não foi possível salvar a prova."
 msgstr "Couldn't save the exam."
@@ -522,17 +486,11 @@ msgstr "New password"
 msgid "Nova sessão"
 msgstr "New session"
 
-msgid "Nova versão disponível"
-msgstr "New version available"
-
 msgid "ocioso"
 msgstr "idle"
 
 msgid "Ocultar senha"
 msgstr "Hide password"
-
-msgid "ontem"
-msgstr "yesterday"
 
 msgid "Opcional"
 msgstr "Optional"
@@ -588,9 +546,6 @@ msgstr "Progress"
 msgid "Prova"
 msgstr "Exam"
 
-msgid "Prova salva"
-msgstr "Exam saved"
-
 msgid "Provas"
 msgstr "Exams"
 
@@ -635,9 +590,6 @@ msgstr "Restore"
 
 msgid "Resultados"
 msgstr "Results"
-
-msgid "Resultados prontos"
-msgstr "Results ready"
 
 msgid "Resultados recentes"
 msgstr "Recent results"

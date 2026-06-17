@@ -13,9 +13,6 @@ msgstr ""
 "Language-Team: \n"
 "Plural-Forms: \n"
 
-msgid "“Prova de SO” foi salva no seu computador."
-msgstr "“Prova de SO” foi salva no seu computador."
-
 #. placeholder {0}: session.groups
 #. placeholder {1}: session.students
 msgid "{0} grupos · {1} alunos · {minutesLeft} min restantes"
@@ -29,9 +26,6 @@ msgstr "{unread, plural, one {# nova} other {# novas}}"
 
 msgid "10 s"
 msgstr "10 s"
-
-msgid "2 dias"
-msgstr "2 dias"
 
 msgid "3 s"
 msgstr "3 s"
@@ -48,9 +42,6 @@ msgstr "A corrigir"
 msgid "A interface será exibida no idioma selecionado."
 msgstr "A interface será exibida no idioma selecionado."
 
-msgid "A sessão da “Prova de Redes” foi encerrada."
-msgstr "A sessão da “Prova de Redes” foi encerrada."
-
 msgid "Abrir painel"
 msgstr "Abrir painel"
 
@@ -59,9 +50,6 @@ msgstr "Abrir sala"
 
 msgid "Acertos (objetivas)"
 msgstr "Acertos (objetivas)"
-
-msgid "agora"
-msgstr "agora"
 
 msgid "Aguardando alunos"
 msgstr "Aguardando alunos"
@@ -74,9 +62,6 @@ msgstr "Alterar senha"
 
 msgid "Aluno"
 msgstr "Aluno"
-
-msgid "Aluno desconectado"
-msgstr "Aluno desconectado"
 
 msgid "Aluno não encontrado"
 msgstr "Aluno não encontrado"
@@ -111,9 +96,6 @@ msgstr "Aplique em grupo, ao vivo"
 msgid "Aplique uma prova ao vivo para a turma."
 msgstr "Aplique uma prova ao vivo para a turma."
 
-msgid "As notas da Turma A já estão disponíveis."
-msgstr "As notas da Turma A já estão disponíveis."
-
 msgid "As senhas não coincidem."
 msgstr "As senhas não coincidem."
 
@@ -129,9 +111,6 @@ msgstr "ativo {0}"
 
 msgid "Atribuir nota (0.0 a 1.0):"
 msgstr "Atribuir nota (0.0 a 1.0):"
-
-msgid "Atualize para a 1.2.0 para as últimas melhorias."
-msgstr "Atualize para a 1.2.0 para as últimas melhorias."
 
 msgid "Avaliações sem internet, sincronizadas na sua rede local."
 msgstr "Avaliações sem internet, sincronizadas na sua rede local."
@@ -357,20 +336,11 @@ msgstr "Exemplo de como um aviso de sucesso aparece."
 msgid "Exemplo de como um aviso informativo aparece."
 msgstr "Exemplo de como um aviso informativo aparece."
 
-msgid "Falha ao exportar"
-msgstr "Falha ao exportar"
-
 msgid "Fecha o toast sozinho após a duração."
 msgstr "Fecha o toast sozinho após a duração."
 
 msgid "Fechar"
 msgstr "Fechar"
-
-msgid "há 2 h"
-msgstr "há 2 h"
-
-msgid "há 3 h"
-msgstr "há 3 h"
 
 msgid "Idioma"
 msgstr "Idioma"
@@ -420,9 +390,6 @@ msgstr "Limpar tudo"
 msgid "Lobby"
 msgstr "Lobby"
 
-msgid "Maria saiu da sessão e pode ter perdido a conexão."
-msgstr "Maria saiu da sessão e pode ter perdido a conexão."
-
 msgid "Maximizar"
 msgstr "Maximizar"
 
@@ -458,9 +425,6 @@ msgstr "Não foi possível carregar as respostas."
 
 msgid "Não foi possível continuar."
 msgstr "Não foi possível continuar."
-
-msgid "Não foi possível exportar o CSV. Tente novamente."
-msgstr "Não foi possível exportar o CSV. Tente novamente."
 
 msgid "Não foi possível salvar a prova."
 msgstr "Não foi possível salvar a prova."
@@ -522,17 +486,11 @@ msgstr "Nova senha"
 msgid "Nova sessão"
 msgstr "Nova sessão"
 
-msgid "Nova versão disponível"
-msgstr "Nova versão disponível"
-
 msgid "ocioso"
 msgstr "ocioso"
 
 msgid "Ocultar senha"
 msgstr "Ocultar senha"
-
-msgid "ontem"
-msgstr "ontem"
 
 msgid "Opcional"
 msgstr "Opcional"
@@ -588,9 +546,6 @@ msgstr "Progresso"
 msgid "Prova"
 msgstr "Prova"
 
-msgid "Prova salva"
-msgstr "Prova salva"
-
 msgid "Provas"
 msgstr "Provas"
 
@@ -635,9 +590,6 @@ msgstr "Restaurar"
 
 msgid "Resultados"
 msgstr "Resultados"
-
-msgid "Resultados prontos"
-msgstr "Resultados prontos"
 
 msgid "Resultados recentes"
 msgstr "Resultados recentes"
