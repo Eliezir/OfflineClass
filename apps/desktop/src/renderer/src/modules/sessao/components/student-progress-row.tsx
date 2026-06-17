@@ -1,29 +1,36 @@
-import { Check } from 'lucide-react'
 import { useLingui } from '@lingui/react/macro'
 import { cn } from '@renderer/shared/utils'
 import { formatRelativeTime } from '@renderer/shared/utils/format'
 import { deriveStudentStatus } from '../student-status'
 import type { SessionLobbyStudent } from '../types'
 import { StudentAvatar } from './student-avatar'
+import { StudentStatusBadge } from './student-status-badge'
 
 type StudentProgressRowProps = {
   student: SessionLobbyStudent
   questionsCount: number
   now: number
+  onSelect: () => void
 }
 
-/** One student in the live dashboard: progress bar + last activity + status. */
+/** One student in the live dashboard: progress bar + last activity + status.
+    Clicking opens the single-student drill-down. */
 export function StudentProgressRow({
   student,
   questionsCount,
-  now
+  now,
+  onSelect
 }: StudentProgressRowProps): React.JSX.Element {
   const { t } = useLingui()
   const status = deriveStudentStatus(student, now)
   const pct = questionsCount > 0 ? Math.round((student.answeredCount / questionsCount) * 100) : 0
 
   return (
-    <div className="flex items-center gap-3 border-b border-border/60 py-3 last:border-0">
+    <button
+      type="button"
+      onClick={onSelect}
+      className="flex w-full items-center gap-3 border-b border-border/60 py-3 text-left transition-colors last:border-0 hover:bg-muted/40 focus-visible:bg-muted/40 focus-visible:outline-none"
+    >
       <StudentAvatar name={student.name} />
 
       <div className="min-w-0 flex-1">
@@ -50,24 +57,9 @@ export function StudentProgressRow({
         {status === 'submitted' ? '—' : formatRelativeTime(student.lastSeenAt)}
       </div>
 
-      <div className="w-24 shrink-0 text-right">
-        {status === 'submitted' ? (
-          <span className="inline-flex items-center gap-1 text-xs font-bold text-success">
-            <Check className="size-3.5" />
-            {t`entregue`}
-          </span>
-        ) : status === 'active' ? (
-          <span className="inline-flex items-center gap-1.5 text-xs font-bold text-primary">
-            <span aria-hidden className="size-1.5 rounded-full bg-current" />
-            {t`ativo`}
-          </span>
-        ) : (
-          <span className="inline-flex items-center gap-1.5 text-xs font-bold text-muted-foreground">
-            <span aria-hidden className="size-1.5 rounded-full bg-current" />
-            {t`ocioso`}
-          </span>
-        )}
+      <div className="flex w-24 shrink-0 justify-end">
+        <StudentStatusBadge status={status} />
       </div>
-    </div>
+    </button>
   )
 }

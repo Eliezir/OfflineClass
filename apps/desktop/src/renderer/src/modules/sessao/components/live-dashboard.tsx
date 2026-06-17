@@ -7,10 +7,15 @@ import { StudentProgressRow } from './student-progress-row'
 type LiveDashboardProps = {
   session: SessionDetail
   now: number
+  onSelectStudent: (studentId: string) => void
 }
 
 /** Running state: metric strip + live per-student progress table. */
-export function LiveDashboard({ session, now }: LiveDashboardProps): React.JSX.Element {
+export function LiveDashboard({
+  session,
+  now,
+  onSelectStudent
+}: LiveDashboardProps): React.JSX.Element {
   const total = session.students.length
   const submitted = session.students.filter((s) => s.submittedAt !== null).length
   const working = total - submitted
@@ -62,6 +67,7 @@ export function LiveDashboard({ session, now }: LiveDashboardProps): React.JSX.E
               student={s}
               questionsCount={session.questionsCount}
               now={now}
+              onSelect={() => onSelectStudent(s.id)}
             />
           ))}
         </div>

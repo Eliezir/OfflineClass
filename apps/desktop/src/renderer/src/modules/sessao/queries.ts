@@ -5,18 +5,26 @@ import {
   type UseMutationResult,
   type UseQueryResult
 } from '@tanstack/react-query'
-import type { DiscoveryStatus, SessionCreateInput, SessionDetail } from '@offlineclass/shared'
+import type {
+  DiscoveryStatus,
+  SessionAnswersReview,
+  SessionCreateInput,
+  SessionDetail
+} from '@offlineclass/shared'
 import {
   createSession,
   endSession,
   getActiveSession,
   getDiscoveryStatus,
+  getStudentAnswers,
   startSession
 } from './api'
 
 export const sessionKeys = {
   all: ['sessions'] as const,
-  active: () => [...sessionKeys.all, 'active'] as const
+  active: () => [...sessionKeys.all, 'active'] as const,
+  studentAnswers: (sessionId: string, studentId: string) =>
+    [...sessionKeys.all, 'studentAnswers', sessionId, studentId] as const
 }
 
 // Interim poll so new joins / answer progress surface while a session is live.
@@ -31,6 +39,20 @@ export function useActiveSessionQuery(): UseQueryResult<SessionDetail | null, Er
       const status = query.state.data?.status
       return status === 'lobby' || status === 'running' ? LIVE_POLL_MS : false
     }
+  })
+}
+
+export function useStudentAnswersQuery(
+  sessionId: string | undefined,
+  studentId: string | null,
+  enabled: boolean
+): UseQueryResult<SessionAnswersReview, Error> {
+  return useQuery({
+    queryKey: sessionKeys.studentAnswers(sessionId ?? '', studentId ?? ''),
+    queryFn: () => getStudentAnswers(sessionId as string, studentId as string),
+    enabled: enabled && !!sessionId && !!studentId,
+    // Mirror the dashboard's interim live poll while the drawer is open.
+    refetchInterval: LIVE_POLL_MS
   })
 }
 

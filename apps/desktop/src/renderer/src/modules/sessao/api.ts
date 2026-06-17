@@ -1,4 +1,9 @@
-import type { DiscoveryStatus, SessionCreateInput, SessionDetail } from '@offlineclass/shared'
+import type {
+  DiscoveryStatus,
+  SessionAnswersReview,
+  SessionCreateInput,
+  SessionDetail
+} from '@offlineclass/shared'
 
 /* Teacher session lifecycle over the domain IPC bridge (window.api.sessions →
    main process). The live roster/progress push (teacher WebSocket) lands in a
@@ -22,4 +27,11 @@ export function endSession(id: string): Promise<SessionDetail> {
 
 export function getDiscoveryStatus(): Promise<DiscoveryStatus> {
   return window.api.discovery.getStatus()
+}
+
+export function getStudentAnswers(
+  sessionId: string,
+  studentId: string
+): Promise<SessionAnswersReview> {
+  return window.api.sessions.studentAnswers(sessionId, studentId)
 }
