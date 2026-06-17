@@ -1,5 +1,6 @@
 import { useState } from 'react'
 import { ClipboardList, Plus, Trash2 } from 'lucide-react'
+import { useNavigate, useSearch } from '@tanstack/react-router'
 import { Trans, useLingui } from '@lingui/react/macro'
 import { Button } from '@renderer/shared/ui/button'
 import { EmptyState } from '@renderer/shared/ui/empty-state'
@@ -18,6 +19,11 @@ export function ProvasPage(): React.JSX.Element {
   const [dialogOpen, setDialogOpen] = useState(false)
   const [editing, setEditing] = useState<ExamSummary | null>(null)
 
+  const navigate = useNavigate()
+  // `?new=true` (deep link from the command palette) opens the create dialog;
+  // it's the single source of truth for that open state until dismissed.
+  const wantsNew = useSearch({ from: '/_app/provas', select: (s) => s.new })
+
   const openCreate = (): void => {
     setEditing(null)
     setDialogOpen(true)
@@ -25,6 +31,15 @@ export function ProvasPage(): React.JSX.Element {
   const openEdit = (prova: ExamSummary): void => {
     setEditing(prova)
     setDialogOpen(true)
+  }
+
+  const formOpen = dialogOpen || Boolean(wantsNew)
+
+  const onFormOpenChange = (next: boolean): void => {
+    if (!next) setEditing(null)
+    setDialogOpen(next)
+    // Drop the deep-link param so the dialog doesn't reopen on the next render.
+    if (!next && wantsNew) void navigate({ to: '/provas', search: {}, replace: true })
   }
 
   return (
@@ -90,7 +105,11 @@ export function ProvasPage(): React.JSX.Element {
         </div>
       )}
 
-      <ProvaFormDialog open={dialogOpen} onOpenChange={setDialogOpen} prova={editing} />
+      <ProvaFormDialog
+        open={formOpen}
+        onOpenChange={onFormOpenChange}
+        prova={wantsNew ? null : editing}
+      />
     </main>
   )
 }

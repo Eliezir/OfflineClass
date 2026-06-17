@@ -4,6 +4,7 @@ import { meQueryOptions } from '@renderer/modules/auth/queries'
 import { Sidebar } from '@renderer/shared/layouts/sidebar'
 import { AppToaster } from '@renderer/shared/layouts/app-toaster'
 import { ThemeProvider } from '@renderer/shared/hooks/theme-provider'
+import { CommandPaletteProvider } from '@renderer/shared/components/command-palette'
 
 const noDragRegion = { WebkitAppRegion: 'no-drag' } as React.CSSProperties
 
@@ -24,15 +25,17 @@ function AppLayout(): React.JSX.Element {
   // own header provides the window-drag region for the content side.
   return (
     <ThemeProvider>
-      <div className="relative flex h-screen bg-background">
-        <Sidebar />
+      <CommandPaletteProvider>
+        <div className="relative flex h-screen bg-background">
+          <Sidebar />
 
-        <div className="flex flex-1 overflow-hidden" style={noDragRegion}>
-          <Outlet />
+          <div className="flex flex-1 overflow-hidden" style={noDragRegion}>
+            <Outlet />
+          </div>
+
+          <AppToaster />
         </div>
-
-        <AppToaster />
-      </div>
+      </CommandPaletteProvider>
     </ThemeProvider>
   )
 }
