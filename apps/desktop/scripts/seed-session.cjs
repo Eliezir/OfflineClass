@@ -43,6 +43,21 @@ const dbPath = runtimeDbPath()
 const db = new Database(dbPath)
 db.pragma('foreign_keys = ON')
 
+// `--clear` removes the seed session + exam (cascades groups/students/answers)
+// so normal session creation in the UI is no longer blocked by the seed's
+// active session. Also ends any other lingering active session for safety.
+if (process.argv.includes('--clear')) {
+  db.prepare('DELETE FROM exam_sessions WHERE id = ?').run(ID.session)
+  db.prepare('DELETE FROM exams WHERE id = ?').run(ID.exam)
+  const ended = db
+    .prepare("UPDATE exam_sessions SET status = 'ended', ended_at = ? WHERE status IN ('lobby','running')")
+    .run(now)
+  db.close()
+  console.log('Seed limpo — sessão/prova de teste removidas; ' + ended.changes + ' sessão(ões) ativa(s) encerrada(s).')
+  console.log('DB:', dbPath)
+  process.exit(0)
+}
+
 const teacher = db.prepare('SELECT id, email FROM teachers ORDER BY created_at ASC LIMIT 1').get()
 if (!teacher) {
   console.error(
