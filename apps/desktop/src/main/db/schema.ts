@@ -32,6 +32,12 @@ export const exams = sqliteTable('exams', {
     .references(() => teachers.id, { onDelete: 'cascade' }),
   title: text('title').notNull(),
   description: text('description'),
+  // Subject/discipline this prova belongs to (e.g. "Redes de Computadores").
+  subject: text('subject'),
+  // Target grade level / academic period (e.g. "3º semestre").
+  gradeLevel: text('grade_level'),
+  // Emoji chosen by the teacher as the prova's cover/visual identity.
+  icon: text('icon'),
   createdAt: timestamp('created_at')
     .notNull()
     .default(sql`(unixepoch() * 1000)`),
@@ -48,10 +54,19 @@ export const questions = sqliteTable(
       .notNull()
       .references(() => exams.id, { onDelete: 'cascade' }),
     position: integer('position').notNull(),
-    kind: text('kind', { enum: ['mcq', 'essay'] }).notNull(),
+    kind: text('kind', { enum: ['mcq', 'multi', 'truefalse', 'essay', 'code'] }).notNull(),
     prompt: text('prompt').notNull(),
-    // For `mcq`: JSON-encoded array of `{ id, text, correct }`. `null` for `essay`.
-    optionsJson: text('options_json')
+    // Weight of this question; the total grade is the sum of correct questions' points.
+    points: real('points').notNull().default(1),
+    // For `mcq`/`multi`: JSON-encoded array of `{ id, text, correct }`. `null` otherwise.
+    optionsJson: text('options_json'),
+    // Optional inline image (data URL), shown with the prompt.
+    image: text('image'),
+    // For `truefalse`: the correct value.
+    answerBool: integer('answer_bool', { mode: 'boolean' }),
+    // For `code`: the language and the starter template the student edits.
+    language: text('language'),
+    starterCode: text('starter_code')
   },
   (t) => ({
     examPositionUnique: unique('questions_exam_position_unique').on(t.examId, t.position)

@@ -54,33 +54,30 @@ export async function ensureSelfSignedCert(): Promise<TlsBundle & { lanIp: strin
 
   const notBefore = new Date()
   const notAfter = new Date(notBefore.getTime() + 365 * 24 * 60 * 60 * 1000)
-  const pems = await selfsigned.generate(
-    [{ name: 'commonName', value: 'offlineclass.local' }],
-    {
-      keySize: 2048,
-      algorithm: 'sha256',
-      notBeforeDate: notBefore,
-      notAfterDate: notAfter,
-      extensions: [
-        {
-          name: 'subjectAltName',
-          altNames: [
-            { type: 2, value: 'offlineclass.local' },
-            { type: 2, value: 'localhost' },
-            { type: 7, ip: '127.0.0.1' },
-            { type: 7, ip: lanIp }
-          ]
-        },
-        { name: 'basicConstraints', cA: false },
-        {
-          name: 'keyUsage',
-          digitalSignature: true,
-          keyEncipherment: true
-        },
-        { name: 'extKeyUsage', serverAuth: true }
-      ]
-    }
-  )
+  const pems = await selfsigned.generate([{ name: 'commonName', value: 'offlineclass.local' }], {
+    keySize: 2048,
+    algorithm: 'sha256',
+    notBeforeDate: notBefore,
+    notAfterDate: notAfter,
+    extensions: [
+      {
+        name: 'subjectAltName',
+        altNames: [
+          { type: 2, value: 'offlineclass.local' },
+          { type: 2, value: 'localhost' },
+          { type: 7, ip: '127.0.0.1' },
+          { type: 7, ip: lanIp }
+        ]
+      },
+      { name: 'basicConstraints', cA: false },
+      {
+        name: 'keyUsage',
+        digitalSignature: true,
+        keyEncipherment: true
+      },
+      { name: 'extKeyUsage', serverAuth: true }
+    ]
+  })
   const bundle: TlsBundle = { key: pems.private, cert: pems.cert }
   persist(bundle, lanIp)
   return { ...bundle, lanIp }

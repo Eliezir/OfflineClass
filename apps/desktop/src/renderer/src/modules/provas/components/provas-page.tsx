@@ -1,19 +1,20 @@
 import { useState } from 'react'
-import { ClipboardList, Plus, Trash2 } from 'lucide-react'
+import { ClipboardList, Plus } from 'lucide-react'
 import { Trans, useLingui } from '@lingui/react/macro'
 import { Button } from '@renderer/shared/ui/button'
 import { EmptyState } from '@renderer/shared/ui/empty-state'
 import { Skeleton } from '@renderer/shared/ui/skeleton'
 import { PageHeader } from '@renderer/shared/components/page-header'
-import { formatRelativeTime } from '@renderer/shared/utils/format'
-import { useDeleteExam, useExamsQuery } from '../queries'
+import { useDeleteExam, useDuplicateExam, useExamsQuery } from '../queries'
 import type { ExamSummary } from '../schemas'
+import { ProvaCard } from './prova-card'
 import { ProvaFormDialog } from './prova-form-dialog'
 
 export function ProvasPage(): React.JSX.Element {
   const { t } = useLingui()
   const { data: provas, isLoading } = useExamsQuery()
   const del = useDeleteExam()
+  const duplicate = useDuplicateExam()
 
   const [dialogOpen, setDialogOpen] = useState(false)
   const [editing, setEditing] = useState<ExamSummary | null>(null)
@@ -61,31 +62,13 @@ export function ProvasPage(): React.JSX.Element {
       ) : (
         <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
           {provas.map((p) => (
-            <div
+            <ProvaCard
               key={p.id}
-              className="flex h-full flex-col gap-3 rounded-2xl border border-border bg-card p-4 transition-colors hover:border-primary/40"
-            >
-              <div className="flex items-start justify-between gap-2">
-                <span className="grid size-10 place-items-center rounded-xl bg-primary-soft text-primary [&_svg]:size-5">
-                  <ClipboardList />
-                </span>
-                <Button
-                  size="icon-sm"
-                  variant="ghost"
-                  aria-label={t`Excluir prova`}
-                  title={t`Excluir prova`}
-                  onClick={() => del.mutate(p.id)}
-                >
-                  <Trash2 />
-                </Button>
-              </div>
-              <button type="button" className="flex-1 text-left" onClick={() => openEdit(p)}>
-                <div className="line-clamp-2 font-bold leading-snug">{p.title}</div>
-                <div className="mt-1 text-xs font-semibold text-muted-foreground">
-                  {p.questionsCount} {t`questões`} · {formatRelativeTime(p.updatedAt)}
-                </div>
-              </button>
-            </div>
+              prova={p}
+              onEdit={() => openEdit(p)}
+              onDuplicate={() => duplicate.mutate(p.id)}
+              onDelete={() => del.mutate(p.id)}
+            />
           ))}
         </div>
       )}

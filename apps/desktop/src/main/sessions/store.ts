@@ -1,6 +1,7 @@
 import { randomUUID } from 'node:crypto'
 import { and, asc, desc, eq, inArray, isNotNull, sql } from 'drizzle-orm'
 import type {
+  CodeLanguage,
   JoinInput,
   JoinResult,
   McqOption,
@@ -21,6 +22,7 @@ import type {
 } from '@offlineclass/shared'
 
 import type { Db } from '../db/client'
+import { rowToQuestion } from '../db/questions-map'
 import { answers, exams, examSessions, questions, students } from '../db/schema'
 
 export class SessionError extends Error {
@@ -93,11 +95,7 @@ function loadDetailById(db: Db, sessionId: string): SessionDetail | null {
   }
 }
 
-export function createSession(
-  db: Db,
-  ownerId: string,
-  input: SessionCreateInput
-): SessionDetail {
+export function createSession(db: Db, ownerId: string, input: SessionCreateInput): SessionDetail {
   // Reject if any session is already active anywhere — keeps /api/session/active
   // unambiguous for students.
   const existing = db
@@ -181,29 +179,35 @@ export function listSessionsForOwner(db: Db, ownerId: string): SessionSummary[] 
       durationMinutes: examSessions.durationMinutes,
       createdAt: examSessions.createdAt,
       startedAt: examSessions.startedAt,
-      endedAt: examSessions.endedAt,
-      studentsCount: sql<number>`(
-        SELECT COUNT(*) FROM ${students} WHERE ${students.sessionId} = ${examSessions.id}
-      )`,
-      submittedCount: sql<number>`(
-        SELECT COUNT(*) FROM ${students}
-        WHERE ${students.sessionId} = ${examSessions.id}
-          AND ${students.submittedAt} IS NOT NULL
-      )`
+      endedAt: examSessions.endedAt
     })
     .from(examSessions)
     .innerJoin(exams, eq(exams.id, examSessions.examId))
     .where(eq(examSessions.ownerId, ownerId))
     .orderBy(desc(examSessions.createdAt))
     .all()
+
+  // Student totals via a grouped query + map. (A correlated subquery built from
+  // sql`...` loses table qualifiers and silently returns 0.)
+  const counts = db
+    .select({
+      sessionId: students.sessionId,
+      total: sql<number>`count(*)`,
+      submitted: sql<number>`count(${students.submittedAt})`
+    })
+    .from(students)
+    .groupBy(students.sessionId)
+    .all()
+  const countBySession = new Map(counts.map((c) => [c.sessionId, c]))
+
   return rows.map((r) => ({
     id: r.id,
     examId: r.examId,
     examTitle: r.examTitle,
     status: r.status as SessionStatus,
     durationMinutes: r.durationMinutes,
-    studentsCount: Number(r.studentsCount),
-    submittedCount: Number(r.submittedCount),
+    studentsCount: Number(countBySession.get(r.id)?.total ?? 0),
+    submittedCount: Number(countBySession.get(r.id)?.submitted ?? 0),
     createdAt: r.createdAt.getTime(),
     startedAt: r.startedAt ? r.startedAt.getTime() : null,
     endedAt: r.endedAt ? r.endedAt.getTime() : null
@@ -213,8 +217,7 @@ export function listSessionsForOwner(db: Db, ownerId: string): SessionSummary[] 
 /**
  * Recent ended sessions for the teacher Home, each with a 0–10 average grade
  * over its *submitted* students. Grading mirrors {@link loadStudentAnswers}:
- * every question is worth 1 (MCQ correct = 1, essay = the manual 0–1 score),
- * so a student's grade is `(raw / questionCount) * 10`.
+ * points-weighted — a student's grade is `(earnedPoints / maxPoints) * 10`.
  */
 export function listRecentResultsForOwner(
   db: Db,
@@ -236,20 +239,13 @@ export function listRecentResultsForOwner(
     .all()
 
   return sessionRows.map((s) => {
-    const qRows = db
-      .select({ id: questions.id, kind: questions.kind, optionsJson: questions.optionsJson })
+    const qs = db
+      .select()
       .from(questions)
       .where(eq(questions.examId, s.examId))
       .all()
-    const questionCount = qRows.length
-    // The correct option id for each MCQ (auto-graded fresh from the builder).
-    const correctByQid = new Map<string, string | null>()
-    for (const q of qRows) {
-      if (q.kind === 'mcq') {
-        const opts = q.optionsJson ? (JSON.parse(q.optionsJson) as McqOption[]) : []
-        correctByQid.set(q.id, opts.find((o) => o.correct)?.id ?? null)
-      }
-    }
+      .map(rowToQuestion)
+    const maxPoints = qs.reduce((acc, q) => acc + q.points, 0)
 
     const submitted = db
       .select({ id: students.id })
@@ -265,17 +261,15 @@ export function listRecentResultsForOwner(
         .where(eq(answers.studentId, stu.id))
         .all()
       const ansByQid = new Map(ansRows.map((a) => [a.questionId, a]))
-      let raw = 0
-      for (const q of qRows) {
-        const a = ansByQid.get(q.id)
-        if (!a) continue
-        if (q.kind === 'mcq') {
-          if (a.value && a.value === correctByQid.get(q.id)) raw += 1
-        } else {
-          raw += a.score ?? 0
-        }
+      // Points-weighted, mirroring loadStudentAnswers: auto kinds earn full points
+      // when correct; manual kinds earn their 0–1 fraction × points.
+      let earned = 0
+      for (const q of qs) {
+        const a = ansByQid.get(q.id) ?? null
+        const auto = autoGrade(q, a?.value ?? null)
+        earned += auto ? auto.score : (a?.score ?? 0) * q.points
       }
-      gradeSum += questionCount > 0 ? (raw / questionCount) * 10 : 0
+      gradeSum += maxPoints > 0 ? (earned / maxPoints) * 10 : 0
     }
 
     const studentCount = submitted.length
@@ -295,10 +289,7 @@ export function findActiveSessionForOwner(db: Db, ownerId: string): SessionDetai
     .select({ id: examSessions.id })
     .from(examSessions)
     .where(
-      and(
-        eq(examSessions.ownerId, ownerId),
-        inArray(examSessions.status, [...ACTIVE_STATUSES])
-      )
+      and(eq(examSessions.ownerId, ownerId), inArray(examSessions.status, [...ACTIVE_STATUSES]))
     )
     .orderBy(desc(examSessions.createdAt))
     .get()
@@ -386,38 +377,22 @@ export function joinSession(db: Db, input: JoinInput): JoinResult {
 
 export function listLobbyStudents(db: Db, sessionId: string): SessionLobbyStudent[] {
   const rows = db
-    .select({
-      id: students.id,
-      sessionId: students.sessionId,
-      name: students.name,
-      matricula: students.matricula,
-      token: students.token,
-      joinedAt: students.joinedAt,
-      lastSeenAt: students.lastSeenAt,
-      submittedAt: students.submittedAt,
-      answeredCount: sql<number>`(
-        SELECT COUNT(*) FROM ${answers} WHERE ${answers.studentId} = ${students.id}
-      )`
-    })
+    .select()
     .from(students)
     .where(eq(students.sessionId, sessionId))
     .orderBy(asc(students.joinedAt))
     .all()
-  return rows.map((r) =>
-    rowToLobbyStudent(
-      {
-        id: r.id,
-        sessionId: r.sessionId,
-        name: r.name,
-        matricula: r.matricula,
-        token: r.token,
-        joinedAt: r.joinedAt,
-        lastSeenAt: r.lastSeenAt,
-        submittedAt: r.submittedAt
-      },
-      Number(r.answeredCount)
-    )
-  )
+
+  // Answered-per-student via a grouped query + map. (A correlated subquery built
+  // from sql`...` loses table qualifiers and silently returns 0.)
+  const answered = db
+    .select({ studentId: answers.studentId, n: sql<number>`count(*)` })
+    .from(answers)
+    .groupBy(answers.studentId)
+    .all()
+  const answeredByStudent = new Map(answered.map((a) => [a.studentId, Number(a.n)]))
+
+  return rows.map((r) => rowToLobbyStudent(r, answeredByStudent.get(r.id) ?? 0))
 }
 
 export function findStudentByToken(
@@ -452,17 +427,29 @@ function loadStudentFull(db: Db, studentId: string): ResolvedStudent | null {
 }
 
 function questionRowToStudent(row: typeof questions.$inferSelect): StudentQuestion {
-  if (row.kind === 'mcq') {
+  const base = { id: row.id, position: row.position, prompt: row.prompt, image: row.image ?? null }
+  const studentOptions = (): { id: string; text: string }[] => {
     const opts = row.optionsJson ? (JSON.parse(row.optionsJson) as McqOption[]) : []
-    return {
-      kind: 'mcq',
-      id: row.id,
-      position: row.position,
-      prompt: row.prompt,
-      options: opts.map((o) => ({ id: o.id, text: o.text }))
-    }
+    return opts.map((o) => ({ id: o.id, text: o.text }))
   }
-  return { kind: 'essay', id: row.id, position: row.position, prompt: row.prompt }
+  switch (row.kind) {
+    case 'mcq':
+      return { kind: 'mcq', ...base, options: studentOptions() }
+    case 'multi':
+      return { kind: 'multi', ...base, options: studentOptions() }
+    case 'truefalse':
+      return { kind: 'truefalse', ...base }
+    case 'code':
+      return {
+        kind: 'code',
+        ...base,
+        language: (row.language ?? 'plaintext') as CodeLanguage,
+        starterCode: row.starterCode ?? ''
+      }
+    case 'essay':
+    default:
+      return { kind: 'essay', ...base }
+  }
 }
 
 export function getStudentExam(db: Db, studentId: string): StudentExam {
@@ -509,11 +496,7 @@ export function getStudentSessionState(db: Db, studentId: string): StudentSessio
     .where(eq(examSessions.id, student.sessionId))
     .get()
   if (!session) throw new SessionError('Sessão não encontrada', 'NOT_FOUND')
-  const answerRows = db
-    .select()
-    .from(answers)
-    .where(eq(answers.studentId, studentId))
-    .all()
+  const answerRows = db.select().from(answers).where(eq(answers.studentId, studentId)).all()
   const answerSnapshots: StudentAnswerSnapshot[] = answerRows.map((row) => ({
     questionId: row.questionId,
     value: row.value,
@@ -531,18 +514,10 @@ export function getStudentSessionState(db: Db, studentId: string): StudentSessio
 }
 
 export function recordHeartbeat(db: Db, studentId: string): void {
-  db.update(students)
-    .set({ lastSeenAt: new Date() })
-    .where(eq(students.id, studentId))
-    .run()
+  db.update(students).set({ lastSeenAt: new Date() }).where(eq(students.id, studentId)).run()
 }
 
-export function saveAnswer(
-  db: Db,
-  studentId: string,
-  questionId: string,
-  value: string
-): void {
+export function saveAnswer(db: Db, studentId: string, questionId: string, value: string): void {
   const student = loadStudentFull(db, studentId)
   if (!student) throw new SessionError('Aluno não encontrado', 'NOT_FOUND')
   if (student.submittedAt) {
@@ -610,18 +585,41 @@ export function getStudentSessionId(db: Db, studentId: string): string | null {
 
 // -- Teacher answer review -----------------------------------------------
 
-function rowToFullQuestion(row: typeof questions.$inferSelect): Question {
-  if (row.kind === 'mcq') {
-    const opts = row.optionsJson ? (JSON.parse(row.optionsJson) as McqOption[]) : []
-    return {
-      kind: 'mcq',
-      id: row.id,
-      position: row.position,
-      prompt: row.prompt,
-      options: opts
+/** Auto-grade an objective question. Returns null for manually-graded kinds
+    (essay/code). A correct answer is worth the question's full points. */
+function autoGrade(
+  question: Question,
+  value: string | null
+): { correct: boolean; score: number } | null {
+  switch (question.kind) {
+    case 'mcq': {
+      const correct =
+        value !== null && question.options.find((o) => o.id === value)?.correct === true
+      return { correct, score: correct ? question.points : 0 }
     }
+    case 'multi': {
+      const expected = new Set(question.options.filter((o) => o.correct).map((o) => o.id))
+      let picked: string[] = []
+      try {
+        const parsed = value ? (JSON.parse(value) as unknown) : []
+        if (Array.isArray(parsed)) picked = parsed.filter((v): v is string => typeof v === 'string')
+      } catch {
+        picked = []
+      }
+      const pickedSet = new Set(picked)
+      const correct =
+        value !== null &&
+        pickedSet.size === expected.size &&
+        [...expected].every((id) => pickedSet.has(id))
+      return { correct, score: correct ? question.points : 0 }
+    }
+    case 'truefalse': {
+      const correct = value !== null && (value === 'true') === question.answer
+      return { correct, score: correct ? question.points : 0 }
+    }
+    default:
+      return null
   }
-  return { kind: 'essay', id: row.id, position: row.position, prompt: row.prompt }
 }
 
 export function loadStudentAnswers(
@@ -657,37 +655,28 @@ export function loadStudentAnswers(
     .where(eq(questions.examId, sessionRow.examId))
     .orderBy(asc(questions.position))
     .all()
-  const answerRows = db
-    .select()
-    .from(answers)
-    .where(eq(answers.studentId, studentId))
-    .all()
+  const answerRows = db.select().from(answers).where(eq(answers.studentId, studentId)).all()
   const answerByQId = new Map(answerRows.map((a) => [a.questionId, a]))
 
   const reviews: StudentAnswerReview[] = questionRows.map((row) => {
-    const question = rowToFullQuestion(row)
+    const question = rowToQuestion(row)
     const ans = answerByQId.get(row.id) ?? null
     const value = ans?.value ?? null
-    let correct: boolean | null = null
-    let score: number | null = null
-    if (question.kind === 'mcq') {
-      if (value !== null) {
-        const opt = question.options.find((o) => o.id === value)
-        correct = opt?.correct === true
-        // MCQ is auto-graded — ignore any stored override and compute fresh
-        // so changing the correct flag in the form builder re-grades on
-        // the next read.
-        score = correct ? 1 : 0
-      }
-    } else {
-      // Essay: whatever the teacher saved (or null = not graded yet).
-      score = ans?.score ?? null
-    }
+    // Auto-graded kinds recompute fresh (so editing answers in the builder
+    // re-grades on the next read); manual kinds use the teacher's saved score.
+    const auto = autoGrade(question, value)
+    const correct = auto ? auto.correct : null
+    const score = auto ? auto.score : (ans?.score ?? null)
     return { question, value, correct, score }
   })
 
-  const totalScore = reviews.reduce((acc, r) => acc + (r.score ?? 0), 0)
-  const maxScore = reviews.length
+  // Points-weighted: auto kinds (correct === non-null) already store the earned
+  // points; manual kinds store a 0–1 fraction, so they earn fraction × points.
+  const totalScore = reviews.reduce(
+    (acc, r) => acc + (r.correct !== null ? (r.score ?? 0) : (r.score ?? 0) * r.question.points),
+    0
+  )
+  const maxScore = reviews.reduce((acc, r) => acc + r.question.points, 0)
 
   return {
     sessionId,
@@ -743,10 +732,7 @@ export function gradeAnswer(
     .get()
   const now = new Date()
   if (existing) {
-    db.update(answers)
-      .set({ score, updatedAt: now })
-      .where(eq(answers.id, existing.id))
-      .run()
+    db.update(answers).set({ score, updatedAt: now }).where(eq(answers.id, existing.id)).run()
   } else {
     // Allow grading even when the student left the field blank — insert a
     // zero-value answer row so the score sticks.
