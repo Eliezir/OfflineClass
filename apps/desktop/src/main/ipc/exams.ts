@@ -63,15 +63,22 @@ export function registerExamsHandlers(ctx: ExamsContext): void {
         gradeLevel: exams.gradeLevel,
         icon: exams.icon,
         createdAt: exams.createdAt,
-        updatedAt: exams.updatedAt,
-        questionsCount: sql<number>`(
-          SELECT COUNT(*) FROM ${questions} WHERE ${questions.examId} = ${exams.id}
-        )`
+        updatedAt: exams.updatedAt
       })
       .from(exams)
       .where(eq(exams.ownerId, ownerId))
       .orderBy(sql`${exams.updatedAt} DESC`)
       .all()
+
+    // Counts via a grouped query + map. (A correlated subquery built from sql`...`
+    // loses table qualifiers and silently returns 0 — see git history.)
+    const counts = db
+      .select({ examId: questions.examId, n: sql<number>`count(*)` })
+      .from(questions)
+      .groupBy(questions.examId)
+      .all()
+    const countByExam = new Map(counts.map((c) => [c.examId, Number(c.n)]))
+
     return rows.map((r) => ({
       id: r.id,
       title: r.title,
@@ -79,7 +86,7 @@ export function registerExamsHandlers(ctx: ExamsContext): void {
       subject: r.subject,
       gradeLevel: r.gradeLevel,
       icon: r.icon,
-      questionsCount: Number(r.questionsCount),
+      questionsCount: countByExam.get(r.id) ?? 0,
       createdAt: r.createdAt.getTime(),
       updatedAt: r.updatedAt.getTime()
     }))

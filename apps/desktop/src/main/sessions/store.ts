@@ -179,29 +179,35 @@ export function listSessionsForOwner(db: Db, ownerId: string): SessionSummary[] 
       durationMinutes: examSessions.durationMinutes,
       createdAt: examSessions.createdAt,
       startedAt: examSessions.startedAt,
-      endedAt: examSessions.endedAt,
-      studentsCount: sql<number>`(
-        SELECT COUNT(*) FROM ${students} WHERE ${students.sessionId} = ${examSessions.id}
-      )`,
-      submittedCount: sql<number>`(
-        SELECT COUNT(*) FROM ${students}
-        WHERE ${students.sessionId} = ${examSessions.id}
-          AND ${students.submittedAt} IS NOT NULL
-      )`
+      endedAt: examSessions.endedAt
     })
     .from(examSessions)
     .innerJoin(exams, eq(exams.id, examSessions.examId))
     .where(eq(examSessions.ownerId, ownerId))
     .orderBy(desc(examSessions.createdAt))
     .all()
+
+  // Student totals via a grouped query + map. (A correlated subquery built from
+  // sql`...` loses table qualifiers and silently returns 0.)
+  const counts = db
+    .select({
+      sessionId: students.sessionId,
+      total: sql<number>`count(*)`,
+      submitted: sql<number>`count(${students.submittedAt})`
+    })
+    .from(students)
+    .groupBy(students.sessionId)
+    .all()
+  const countBySession = new Map(counts.map((c) => [c.sessionId, c]))
+
   return rows.map((r) => ({
     id: r.id,
     examId: r.examId,
     examTitle: r.examTitle,
     status: r.status as SessionStatus,
     durationMinutes: r.durationMinutes,
-    studentsCount: Number(r.studentsCount),
-    submittedCount: Number(r.submittedCount),
+    studentsCount: Number(countBySession.get(r.id)?.total ?? 0),
+    submittedCount: Number(countBySession.get(r.id)?.submitted ?? 0),
     createdAt: r.createdAt.getTime(),
     startedAt: r.startedAt ? r.startedAt.getTime() : null,
     endedAt: r.endedAt ? r.endedAt.getTime() : null
@@ -371,38 +377,22 @@ export function joinSession(db: Db, input: JoinInput): JoinResult {
 
 export function listLobbyStudents(db: Db, sessionId: string): SessionLobbyStudent[] {
   const rows = db
-    .select({
-      id: students.id,
-      sessionId: students.sessionId,
-      name: students.name,
-      matricula: students.matricula,
-      token: students.token,
-      joinedAt: students.joinedAt,
-      lastSeenAt: students.lastSeenAt,
-      submittedAt: students.submittedAt,
-      answeredCount: sql<number>`(
-        SELECT COUNT(*) FROM ${answers} WHERE ${answers.studentId} = ${students.id}
-      )`
-    })
+    .select()
     .from(students)
     .where(eq(students.sessionId, sessionId))
     .orderBy(asc(students.joinedAt))
     .all()
-  return rows.map((r) =>
-    rowToLobbyStudent(
-      {
-        id: r.id,
-        sessionId: r.sessionId,
-        name: r.name,
-        matricula: r.matricula,
-        token: r.token,
-        joinedAt: r.joinedAt,
-        lastSeenAt: r.lastSeenAt,
-        submittedAt: r.submittedAt
-      },
-      Number(r.answeredCount)
-    )
-  )
+
+  // Answered-per-student via a grouped query + map. (A correlated subquery built
+  // from sql`...` loses table qualifiers and silently returns 0.)
+  const answered = db
+    .select({ studentId: answers.studentId, n: sql<number>`count(*)` })
+    .from(answers)
+    .groupBy(answers.studentId)
+    .all()
+  const answeredByStudent = new Map(answered.map((a) => [a.studentId, Number(a.n)]))
+
+  return rows.map((r) => rowToLobbyStudent(r, answeredByStudent.get(r.id) ?? 0))
 }
 
 export function findStudentByToken(

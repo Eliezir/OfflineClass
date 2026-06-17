@@ -40,9 +40,17 @@ export function useExamQuery(id: string): UseQueryResult<Exam, Error> {
   return useQuery({ queryKey: examKeys.detail(id), queryFn: () => getExam(id) })
 }
 
+// Sessions read exam data (question counts, grading) live, so any exam change
+// must refresh them too. Use the literal `['sessions']` prefix (mirrors
+// sessionKeys.all) to avoid a provas → sessao import cycle.
+const SESSION_KEY_PREFIX = ['sessions'] as const
+
 function useInvalidateExams(): () => void {
   const qc = useQueryClient()
-  return () => void qc.invalidateQueries({ queryKey: examKeys.all })
+  return () => {
+    void qc.invalidateQueries({ queryKey: examKeys.all })
+    void qc.invalidateQueries({ queryKey: SESSION_KEY_PREFIX })
+  }
 }
 
 export function useCreateExam(): UseMutationResult<Exam, Error, ExamInput> {
@@ -75,6 +83,7 @@ function useInvalidateExam(examId: string): () => void {
   return () => {
     void qc.invalidateQueries({ queryKey: examKeys.detail(examId) })
     void qc.invalidateQueries({ queryKey: examKeys.list() })
+    void qc.invalidateQueries({ queryKey: SESSION_KEY_PREFIX })
   }
 }
 
@@ -130,6 +139,7 @@ export function useReorderQuestions(
     onSettled: () => {
       void qc.invalidateQueries({ queryKey: examKeys.detail(examId) })
       void qc.invalidateQueries({ queryKey: examKeys.list() })
+      void qc.invalidateQueries({ queryKey: SESSION_KEY_PREFIX })
     }
   })
 }
