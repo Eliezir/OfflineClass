@@ -6,6 +6,3 @@ onlyBuiltDependencies:
   - electron
   - esbuild
   - better-sqlite3
-  - "@prisma/client"
-  - "@prisma/engines"
-  - prisma

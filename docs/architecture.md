@@ -163,7 +163,15 @@ Pure SPA. Served by the desktop's Hono server over LAN (HTTPS). Loads in a PC br
 - TanStack Query for HTTP calls (`/api/join`, `/api/heartbeat`, `/api/answers`)
 - No build-time backend coupling: the SPA is statically served and discovers the backend by virtue of being served from it (same origin)
 
-### `apps/cloud` (Hono + Drizzle + Postgres)
+### `apps/cloud` (optional cloud-sync tier — planned via PowerSync)
+
+> **Status:** not in the repo. The earlier apresenta-derived `apps/cloud` clone was deleted,
+> and the sync tier will be implemented with **PowerSync** rather than the hand-rolled
+> sync_outbox / LWW design described below. PowerSync handles replication, conflict
+> resolution, and the local-to-remote bridge itself, so the implementation will reduce to a
+> source DB (Postgres), the PowerSync service, and a thin auth-token + write-upload connector.
+> The sections below are kept as the original product intent and will be revised when that
+> work starts.
 
 The VPS-hosted backend. Receives definitions + results, sends email. Never speaks Yjs.
 

@@ -22,10 +22,10 @@ College project for the **Operating Systems & Networks** courses.
 > `apresenta.ai` (an Electron + React app) and adapted section by section. Refactor roadmap
 > **theme → splash → onboarding → home → settings → landing** is **done** — those are now
 > OfflineClass (Indigo Pop theme, Nunito, rebranded copy/assets) with the apresenta
-> AI-provider screens, provider IPC, and presentation copy removed. The **one remaining
-> clone** is **`apps/cloud`** — still the apresenta OOP Hono+Prisma+SQLite backend (provedor
-> domain) — pending the **backend** refactor. Anything mentioning "apresenta", "provedores",
-> Claude/Anthropic, or presentations now lives only under `apps/cloud` and is the next target.
+> AI-provider screens, provider IPC, and presentation copy removed. The old `apps/cloud`
+> clone (the apresenta OOP Hono+Prisma+SQLite backend) has been **deleted** — the runtime
+> backend is now in-process inside the Electron main (`apps/desktop/src/main`). The optional
+> cloud-sync tier is **planned via PowerSync** and is **not yet in the repo**.
 
 ---
 
@@ -34,21 +34,21 @@ College project for the **Operating Systems & Networks** courses.
 | Layer | Technologies |
 |---|---|
 | Desktop (`apps/desktop`) | Electron 39, React 19, TanStack Router + Query + Form, Tailwind v4, hand-rolled `shared/ui` primitives (on radix-ui), Lingui i18n, Zod v4 |
-| Cloud/Backend (`apps/cloud`) | TypeScript, Node 22, Hono, Prisma + SQLite, Zod, layered OOP (Controller→BO→DAO) |
+| Backend (LAN runtime) | In-process inside the Electron main (`apps/desktop/src/main`): Hono LAN server + Drizzle + better-sqlite3, talks to the renderer over IPC |
 | Landing (`apps/landing`) | Vite + React, MagicUI components |
 | Build | electron-vite, electron-builder, tsx, pnpm workspaces |
 
-> The cloned backend is the OOP Hono+Prisma+SQLite API from `apresenta.ai`. The **target**
-> backend (see `docs/architecture.md`) is offline-first: an in-process Hono LAN server with
-> Drizzle + better-sqlite3 inside the Electron main process, plus Socket.IO/Yjs for live
-> collaboration. The backend refactor reconciles the two — until then, `apps/cloud` runs as
-> a separate process the desktop spawns/attaches to over HTTP on :8080.
+> The runtime backend is **offline-first and in-process**: a Hono LAN server with Drizzle +
+> better-sqlite3 living inside the Electron main process (`apps/desktop/src/main`), reached
+> from the renderer over IPC. There is **no separate backend app** — the old `apps/cloud`
+> clone was removed. The optional **cloud-sync tier (PowerSync)** is planned and not yet in
+> the repo; see `docs/architecture.md` for the target design.
 
 Repo layout (pnpm workspace):
 ```
-/apps/desktop     Electron + React (renderer at src/renderer/src)  ← cloned frontend
-/apps/cloud       TypeScript API (Hono + Prisma + SQLite)          ← cloned backend
+/apps/desktop     Electron + React (renderer at src/renderer/src); LAN backend in src/main
 /apps/landing     Marketing site (Vite + React)                    ← cloned landing
+/packages/shared  Zod schemas / types shared across apps
 /assets           OfflineClass logos/banners
 /docs             architecture.md, features.md (product design)
 /.context         Working notes shared across agents (clone-plan.md)
@@ -79,19 +79,14 @@ At the repo root (pnpm workspace):
 
 ```bash
 pnpm install                # install everything (all apps)
-pnpm dev                    # run the Electron desktop app with HMR (spawns/attaches the backend)
+pnpm dev                    # run the Electron desktop app with HMR (LAN backend runs in-process)
 pnpm dev:web                # run the renderer only in the browser (no Electron)
-pnpm dev:backend            # start the cloud/backend API (hot reload) at http://localhost:8080
 pnpm dev:landing            # run the landing site
 pnpm build                  # typecheck + desktop build
-pnpm build:backend          # prisma generate + backend typecheck
-pnpm test:backend           # backend tests (Vitest)
 ```
 
-Backend (inside `apps/cloud`): `pnpm dev`, `pnpm test:coverage` (70% gate), `pnpm lint`,
-`pnpm dc:check` (layering rules), `pnpm migrate:dev --name x`.
-
-Docker (root): `docker compose up --build` (see `docker-compose.yml`).
+The LAN backend has no separate process or command — it boots inside the Electron main when
+you run `pnpm dev`. DB tooling lives in `apps/desktop` (`pnpm --filter ./apps/desktop db:studio`).
 
 ---
 
@@ -103,7 +98,8 @@ Docker (root): `docker compose up --build` (see `docker-compose.yml`).
   familiar. Extract to a shared location when a second caller appears — not before.
   - Desktop shared UI → `apps/desktop/src/renderer/src/shared/ui` (primitives) or
     `shared/components` (composed). Shared logic → `shared/hooks` / `shared/utils`.
-  - Backend shared logic → an existing `BO`/util, or a new one under the right layer.
+  - LAN backend logic → the modules under `apps/desktop/src/main` (`sessions/`, `db/`, `ipc/`).
+  - Cross-app types/schemas → `packages/shared`.
 
 ---
 
@@ -140,23 +136,25 @@ Docker (root): `docker compose up --build` (see `docker-compose.yml`).
 
 ---
 
-## 8. Backend conventions (`apps/cloud`)
+## 8. Backend conventions (LAN runtime, `apps/desktop/src/main`)
 
-The cloned backend is a layered TypeScript API (Hono + Prisma), built **TDD-first**.
+The backend is **offline-first and in-process** — it boots inside the Electron main process;
+there is no separate server app or deploy.
 
-- **Layers:** `Controller` (`src/controllers/`, Hono routers) → `BO` (`src/bo/`) →
-  `DAO` (`src/dao/`, wraps `PrismaClient`) → Prisma models. Immutable DTOs are Zod schemas.
-- **DI is manual** in `src/app.ts` (composition root). No framework magic.
-- **Layering is enforced** by `dependency-cruiser` (`pnpm dc:check`).
-- **Errors:** throw `ExcecaoNaoEncontrado` / `ExcecaoValidacao` / `ExcecaoApp`
-  (`src/exception/`); `error-handler.ts` maps them (plus Zod errors) to `ErroResponse`.
-- **Persistence:** Prisma over SQLite (`prisma/schema.prisma`, migrations in
-  `prisma/migrations/`). Secrets are encrypted before storage.
-- **Endpoints live under `/api`** (`/api/health`, …). Server on port **8080**.
-- **Tests:** Vitest, controllers tested in-process via Hono `app.request()`. 70% coverage gate.
+- **DB:** Drizzle over better-sqlite3. Schema in `db/schema.ts`; migrations applied on startup.
+  Synchronous queries (better-sqlite3) — no `await` on DB calls.
+- **Data access:** plain functions grouped by domain under `sessions/` (e.g. `store.ts`),
+  owner-scoped (`ownerId`) for every teacher-facing read/write. No ORM layering/DI framework.
+- **Renderer ↔ main:** IPC handlers in `ipc/` (`ipcMain.handle('domain.action', …)`), exposed
+  to the renderer via the typed `window.api.*` bridge in `src/preload`. The renderer never
+  hits HTTP for teacher actions — only the in-process LAN HTTP/WS server serves students.
+- **LAN server:** a Hono server (`startServer(...)`) for the student SPA + Socket.IO/WS,
+  started during `bootstrap()` in `main/index.ts`.
+- **Shared types/schemas:** Zod schemas in `packages/shared`, imported by both main and renderer.
 
-> When the backend refactor begins, reconcile this OOP/Prisma shape with the offline-first
-> target in `docs/architecture.md` (Drizzle + better-sqlite3 in-process, Socket.IO/Yjs).
+> The optional **cloud-sync tier is planned via PowerSync** and not yet in the repo. When it
+> lands it will be a thin sync/connector service (auth tokens + write upload), not a port of
+> the old `apps/cloud` clone. See `docs/architecture.md` for the target design.
 
 ---
 
