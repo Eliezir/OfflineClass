@@ -22,7 +22,7 @@ import type { Db } from '../db/client'
 import { env } from '../env'
 import { resolveSession } from '../auth/sessions'
 import { examSessions } from '../db/schema'
-import { SERVER_EVENT, sessionRoom, studentRoom, teacherRoom } from '../sessions/rooms'
+import { SERVER_EVENT, groupRoom, sessionRoom, studentRoom, teacherRoom } from '../sessions/rooms'
 import type { Rooms } from '../sessions/rooms'
 import {
   findActiveSessionPublic,
@@ -174,6 +174,16 @@ export async function startServer(port: number, deps: ServerDeps): Promise<Serve
     try {
       saveAnswer(db, student.id, parsed.data.questionId, parsed.data.value)
       broadcastLobbyUpdate(db, rooms, student.sessionId)
+      // Collaborative groups: push the answer to teammates' room live.
+      if (student.groupId) {
+        rooms.toGroup(student.sessionId, student.groupId, {
+          type: 'group.answer.update',
+          groupId: student.groupId,
+          questionId: parsed.data.questionId,
+          value: parsed.data.value,
+          byStudentId: student.id
+        })
+      }
       return c.json({ ok: true })
     } catch (err) {
       return mapSessionError(c, err)
@@ -261,7 +271,11 @@ export async function startServer(port: number, deps: ServerDeps): Promise<Serve
 
       void socket.join(teacherRoom(examSession.id))
       void socket.join(sessionRoom(examSession.id))
-      socket.emit(SERVER_EVENT, { type: 'connection.ack', role: 'teacher' } satisfies WsServerEvent)
+      socket.emit(SERVER_EVENT, {
+        type: 'connection.ack',
+        role: 'teacher',
+        groupId: null
+      } satisfies WsServerEvent)
       socket.emit(SERVER_EVENT, {
         type: 'session.lobby.update',
         students: listLobbyStudents(db, examSession.id)
@@ -275,7 +289,13 @@ export async function startServer(port: number, deps: ServerDeps): Promise<Serve
 
       void socket.join(studentRoom(student.sessionId))
       void socket.join(sessionRoom(student.sessionId))
-      socket.emit(SERVER_EVENT, { type: 'connection.ack', role: 'student' } satisfies WsServerEvent)
+      // Join the group room so teammates' live answer activity reaches this socket.
+      if (student.groupId) void socket.join(groupRoom(student.sessionId, student.groupId))
+      socket.emit(SERVER_EVENT, {
+        type: 'connection.ack',
+        role: 'student',
+        groupId: student.groupId
+      } satisfies WsServerEvent)
       return
     }
 

@@ -6,6 +6,8 @@ import type { WsServerEvent } from '@offlineclass/shared'
 export const teacherRoom = (sessionId: string): string => `teacher:${sessionId}`
 export const studentRoom = (sessionId: string): string => `student:${sessionId}`
 export const sessionRoom = (sessionId: string): string => `session:${sessionId}`
+export const groupRoom = (sessionId: string, groupId: string): string =>
+  `group:${sessionId}:${groupId}`
 
 /** Every real-time message rides this single Socket.IO event name; the payload
     is the shared discriminated union, so clients keep parsing with one Zod
@@ -34,5 +36,10 @@ export class Rooms {
 
   toAll(sessionId: string, event: WsServerEvent): void {
     this.io?.to(sessionRoom(sessionId)).emit(SERVER_EVENT, event)
+  }
+
+  /** Broadcast to one group's room — teammates collaborating live. */
+  toGroup(sessionId: string, groupId: string, event: WsServerEvent): void {
+    this.io?.to(groupRoom(sessionId, groupId)).emit(SERVER_EVENT, event)
   }
 }

@@ -117,10 +117,20 @@ export type Exam = z.infer<typeof Exam>
 export const SessionStatus = z.enum(['lobby', 'running', 'ended'])
 export type SessionStatus = z.infer<typeof SessionStatus>
 
+// A collaborative group within a session. Students in the same group share a
+// real-time room.
+export const SessionGroup = z.object({
+  id: z.string(),
+  name: z.string(),
+  color: z.string().nullable()
+})
+export type SessionGroup = z.infer<typeof SessionGroup>
+
 export const SessionLobbyStudent = z.object({
   id: z.string(),
   name: z.string(),
   matricula: z.string(),
+  groupId: z.string().nullable(),
   joinedAt: z.number().int(),
   lastSeenAt: z.number().int(),
   submittedAt: z.number().int().nullable(),
@@ -180,7 +190,9 @@ export type JoinResult = z.infer<typeof JoinResult>
 export const WsServerEvent = z.discriminatedUnion('type', [
   z.object({
     type: z.literal('connection.ack'),
-    role: z.enum(['teacher', 'student'])
+    role: z.enum(['teacher', 'student']),
+    // The student's resolved group (null = ungrouped). Null for teachers.
+    groupId: z.string().nullable()
   }),
   z.object({
     type: z.literal('session.lobby.update'),
@@ -194,6 +206,15 @@ export const WsServerEvent = z.discriminatedUnion('type', [
   z.object({
     type: z.literal('session.ended'),
     endedAt: z.number().int()
+  }),
+  // Live collaborative answer activity, broadcast to a group's room so
+  // teammates see each other's answers in real time.
+  z.object({
+    type: z.literal('group.answer.update'),
+    groupId: z.string(),
+    questionId: z.string(),
+    value: z.string(),
+    byStudentId: z.string()
   })
 ])
 export type WsServerEvent = z.infer<typeof WsServerEvent>

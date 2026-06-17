@@ -47,6 +47,7 @@ function rowToLobbyStudent(
     id: row.id,
     name: row.name,
     matricula: row.matricula,
+    groupId: row.groupId ?? null,
     joinedAt: row.joinedAt.getTime(),
     lastSeenAt: row.lastSeenAt.getTime(),
     submittedAt: row.submittedAt ? row.submittedAt.getTime() : null,
@@ -308,6 +309,7 @@ export function listLobbyStudents(db: Db, sessionId: string): SessionLobbyStuden
     .select({
       id: students.id,
       sessionId: students.sessionId,
+      groupId: students.groupId,
       name: students.name,
       matricula: students.matricula,
       token: students.token,
@@ -327,6 +329,7 @@ export function listLobbyStudents(db: Db, sessionId: string): SessionLobbyStuden
       {
         id: r.id,
         sessionId: r.sessionId,
+        groupId: r.groupId,
         name: r.name,
         matricula: r.matricula,
         token: r.token,
@@ -342,10 +345,22 @@ export function listLobbyStudents(db: Db, sessionId: string): SessionLobbyStuden
 export function findStudentByToken(
   db: Db,
   token: string
-): { id: string; sessionId: string; name: string; matricula: string } | null {
+): {
+  id: string
+  sessionId: string
+  groupId: string | null
+  name: string
+  matricula: string
+} | null {
   const row = db.select().from(students).where(eq(students.token, token)).get()
   if (!row) return null
-  return { id: row.id, sessionId: row.sessionId, name: row.name, matricula: row.matricula }
+  return {
+    id: row.id,
+    sessionId: row.sessionId,
+    groupId: row.groupId ?? null,
+    name: row.name,
+    matricula: row.matricula
+  }
 }
 
 // -- Student gameplay -----------------------------------------------------

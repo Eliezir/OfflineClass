@@ -78,6 +78,21 @@ export const examSessions = sqliteTable('exam_sessions', {
     .default(sql`(unixepoch() * 1000)`)
 })
 
+// Collaborative groups within a session. Students in the same group share a
+// Socket.IO room and (live) answer activity. Optional — a session with no
+// groups behaves as before (each student on their own).
+export const groups = sqliteTable('groups', {
+  id: text('id').primaryKey(),
+  sessionId: text('session_id')
+    .notNull()
+    .references(() => examSessions.id, { onDelete: 'cascade' }),
+  name: text('name').notNull(),
+  color: text('color'),
+  createdAt: timestamp('created_at')
+    .notNull()
+    .default(sql`(unixepoch() * 1000)`)
+})
+
 export const students = sqliteTable(
   'students',
   {
@@ -85,6 +100,9 @@ export const students = sqliteTable(
     sessionId: text('session_id')
       .notNull()
       .references(() => examSessions.id, { onDelete: 'cascade' }),
+    // Optional group membership (null = ungrouped). Set null if the group is
+    // removed so the student row survives.
+    groupId: text('group_id').references(() => groups.id, { onDelete: 'set null' }),
     name: text('name').notNull(),
     matricula: text('matricula').notNull(),
     token: text('token').notNull().unique(),

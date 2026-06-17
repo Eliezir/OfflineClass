@@ -15,6 +15,13 @@
       "when": 1779216903434,
       "tag": "0001_add_score_to_answers",
       "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "6",
+      "when": 1781674842908,
+      "tag": "0002_loving_nightcrawler",
+      "breakpoints": true
     }
   ]
 }
