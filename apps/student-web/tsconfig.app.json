@@ -23,8 +23,8 @@
 
     /* Path aliases */
     "paths": {
-      "@/*": ["./src/*"]
+      "@/*": ["./src/renderer/src/*"]
     }
   },
-  "include": ["src"]
+  "include": ["src/renderer", "src/preload/*.d.ts"]
 }

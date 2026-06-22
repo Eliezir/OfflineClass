@@ -4,6 +4,7 @@ export type WsStatus = 'connecting' | 'open' | 'closed'
 
 interface ConnectOptions {
   token: string
+  baseUrl: string | null
   onEvent: (event: WsServerEvent) => void
   onStatus?: (status: WsStatus) => void
 }
@@ -17,12 +18,22 @@ export function connectStudentWs(opts: ConnectOptions): WsConnection {
   let socket: WebSocket | null = null
   let reconnectTimer: ReturnType<typeof setTimeout> | null = null
 
+  const buildUrl = (): string => {
+    const token = encodeURIComponent(opts.token)
+    if (opts.baseUrl) {
+      // Standalone Electron: absolute WebSocket URL to teacher server.
+      const wsProto = opts.baseUrl.startsWith('https:') ? 'wss:' : 'ws:'
+      const host = opts.baseUrl.replace(/^https?:\/\//, '')
+      return `${wsProto}//${host}/api/ws?role=student&token=${token}`
+    }
+    // Browser (served by teacher): same-origin WebSocket.
+    const proto = location.protocol === 'https:' ? 'wss:' : 'ws:'
+    return `${proto}//${location.host}/api/ws?role=student&token=${token}`
+  }
+
   const open = (): void => {
     opts.onStatus?.('connecting')
-    // Same host:port as the SPA bundle's origin.
-    const proto = location.protocol === 'https:' ? 'wss:' : 'ws:'
-    const url = `${proto}//${location.host}/api/ws?role=student&token=${encodeURIComponent(opts.token)}`
-    const ws = new WebSocket(url)
+    const ws = new WebSocket(buildUrl())
     socket = ws
     ws.onopen = () => opts.onStatus?.('open')
     ws.onmessage = (event) => {

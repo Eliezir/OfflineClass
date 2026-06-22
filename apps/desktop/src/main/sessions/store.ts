@@ -96,15 +96,16 @@ function loadDetailById(db: Db, sessionId: string): SessionDetail | null {
 }
 
 export function createSession(db: Db, ownerId: string, input: SessionCreateInput): SessionDetail {
-  // Reject if any session is already active anywhere — keeps /api/session/active
-  // unambiguous for students.
+  // One active session per teacher — only block sessions owned by the same teacher.
   const existing = db
     .select({ id: examSessions.id })
     .from(examSessions)
-    .where(inArray(examSessions.status, [...ACTIVE_STATUSES]))
+    .where(
+      and(eq(examSessions.ownerId, ownerId), inArray(examSessions.status, [...ACTIVE_STATUSES]))
+    )
     .get()
   if (existing) {
-    throw new SessionError('Já existe uma sessão ativa', 'ALREADY_ACTIVE')
+    throw new SessionError('Já existe uma sessão ativa para este professor', 'ALREADY_ACTIVE')
   }
 
   const exam = db

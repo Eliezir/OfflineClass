@@ -1,20 +1,29 @@
 import { useEffect, useState } from 'react'
 import { useQuery, useQueryClient } from '@tanstack/react-query'
 import { useNavigate } from 'react-router-dom'
+import { LogOut } from 'lucide-react'
 
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
-import { api } from '../lib/api'
+import { Button } from '@/components/ui/button'
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
+import { createApi } from '../lib/api'
 import { clearToken, loadToken } from '../lib/session'
+import { notify } from '../lib/toast'
+import { useServerUrl } from '../lib/serverContext'
 import { connectStudentWs, type WsStatus } from '../lib/ws'
 
 export default function WaitingRoute(): React.JSX.Element {
   const navigate = useNavigate()
   const qc = useQueryClient()
+  const { teacherUrl } = useServerUrl()
+  const api = createApi(teacherUrl)
   const [wsStatus, setWsStatus] = useState<WsStatus>('connecting')
 
-  // Read identity. If the token is missing, send them back to /.
+  useEffect(() => {
+    if (!teacherUrl) navigate('/', { replace: true })
+  }, [teacherUrl, navigate])
+
   const meQuery = useQuery({
-    queryKey: ['session', 'me'],
+    queryKey: ['session', 'me', teacherUrl],
     queryFn: api.me,
     retry: false
   })
@@ -33,55 +42,75 @@ export default function WaitingRoute(): React.JSX.Element {
     }
   }, [meQuery.error, navigate])
 
-  // Move to /test as soon as the server says the session is running.
   useEffect(() => {
     if (meQuery.data?.status === 'running' && !meQuery.data.submittedAt) {
       navigate('/test', { replace: true })
     }
-    if (meQuery.data?.status === 'ended' || meQuery.data?.submittedAt) {
+    if (meQuery.data?.submittedAt) {
       navigate('/done', { replace: true })
+    }
+    if (meQuery.data?.status === 'ended' && !meQuery.data.submittedAt) {
+      notify.info('O professor encerrou a sessão.')
+      navigate('/ended', { replace: true })
     }
   }, [meQuery.data, navigate])
 
-  // WS subscription: every event invalidates `me` so the navigate effect
-  // above takes over.
   useEffect(() => {
     const token = loadToken()
     if (!token) return
     const conn = connectStudentWs({
       token,
+      baseUrl: teacherUrl,
       onStatus: setWsStatus,
-      onEvent: () => qc.invalidateQueries({ queryKey: ['session', 'me'] })
+      onEvent: () => qc.invalidateQueries({ queryKey: ['session', 'me', teacherUrl] })
     })
     return () => conn.close()
-  }, [qc])
+  }, [qc, teacherUrl])
 
-  // Heartbeat every 10s while waiting.
   useEffect(() => {
     const interval = setInterval(() => {
       void api.heartbeat().catch(() => {})
     }, 10_000)
     return () => clearInterval(interval)
-  }, [])
+  }, [api])
+
+  const handleLeave = (): void => {
+    clearToken()
+    navigate('/', { replace: true })
+  }
 
   return (
-    <main className="bg-background flex min-h-screen items-center justify-center p-4">
+    <main className="flex flex-1 flex-col items-center justify-center gap-6 px-6 py-10">
       <Card className="w-full max-w-sm text-center">
         <CardHeader>
-          <CardTitle>Aguarde o professor</CardTitle>
+          <CardTitle>Aguardando o professor</CardTitle>
+          <CardDescription>
+            {meQuery.data
+              ? `Você está na sala como ${meQuery.data.studentName}`
+              : 'Carregando…'}
+          </CardDescription>
         </CardHeader>
-        <CardContent className="space-y-3">
+        <CardContent className="space-y-4">
           <p className="text-muted-foreground text-sm">
             {meQuery.data
-              ? `${meQuery.data.studentName} · matrícula ${meQuery.data.studentMatricula}`
-              : 'Carregando…'}
+              ? `Matrícula: ${meQuery.data.studentMatricula}`
+              : 'Obtendo informações da sessão…'}
           </p>
-          <div className="border-border bg-muted/40 mx-auto h-1 w-32 overflow-hidden rounded-full">
+          <div className="border-border bg-muted/40 mx-auto h-1 w-40 overflow-hidden rounded-full">
             <div className="bg-primary h-full w-1/3 animate-pulse" />
           </div>
           <p className="text-muted-foreground text-xs uppercase tracking-widest">
             Conexão: {wsStatus}
           </p>
+          <Button
+            variant="ghost"
+            size="sm"
+            className="w-full"
+            onClick={handleLeave}
+          >
+            <LogOut className="size-3.5" />
+            Sair da sala
+          </Button>
         </CardContent>
       </Card>
     </main>

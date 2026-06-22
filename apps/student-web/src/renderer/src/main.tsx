@@ -6,11 +6,17 @@ import { RouterProvider } from 'react-router-dom'
 import './index.css'
 import { queryClient } from './lib/queryClient'
 import { router } from './lib/router'
+import { ServerProvider } from './lib/serverContext'
+import { ThemeProvider } from './lib/ThemeProvider'
 
 createRoot(document.getElementById('root')!).render(
   <StrictMode>
-    <QueryClientProvider client={queryClient}>
-      <RouterProvider router={router} />
-    </QueryClientProvider>
+    <ThemeProvider>
+      <QueryClientProvider client={queryClient}>
+        <ServerProvider>
+          <RouterProvider router={router} />
+        </ServerProvider>
+      </QueryClientProvider>
+    </ThemeProvider>
   </StrictMode>
 )

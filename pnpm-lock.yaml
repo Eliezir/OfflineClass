@@ -316,9 +316,15 @@ importers:
 
   apps/student-web:
     dependencies:
-      '@fontsource-variable/geist':
-        specifier: ^5.2.9
-        version: 5.2.9
+      '@electron-toolkit/preload':
+        specifier: ^3.0.2
+        version: 3.0.2(electron@39.8.10)
+      '@electron-toolkit/utils':
+        specifier: ^4.0.0
+        version: 4.0.0(electron@39.8.10)
+      '@fontsource-variable/nunito':
+        specifier: ^5.2.7
+        version: 5.2.7
       '@offlineclass/shared':
         specifier: workspace:*
         version: link:../../packages/shared
@@ -328,6 +334,9 @@ importers:
       '@tanstack/react-query':
         specifier: ^5.100.11
         version: 5.101.0(react@19.2.7)
+      bonjour-service:
+        specifier: ^1.3.0
+        version: 1.4.1
       class-variance-authority:
         specifier: ^0.7.1
         version: 0.7.1
@@ -352,6 +361,9 @@ importers:
       shadcn:
         specifier: ^4.7.0
         version: 4.11.0(babel-plugin-macros@3.1.0)(typescript@6.0.3)
+      sonner:
+        specifier: ^2.0.7
+        version: 2.0.7(react-dom@19.2.7(react@19.2.7))(react@19.2.7)
       tailwind-merge:
         specifier: ^3.6.0
         version: 3.6.0
@@ -380,6 +392,15 @@ importers:
       '@vitejs/plugin-react':
         specifier: ^6.0.1
         version: 6.0.2(vite@8.0.16(@types/node@24.13.2)(esbuild@0.28.1)(jiti@2.7.0)(tsx@4.22.4))
+      electron:
+        specifier: ^39.2.6
+        version: 39.8.10
+      electron-builder:
+        specifier: ^26.0.12
+        version: 26.15.3(electron-builder-squirrel-windows@26.15.3)
+      electron-vite:
+        specifier: 6.0.0-beta.1
+        version: 6.0.0-beta.1(vite@8.0.16(@types/node@24.13.2)(esbuild@0.28.1)(jiti@2.7.0)(tsx@4.22.4))
       eslint:
         specifier: ^10.3.0
         version: 10.5.0(jiti@2.7.0)
@@ -10062,6 +10083,18 @@ snapshots:
       magic-string: 0.30.21
       picocolors: 1.1.1
       vite: 8.0.16(@types/node@22.19.21)(esbuild@0.28.1)(jiti@2.7.0)(tsx@4.22.4)
+    transitivePeerDependencies:
+      - supports-color
+
+  electron-vite@6.0.0-beta.1(vite@8.0.16(@types/node@24.13.2)(esbuild@0.28.1)(jiti@2.7.0)(tsx@4.22.4)):
+    dependencies:
+      '@babel/core': 7.29.7
+      '@babel/plugin-transform-arrow-functions': 7.29.7(@babel/core@7.29.7)
+      cac: 7.0.0
+      esbuild: 0.25.12
+      magic-string: 0.30.21
+      picocolors: 1.1.1
+      vite: 8.0.16(@types/node@24.13.2)(esbuild@0.28.1)(jiti@2.7.0)(tsx@4.22.4)
     transitivePeerDependencies:
       - supports-color
 
