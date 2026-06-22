@@ -86,6 +86,10 @@ export const examSessions = sqliteTable('exam_sessions', {
     .default('lobby'),
   durationMinutes: integer('duration_minutes').notNull(),
   allowLateJoin: integer('allow_late_join', { mode: 'boolean' }).notNull().default(false),
+  groupMode: text('group_mode', { enum: ['disabled', 'free', 'teacher', 'shuffle'] })
+    .notNull()
+    .default('disabled'),
+  maxGroupSize: integer('max_group_size'),
   startedAt: timestamp('started_at'),
   endedAt: timestamp('ended_at'),
   createdAt: timestamp('created_at')
@@ -137,5 +141,35 @@ export const answers = sqliteTable(
   },
   (t) => ({
     studentQuestionUnique: unique('answers_student_question_unique').on(t.studentId, t.questionId)
+  })
+)
+
+export const groups = sqliteTable('groups', {
+  id: text('id').primaryKey(),
+  sessionId: text('session_id')
+    .notNull()
+    .references(() => examSessions.id, { onDelete: 'cascade' }),
+  name: text('name').notNull(),
+  createdAt: timestamp('created_at')
+    .notNull()
+    .default(sql`(unixepoch() * 1000)`)
+})
+
+export const groupMembers = sqliteTable(
+  'group_members',
+  {
+    id: text('id').primaryKey(),
+    groupId: text('group_id')
+      .notNull()
+      .references(() => groups.id, { onDelete: 'cascade' }),
+    studentId: text('student_id')
+      .notNull()
+      .references(() => students.id, { onDelete: 'cascade' }),
+    joinedAt: timestamp('joined_at')
+      .notNull()
+      .default(sql`(unixepoch() * 1000)`)
+  },
+  (t) => ({
+    groupStudentUnique: unique('group_members_group_student_unique').on(t.groupId, t.studentId)
   })
 )

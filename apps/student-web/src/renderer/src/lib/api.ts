@@ -1,5 +1,6 @@
 import {
   AnswerInput,
+  type GroupPublic,
   JoinInput,
   JoinResult,
   SessionPublic,
@@ -69,6 +70,16 @@ export function createApi(baseUrl: string | null) {
     },
     leave: async () => {
       await jsonRequest('POST', '/api/leave')
+    },
+    groups: {
+      list: async () =>
+        (await jsonRequest<GroupPublic[]>('GET', '/api/groups')),
+      create: async (name: string) =>
+        jsonRequest<GroupPublic>('POST', '/api/groups', { name }),
+      join: async (groupId: string) =>
+        jsonRequest<{ ok: boolean }>('POST', `/api/groups/${groupId}/join`),
+      leave: async (groupId: string) =>
+        jsonRequest<{ ok: boolean }>('POST', `/api/groups/${groupId}/leave`)
     }
   }
 }

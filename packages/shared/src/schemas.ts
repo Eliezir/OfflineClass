@@ -222,10 +222,15 @@ export const SessionLobbyStudent = z.object({
 })
 export type SessionLobbyStudent = z.infer<typeof SessionLobbyStudent>
 
+export const GroupMode = z.enum(['disabled', 'free', 'teacher', 'shuffle'])
+export type GroupMode = z.infer<typeof GroupMode>
+
 export const SessionCreateInput = z.object({
   examId: z.string(),
   durationMinutes: z.number().int().positive().max(600),
-  allowLateJoin: z.boolean().optional()
+  allowLateJoin: z.boolean().optional(),
+  groupMode: GroupMode.optional(),
+  maxGroupSize: z.number().int().positive().max(20).optional()
 })
 export type SessionCreateInput = z.infer<typeof SessionCreateInput>
 
@@ -236,6 +241,8 @@ export const SessionDetail = z.object({
   status: SessionStatus,
   durationMinutes: z.number().int(),
   allowLateJoin: z.boolean(),
+  groupMode: GroupMode,
+  maxGroupSize: z.number().int().nullable(),
   questionsCount: z.number().int().nonnegative(),
   students: z.array(SessionLobbyStudent),
   createdAt: z.number().int(),
@@ -251,7 +258,8 @@ export const SessionPublic = z.object({
   status: SessionStatus,
   examTitle: z.string(),
   durationMinutes: z.number().int(),
-  allowLateJoin: z.boolean()
+  allowLateJoin: z.boolean(),
+  groupMode: GroupMode
 })
 export type SessionPublic = z.infer<typeof SessionPublic>
 
@@ -270,6 +278,24 @@ export const JoinResult = z.object({
   studentMatricula: z.string()
 })
 export type JoinResult = z.infer<typeof JoinResult>
+
+// -- Groups -----------------------------------------------------------------
+
+export const GroupMember = z.object({
+  studentId: z.string(),
+  studentName: z.string(),
+  studentMatricula: z.string(),
+  joinedAt: z.number().int()
+})
+export type GroupMember = z.infer<typeof GroupMember>
+
+export const GroupPublic = z.object({
+  id: z.string(),
+  name: z.string(),
+  members: z.array(GroupMember),
+  createdAt: z.number().int()
+})
+export type GroupPublic = z.infer<typeof GroupPublic>
 
 export const WsServerEvent = z.discriminatedUnion('type', [
   z.object({
@@ -296,6 +322,10 @@ export const WsServerEvent = z.discriminatedUnion('type', [
   z.object({
     type: z.literal('student.submitted'),
     student: SessionLobbyStudent
+  }),
+  z.object({
+    type: z.literal('group.list'),
+    groups: z.array(GroupPublic)
   })
 ])
 export type WsServerEvent = z.infer<typeof WsServerEvent>

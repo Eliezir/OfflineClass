@@ -35,6 +35,13 @@ import {
   SessionError,
   submitStudent
 } from '../sessions/store'
+import {
+  createGroup,
+  joinGroup,
+  leaveGroup,
+  listGroups,
+  GroupError
+} from '../sessions/groups'
 
 export interface ServerHandle {
   port: number
@@ -222,6 +229,76 @@ export async function startServer(port: number, deps: ServerDeps): Promise<Serve
       } satisfies import('@offlineclass/shared').WsServerEvent)
     }
     return c.json({ ok: true })
+  })
+
+  // ---- Groups -----------------------------------------------------------
+
+  function broadcastGroupList(sessionId: string): void {
+    const groups = listGroups(db, sessionId)
+    rooms.toAll(sessionId, {
+      type: 'group.list',
+      groups
+    } satisfies import('@offlineclass/shared').WsServerEvent)
+  }
+
+  app.get('/api/groups', (c) => {
+    const token = extractBearer(c)
+    if (!token) return c.json({ error: 'unauthorized' }, 401)
+    const student = findStudentByToken(db, token)
+    if (!student) return c.json({ error: 'unauthorized' }, 401)
+    return c.json(listGroups(db, student.sessionId))
+  })
+
+  app.post('/api/groups', async (c) => {
+    const token = extractBearer(c)
+    if (!token) return c.json({ error: 'unauthorized' }, 401)
+    const student = findStudentByToken(db, token)
+    if (!student) return c.json({ error: 'unauthorized' }, 401)
+    let body: { name?: string }
+    try { body = await c.req.json() } catch { return c.json({ error: 'invalid-json' }, 400) }
+    if (!body.name || body.name.trim().length < 1) {
+      return c.json({ error: 'invalid-input', message: 'Nome do grupo obrigatório' }, 400)
+    }
+    try {
+      const group = createGroup(db, student.sessionId, body.name, student.id)
+      broadcastGroupList(student.sessionId)
+      return c.json(group)
+    } catch (err) {
+      if (err instanceof GroupError) return c.json({ error: err.code, message: err.message }, 400)
+      throw err
+    }
+  })
+
+  app.post('/api/groups/:id/join', (c) => {
+    const token = extractBearer(c)
+    if (!token) return c.json({ error: 'unauthorized' }, 401)
+    const student = findStudentByToken(db, token)
+    if (!student) return c.json({ error: 'unauthorized' }, 401)
+    const groupId = c.req.param('id')
+    try {
+      joinGroup(db, groupId, student.id)
+      broadcastGroupList(student.sessionId)
+      return c.json({ ok: true })
+    } catch (err) {
+      if (err instanceof GroupError) return c.json({ error: err.code, message: err.message }, 400)
+      throw err
+    }
+  })
+
+  app.post('/api/groups/:id/leave', (c) => {
+    const token = extractBearer(c)
+    if (!token) return c.json({ error: 'unauthorized' }, 401)
+    const student = findStudentByToken(db, token)
+    if (!student) return c.json({ error: 'unauthorized' }, 401)
+    const groupId = c.req.param('id')
+    try {
+      leaveGroup(db, groupId, student.id)
+      broadcastGroupList(student.sessionId)
+      return c.json({ ok: true })
+    } catch (err) {
+      if (err instanceof GroupError) return c.json({ error: err.code, message: err.message }, 400)
+      throw err
+    }
   })
 
   // ---- WebSocket --------------------------------------------------------

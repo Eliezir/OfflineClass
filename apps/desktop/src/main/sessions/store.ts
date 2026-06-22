@@ -71,6 +71,8 @@ function loadDetailById(
       status: examSessions.status,
       durationMinutes: examSessions.durationMinutes,
       allowLateJoin: examSessions.allowLateJoin,
+      groupMode: examSessions.groupMode,
+      maxGroupSize: examSessions.maxGroupSize,
       createdAt: examSessions.createdAt,
       startedAt: examSessions.startedAt,
       endedAt: examSessions.endedAt
@@ -92,6 +94,8 @@ function loadDetailById(
     status: row.status as SessionStatus,
     durationMinutes: row.durationMinutes,
     allowLateJoin: row.allowLateJoin,
+    groupMode: (row.groupMode ?? 'disabled') as 'disabled' | 'free' | 'teacher' | 'shuffle',
+    maxGroupSize: row.maxGroupSize,
     questionsCount: Number(countRow?.n ?? 0),
     students: opts?.includeAllStudents
       ? listAllSessionStudents(db, sessionId)
@@ -149,7 +153,9 @@ export function createSession(db: Db, ownerId: string, input: SessionCreateInput
       ownerId,
       status: 'lobby',
       durationMinutes: input.durationMinutes,
-      allowLateJoin: !!input.allowLateJoin
+      allowLateJoin: !!input.allowLateJoin,
+      groupMode: input.groupMode ?? 'disabled',
+      maxGroupSize: input.maxGroupSize ?? null
     })
     .run()
   const detail = loadDetailById(db, id)
@@ -344,7 +350,8 @@ export function findActiveSessionPublic(db: Db): SessionPublic | null {
       status: examSessions.status,
       examTitle: exams.title,
       durationMinutes: examSessions.durationMinutes,
-      allowLateJoin: examSessions.allowLateJoin
+      allowLateJoin: examSessions.allowLateJoin,
+      groupMode: examSessions.groupMode
     })
     .from(examSessions)
     .innerJoin(exams, eq(exams.id, examSessions.examId))
@@ -357,7 +364,8 @@ export function findActiveSessionPublic(db: Db): SessionPublic | null {
     status: row.status as SessionStatus,
     examTitle: row.examTitle,
     durationMinutes: row.durationMinutes,
-    allowLateJoin: row.allowLateJoin
+    allowLateJoin: row.allowLateJoin,
+    groupMode: (row.groupMode ?? 'disabled') as 'disabled' | 'free' | 'teacher' | 'shuffle'
   }
 }
 

@@ -2,9 +2,10 @@ import { useState } from 'react'
 import { ClipboardList, Loader2, Plus, Radio } from 'lucide-react'
 import { Link } from '@tanstack/react-router'
 import { Trans, useLingui } from '@lingui/react/macro'
-import type { ExamSummary, SessionCreateInput } from '@offlineclass/shared'
+import type { ExamSummary, GroupMode, SessionCreateInput } from '@offlineclass/shared'
 import { Button } from '@renderer/shared/ui/button'
 import { EmptyState } from '@renderer/shared/ui/empty-state'
+import { Input } from '@renderer/shared/ui/input'
 import { Label } from '@renderer/shared/ui/label'
 import { Segmented } from '@renderer/shared/ui/segmented'
 import {
@@ -41,6 +42,8 @@ export function NoSession({
   const [provaId, setProvaId] = useState(defaultProvaId ?? '')
   const [duration, setDuration] = useState<DurationOption>('60')
   const [allowLateJoin, setAllowLateJoin] = useState(false)
+  const [groupMode, setGroupMode] = useState<GroupMode>('disabled')
+  const [maxGroupSize, setMaxGroupSize] = useState(4)
 
   const hasProvas = provas.length > 0
   // Fall back to the first prova until the teacher picks one explicitly.
@@ -120,6 +123,49 @@ export function NoSession({
             />
           </div>
 
+          <div className="space-y-1.5">
+            <Label>
+              <Trans>Formação de grupos</Trans>
+            </Label>
+            <Segmented
+              fullWidth
+              ariaLabel={t`Formação de grupos`}
+              value={groupMode}
+              onChange={setGroupMode}
+              options={[
+                { value: 'disabled', label: 'Individual' },
+                { value: 'free', label: 'Livre' },
+                { value: 'teacher', label: 'Professor' },
+                { value: 'shuffle', label: 'Sorteio' }
+              ]}
+            />
+            {groupMode !== 'disabled' && (
+              <p className="text-xs text-muted-foreground">
+                {groupMode === 'free'
+                  ? 'Alunos criam e entram em grupos livremente no lobby.'
+                  : groupMode === 'teacher'
+                    ? 'Você organiza os alunos manualmente.'
+                    : 'O sistema divide os alunos em grupos automaticamente.'}
+              </p>
+            )}
+          </div>
+
+          {groupMode !== 'disabled' && (
+            <div className="space-y-1.5">
+              <Label htmlFor="maxGroupSize">
+                <Trans>Tamanho máximo do grupo</Trans>
+              </Label>
+              <Input
+                id="maxGroupSize"
+                type="number"
+                min={2}
+                max={20}
+                value={maxGroupSize}
+                onChange={(e) => setMaxGroupSize(Number(e.target.value) || 2)}
+              />
+            </div>
+          )}
+
           <label className="flex cursor-pointer items-center justify-between gap-3">
             <span className="min-w-0">
               <span className="block text-sm font-bold">
@@ -137,7 +183,13 @@ export function NoSession({
             size="lg"
             disabled={pending || !selectedId}
             onClick={() =>
-              onOpen({ examId: selectedId, durationMinutes: Number(duration), allowLateJoin })
+              onOpen({
+                examId: selectedId,
+                durationMinutes: Number(duration),
+                allowLateJoin,
+                groupMode,
+                maxGroupSize: groupMode !== 'disabled' ? maxGroupSize : undefined
+              })
             }
           >
             {pending ? <Loader2 className="animate-spin" /> : <Radio />}
