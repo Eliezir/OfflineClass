@@ -16,6 +16,9 @@ export const WindowIsMaximizedOutputSchema = z.object({
   isMaximized: z.boolean()
 })
 
+export const WindowPrintInputSchema = z.undefined()
+export const WindowPrintOutputSchema = z.void()
+
 /* Payload pushed from main whenever the window's maximize state changes. */
 export const WindowMaximizeChangedEventSchema = z.object({
   isMaximized: z.boolean()

@@ -8,6 +8,7 @@ import {
   type SessionSummary,
   type WsServerEvent
 } from '@offlineclass/shared'
+import { getMainWindow } from '../windows'
 
 import { requireTeacherId } from './auth'
 import type { Db } from '../db/client'
@@ -104,6 +105,18 @@ export function registerSessionsHandlers(ctx: SessionsContext): void {
       return loadStudentAnswers(db, sessionId, studentId, ownerId)
     }
   )
+
+  ipcMain.handle('sessions.print', async (): Promise<void> => {
+    const w = getMainWindow()
+    if (w) w.webContents.print({ printBackground: true }, () => {})
+  })
+
+  ipcMain.handle('sessions.exportPdf', async (): Promise<string | null> => {
+    const w = getMainWindow()
+    if (!w) return null
+    const data = await w.webContents.printToPDF({ printBackground: true, landscape: false })
+    return data.toString('base64')
+  })
 
   ipcMain.handle(
     'sessions.gradeAnswer',

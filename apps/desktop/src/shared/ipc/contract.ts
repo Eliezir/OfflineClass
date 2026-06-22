@@ -10,7 +10,9 @@ import {
   WindowMaximizeToggleInputSchema,
   WindowMaximizeToggleOutputSchema,
   WindowMinimizeInputSchema,
-  WindowMinimizeOutputSchema
+  WindowMinimizeOutputSchema,
+  WindowPrintInputSchema,
+  WindowPrintOutputSchema
 } from './window'
 
 export const IpcSchemas = {
@@ -33,6 +35,10 @@ export const IpcSchemas = {
   [IPC.WINDOW.IS_MAXIMIZED]: {
     input: WindowIsMaximizedInputSchema,
     output: WindowIsMaximizedOutputSchema
+  },
+  [IPC.WINDOW.PRINT]: {
+    input: WindowPrintInputSchema,
+    output: WindowPrintOutputSchema
   }
 } as const
 

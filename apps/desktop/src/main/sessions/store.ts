@@ -1,5 +1,5 @@
 import { randomUUID } from 'node:crypto'
-import { and, asc, desc, eq, inArray, isNotNull, sql } from 'drizzle-orm'
+import { and, asc, desc, eq, inArray, isNotNull, isNull, sql } from 'drizzle-orm'
 import type {
   CodeLanguage,
   JoinInput,
@@ -53,11 +53,16 @@ function rowToLobbyStudent(
     joinedAt: row.joinedAt.getTime(),
     lastSeenAt: row.lastSeenAt.getTime(),
     submittedAt: row.submittedAt ? row.submittedAt.getTime() : null,
+    leftAt: row.leftAt ? row.leftAt.getTime() : null,
     answeredCount
   }
 }
 
-function loadDetailById(db: Db, sessionId: string): SessionDetail | null {
+function loadDetailById(
+  db: Db,
+  sessionId: string,
+  opts?: { includeAllStudents?: boolean }
+): SessionDetail | null {
   const row = db
     .select({
       id: examSessions.id,
@@ -88,11 +93,32 @@ function loadDetailById(db: Db, sessionId: string): SessionDetail | null {
     durationMinutes: row.durationMinutes,
     allowLateJoin: row.allowLateJoin,
     questionsCount: Number(countRow?.n ?? 0),
-    students: listLobbyStudents(db, sessionId),
+    students: opts?.includeAllStudents
+      ? listAllSessionStudents(db, sessionId)
+      : listLobbyStudents(db, sessionId),
     createdAt: row.createdAt.getTime(),
     startedAt: row.startedAt ? row.startedAt.getTime() : null,
     endedAt: row.endedAt ? row.endedAt.getTime() : null
   }
+}
+
+/** Like listLobbyStudents but includes students who left (for results). */
+function listAllSessionStudents(db: Db, sessionId: string): SessionLobbyStudent[] {
+  const rows = db
+    .select()
+    .from(students)
+    .where(eq(students.sessionId, sessionId))
+    .orderBy(asc(students.joinedAt))
+    .all()
+
+  const answered = db
+    .select({ studentId: answers.studentId, n: sql<number>`count(*)` })
+    .from(answers)
+    .groupBy(answers.studentId)
+    .all()
+  const answeredByStudent = new Map(answered.map((a) => [a.studentId, Number(a.n)]))
+
+  return rows.map((r) => rowToLobbyStudent(r, answeredByStudent.get(r.id) ?? 0))
 }
 
 export function createSession(db: Db, ownerId: string, input: SessionCreateInput): SessionDetail {
@@ -132,9 +158,16 @@ export function createSession(db: Db, ownerId: string, input: SessionCreateInput
 }
 
 export function getSession(db: Db, sessionId: string, ownerId: string): SessionDetail {
-  const detail = loadDetailById(db, sessionId)
+  // For ended sessions, include students who left — the results screen needs
+  // the full audit trail. For live sessions, only active students.
+  const status = db
+    .select({ s: examSessions.status })
+    .from(examSessions)
+    .where(eq(examSessions.id, sessionId))
+    .get()?.s
+  const includeAll = status === 'ended'
+  const detail = loadDetailById(db, sessionId, { includeAllStudents: includeAll })
   if (!detail) throw new SessionError('Sessão não encontrada', 'NOT_FOUND')
-  // Ownership check — reuse the join row to avoid a separate query.
   const owner = db
     .select({ ownerId: examSessions.ownerId })
     .from(examSessions)
@@ -163,9 +196,15 @@ export function endSession(db: Db, sessionId: string, ownerId: string): SessionD
   if (detail.status === 'ended') {
     return detail
   }
+  const now = new Date()
   db.update(examSessions)
-    .set({ status: 'ended', endedAt: new Date() })
+    .set({ status: 'ended', endedAt: now })
     .where(eq(examSessions.id, sessionId))
+    .run()
+  // Mark all students who haven't left yet as left now — clean audit trail.
+  db.update(students)
+    .set({ leftAt: now })
+    .where(and(eq(students.sessionId, sessionId), isNull(students.leftAt)))
     .run()
   return getSession(db, sessionId, ownerId)
 }
@@ -342,17 +381,28 @@ export function joinSession(db: Db, input: JoinInput): JoinResult {
   const name = input.name.trim()
   const now = new Date()
 
-  // Prevent the same student from joining twice (browser + Electron).
-  const alreadyIn = db
-    .select({ id: students.id })
+  // If the same student already has a record (e.g. closed the app without
+  // clicking "Sair"), update the existing row: clear leftAt, new token.
+  const existing = db
+    .select()
     .from(students)
     .where(and(eq(students.sessionId, sessionId), eq(students.matricula, matricula)))
     .get()
-  if (alreadyIn) {
-    throw new SessionError(
-      'Você já está na sala. Saia antes de entrar novamente.',
-      'ALREADY_ACTIVE'
-    )
+
+  if (existing) {
+    const token = randomUUID()
+    db.update(students)
+      .set({ name, token, lastSeenAt: now, leftAt: null })
+      .where(eq(students.id, existing.id))
+      .run()
+    return {
+      token,
+      studentId: existing.id,
+      sessionId,
+      status: active.status as SessionStatus,
+      studentName: name,
+      studentMatricula: matricula
+    }
   }
 
   const token = randomUUID()
@@ -382,19 +432,22 @@ export function joinSession(db: Db, input: JoinInput): JoinResult {
   }
 }
 
-/** Remove a student from the session by token. Called when the student
-    clicks "Sair da sala" in the student app. */
+/** Mark a student as having left the session. Called when the student
+    clicks "Sair da sala" in the student app. Records leftAt for audit. */
 export function leaveSession(db: Db, token: string): void {
   const student = findStudentByToken(db, token)
   if (!student) return
-  db.delete(students).where(eq(students.id, student.id)).run()
+  db.update(students)
+    .set({ leftAt: new Date() })
+    .where(eq(students.id, student.id))
+    .run()
 }
 
 export function listLobbyStudents(db: Db, sessionId: string): SessionLobbyStudent[] {
   const rows = db
     .select()
     .from(students)
-    .where(eq(students.sessionId, sessionId))
+    .where(and(eq(students.sessionId, sessionId), isNull(students.leftAt)))
     .orderBy(asc(students.joinedAt))
     .all()
 
@@ -693,6 +746,8 @@ export function loadStudentAnswers(
   )
   const maxScore = reviews.reduce((acc, r) => acc + r.question.points, 0)
 
+  const answeredCount = answerRows.length
+
   return {
     sessionId,
     studentId,
@@ -700,6 +755,9 @@ export function loadStudentAnswers(
     studentMatricula: studentRow.matricula,
     examTitle: sessionRow.examTitle,
     submittedAt: studentRow.submittedAt ? studentRow.submittedAt.getTime() : null,
+    joinedAt: studentRow.joinedAt.getTime(),
+    leftAt: studentRow.leftAt ? studentRow.leftAt.getTime() : null,
+    answeredCount,
     answers: reviews,
     totalScore,
     maxScore

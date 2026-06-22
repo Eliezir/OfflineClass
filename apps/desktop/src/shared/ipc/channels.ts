@@ -7,6 +7,7 @@ export const IPC = {
     MAXIMIZE_TOGGLE: 'window:maximize-toggle',
     CLOSE: 'window:close',
     IS_MAXIMIZED: 'window:is-maximized',
+    PRINT: 'window:print',
     /* main → renderer push when the OS maximize state changes (snap, double-click, etc.) */
     MAXIMIZE_CHANGED: 'window:maximize-changed'
   },
