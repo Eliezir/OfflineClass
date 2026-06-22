@@ -28,6 +28,7 @@ import {
   getStudentExam,
   getStudentSessionState,
   joinSession,
+  leaveSession,
   listLobbyStudents,
   recordHeartbeat,
   saveAnswer,
@@ -192,6 +193,17 @@ export async function startServer(port: number, deps: ServerDeps): Promise<Serve
     }
   })
 
+  app.post('/api/leave', (c) => {
+    const token = extractBearer(c)
+    if (!token) return c.json({ error: 'unauthorized' }, 401)
+    const student = findStudentByToken(db, token)
+    if (!student) return c.json({ error: 'unauthorized' }, 401)
+    const sessionId = student.sessionId
+    leaveSession(db, token)
+    broadcastLobbyUpdate(db, rooms, sessionId)
+    return c.json({ ok: true })
+  })
+
   // ---- WebSocket --------------------------------------------------------
   // MUST come before the static / SPA-fallback handlers below: Hono matches
   // routes in declaration order and `app.get('*')` would otherwise swallow
@@ -263,12 +275,12 @@ export async function startServer(port: number, deps: ServerDeps): Promise<Serve
   )
 
   // ---- Static SPA --------------------------------------------------------
-  // Serves apps/student-web/dist on every non-API path so a phone scanning
-  // the QR loads the student SPA from the same origin as the API (no CORS).
-  // Declared AFTER the /api/* routes and /api/ws so wildcards don't
-  // intercept them. The path is resolved against the Electron app dir;
-  // Stage 7 will adjust it for the packaged asar layout.
-  const studentWebRoot = resolve(electronApp.getAppPath(), '../student-web/dist')
+  // Serves apps/student-web/out/renderer on every non-API path so a student
+  // scanning the QR loads the SPA from the same origin as the API (no CORS).
+  // Declared AFTER the /api/* routes and /api/ws so wildcards don't intercept
+  // them. In dev the path resolves to the electron-vite renderer output; in
+  // packaged builds electron-builder bundles it via extraResources.
+  const studentWebRoot = resolve(electronApp.getAppPath(), '../student-web/out/renderer')
   app.use('*', serveStatic({ root: studentWebRoot }))
 
   // SPA fallback: unmatched non-API GET serves index.html so client-side
@@ -278,7 +290,7 @@ export async function startServer(port: number, deps: ServerDeps): Promise<Serve
     const indexPath = join(studentWebRoot, 'index.html')
     if (!existsSync(indexPath)) {
       return c.text(
-        'student-web bundle not built yet — run `pnpm --filter @offlineclass/student-web build`',
+        'student-web bundle not built yet — run `pnpm --prefix apps/student-web run build`',
         503
       )
     }

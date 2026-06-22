@@ -5,11 +5,21 @@ import type { StudentQuestion } from '@offlineclass/shared'
 
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle
+} from '@/components/ui/dialog'
 import { Label } from '@/components/ui/label'
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group'
 import { Textarea } from '@/components/ui/textarea'
-import { api } from '../lib/api'
+import { createApi } from '../lib/api'
 import { clearToken, loadToken } from '../lib/session'
+import { notify } from '../lib/toast'
+import { useServerUrl } from '../lib/serverContext'
 import { connectStudentWs } from '../lib/ws'
 
 function formatTime(secs: number): string {
@@ -21,28 +31,32 @@ function formatTime(secs: number): string {
 export default function TestRoute(): React.JSX.Element {
   const navigate = useNavigate()
   const qc = useQueryClient()
+  const { teacherUrl } = useServerUrl()
+  const api = createApi(teacherUrl)
+
+  useEffect(() => {
+    if (!teacherUrl) navigate('/', { replace: true })
+  }, [teacherUrl, navigate])
 
   useEffect(() => {
     if (!loadToken()) navigate('/', { replace: true })
   }, [navigate])
 
   const examQuery = useQuery({
-    queryKey: ['exam', 'current'],
+    queryKey: ['exam', 'current', teacherUrl],
     queryFn: api.exam,
     retry: false
   })
 
   const meQuery = useQuery({
-    queryKey: ['session', 'me'],
+    queryKey: ['session', 'me', teacherUrl],
     queryFn: api.me,
     retry: false
   })
 
-  // Local draft of every answer, keyed by question id. Server is authoritative
-  // on save; the local map exists so the form stays responsive.
   const [drafts, setDrafts] = useState<Record<string, string>>({})
+  const [showSubmitDialog, setShowSubmitDialog] = useState(false)
 
-  // Seed drafts once from the server-saved answers (handles refresh-mid-test).
   useEffect(() => {
     if (!meQuery.data) return
     setDrafts((cur) => {
@@ -54,10 +68,9 @@ export default function TestRoute(): React.JSX.Element {
     })
   }, [meQuery.data?.studentId])
 
-  // Server status → redirect.
   useEffect(() => {
     if (meQuery.data?.submittedAt) navigate('/done', { replace: true })
-    if (meQuery.data?.status === 'ended') navigate('/done', { replace: true })
+    if (meQuery.data?.status === 'ended') navigate('/ended', { replace: true })
     if (meQuery.error) {
       const status = (meQuery.error as Error & { status?: number }).status
       if (status === 401) {
@@ -67,32 +80,33 @@ export default function TestRoute(): React.JSX.Element {
     }
   }, [meQuery.data, meQuery.error, navigate])
 
-  // WS for session.ended / session.started edge cases.
   useEffect(() => {
     const token = loadToken()
     if (!token) return
     const conn = connectStudentWs({
       token,
+      baseUrl: teacherUrl,
       onEvent: (event) => {
-        if (event.type === 'session.ended') navigate('/done', { replace: true })
+        if (event.type === 'session.ended') {
+          notify.info('O professor encerrou a sessão.')
+          navigate('/ended', { replace: true })
+        }
         if (event.type === 'session.started') {
-          qc.invalidateQueries({ queryKey: ['exam', 'current'] })
-          qc.invalidateQueries({ queryKey: ['session', 'me'] })
+          qc.invalidateQueries({ queryKey: ['exam', 'current', teacherUrl] })
+          qc.invalidateQueries({ queryKey: ['session', 'me', teacherUrl] })
         }
       }
     })
     return () => conn.close()
-  }, [navigate, qc])
+  }, [navigate, qc, teacherUrl])
 
-  // Heartbeat every 10s.
   useEffect(() => {
     const interval = setInterval(() => {
       void api.heartbeat().catch(() => {})
     }, 10_000)
     return () => clearInterval(interval)
-  }, [])
+  }, [api])
 
-  // Countdown.
   const startedAt = examQuery.data?.startedAt ?? null
   const durationMinutes = examQuery.data?.durationMinutes ?? 0
   const [now, setNow] = useState(() => Date.now())
@@ -111,7 +125,6 @@ export default function TestRoute(): React.JSX.Element {
       api.answer({ questionId, value })
   })
 
-  // Debounced save per question.
   const debounceRefs = useRef<Record<string, ReturnType<typeof setTimeout>>>({})
   const updateDraft = (questionId: string, value: string): void => {
     setDrafts((cur) => ({ ...cur, [questionId]: value }))
@@ -125,11 +138,15 @@ export default function TestRoute(): React.JSX.Element {
 
   const submitMutation = useMutation({
     mutationFn: () => api.submit(),
-    onSuccess: () => navigate('/done', { replace: true })
+    onSuccess: () => {
+      notify.success('Prova enviada com sucesso!')
+      navigate('/done', { replace: true })
+    },
+    onError: (err: Error) => {
+      notify.error(err.message || 'Erro ao enviar a prova. Tente novamente.')
+    }
   })
 
-  // Auto-submit when the countdown hits zero. Guard so the mutation only fires
-  // once even if the timer effect re-evaluates.
   useEffect(() => {
     if (
       remainingSeconds === 0 &&
@@ -162,7 +179,7 @@ export default function TestRoute(): React.JSX.Element {
   const answeredCount = Object.values(drafts).filter((v) => v.trim().length > 0).length
 
   return (
-    <main className="bg-background min-h-screen pb-32">
+    <main className="flex flex-1 flex-col pb-32">
       <div className="bg-background/95 border-border sticky top-0 z-10 border-b backdrop-blur">
         <div className="mx-auto flex max-w-2xl items-center justify-between gap-2 px-4 py-3">
           <div>
@@ -200,15 +217,41 @@ export default function TestRoute(): React.JSX.Element {
             {answerMutation.isPending ? 'Salvando…' : 'Auto-save ligado'}
           </p>
           <Button
-            onClick={() => {
-              if (confirm('Enviar prova? Você não poderá alterar as respostas depois.')) {
-                submitMutation.mutate()
-              }
-            }}
+            onClick={() => setShowSubmitDialog(true)}
             disabled={submitMutation.isPending}
           >
             {submitMutation.isPending ? 'Enviando…' : 'Enviar prova'}
           </Button>
+
+          {/* ── Submit confirmation dialog ──────────────────────────── */}
+          <Dialog open={showSubmitDialog} onOpenChange={setShowSubmitDialog}>
+            <DialogContent className="sm:max-w-md">
+              <DialogHeader>
+                <DialogTitle>Enviar prova?</DialogTitle>
+                <DialogDescription>
+                  Você não poderá alterar as respostas depois de enviar.
+                  {answeredCount < exam.questions.length && (
+                    <span className="text-warning mt-1 block font-medium">
+                      Atenção: você respondeu {answeredCount} de {exam.questions.length} questões.
+                    </span>
+                  )}
+                </DialogDescription>
+              </DialogHeader>
+              <DialogFooter>
+                <Button variant="ghost" onClick={() => setShowSubmitDialog(false)}>
+                  Cancelar
+                </Button>
+                <Button
+                  onClick={() => {
+                    setShowSubmitDialog(false)
+                    submitMutation.mutate()
+                  }}
+                >
+                  Enviar prova
+                </Button>
+              </DialogFooter>
+            </DialogContent>
+          </Dialog>
         </div>
       </div>
     </main>
