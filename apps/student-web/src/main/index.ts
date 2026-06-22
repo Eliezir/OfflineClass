@@ -43,9 +43,13 @@ function startDiscovery(): void {
     if (found) return
     if (service.name === 'offlineclass' || service.name?.startsWith('offlineclass')) {
       found = true
-      const ip = service.addresses?.[0] ?? service.host ?? 'offlineclass.local'
+
+      // Prefer the mDNS-resolvable hostname over raw IPs. The teacher
+      // publishes `host: 'offlineclass.local'` which resolves to the
+      // same LAN IP that the teacher's discovery.getStatus reports.
+      const host = service.host ?? service.addresses?.[0] ?? 'offlineclass.local'
       const port = service.port ?? 8000
-      const url = `https://${ip}:${port}`
+      const url = `https://${host}:${port}`
 
       if (mainWindow && !mainWindow.isDestroyed()) {
         mainWindow.webContents.send(IPC.DISCOVERY_FOUND, { url, name: service.name })

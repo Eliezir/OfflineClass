@@ -74,8 +74,14 @@ export default function WaitingRoute(): React.JSX.Element {
     return () => clearInterval(interval)
   }, [api])
 
-  const handleLeave = (): void => {
+  const handleLeave = async (): Promise<void> => {
+    try {
+      await api.leave()
+    } catch {
+      // Best-effort — the server might be unreachable.
+    }
     clearToken()
+    notify.info('Você saiu da sala.')
     navigate('/', { replace: true })
   }
 

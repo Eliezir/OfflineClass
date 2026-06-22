@@ -1,6 +1,6 @@
 import { useEffect, useState, useRef, useCallback } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { Wifi, WifiOff, Loader2, ArrowRight, School, RefreshCw } from 'lucide-react'
+import { Wifi, WifiOff, Loader2, ArrowRight, RefreshCw, ExternalLink } from 'lucide-react'
 
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
@@ -19,7 +19,7 @@ type DiscoverStatus = 'scanning' | 'found' | 'empty'
 
 export default function DiscoverRoute(): React.JSX.Element {
   const navigate = useNavigate()
-  const { setTeacherUrl } = useServerUrl()
+  const { teacherUrl, setTeacherUrl } = useServerUrl()
   const [status, setStatus] = useState<DiscoverStatus>('scanning')
   const [session, setSession] = useState<DiscoveredSession | null>(null)
   const [profile, setProfile] = useState<StudentProfile | null>(loadProfile)
@@ -44,19 +44,34 @@ export default function DiscoverRoute(): React.JSX.Element {
     }, SCAN_TIMEOUT_MS)
   }, [clearScanTimeout])
 
+  // In browser mode (loaded from teacher's server), we're already at the
+  // correct origin — skip mDNS and go straight to Join.
+  const isBrowser = !window.api
   useEffect(() => {
+    if (isBrowser) {
+      setTeacherUrl(window.location.origin)
+      return
+    }
     startScan()
     return () => clearScanTimeout()
-  }, [startScan, clearScanTimeout])
+  }, [isBrowser, startScan, clearScanTimeout])
 
   useEffect(() => {
+    if (isBrowser) return
     const unsubscribe = window.api?.discovery?.onFound?.((result) => {
       clearScanTimeout()
       setSession(result)
       setStatus('found')
     })
     return () => unsubscribe?.()
-  }, [clearScanTimeout])
+  }, [isBrowser, clearScanTimeout])
+
+  // Auto-advance to Join when in browser mode (already connected to teacher).
+  useEffect(() => {
+    if (isBrowser && teacherUrl) {
+      navigate('/join', { replace: true })
+    }
+  }, [isBrowser, teacherUrl, navigate])
 
   const handleJoin = (): void => {
     if (!session) return
@@ -85,9 +100,11 @@ export default function DiscoverRoute(): React.JSX.Element {
       {/* ── Centre content ───────────────────────────────────────────── */}
       <div className="flex flex-col items-center justify-center gap-6">
         <div className="flex flex-col items-center gap-3 text-center">
-          <div className="flex h-14 w-14 items-center justify-center rounded-2xl bg-primary-soft shadow-sm">
-            <School className="text-primary size-7" />
-          </div>
+          <img
+            src="/logo-icon.png"
+            alt="OfflineClass"
+            className="h-14 w-14 rounded-2xl shadow-sm"
+          />
           <div>
             <h1 className="font-display text-2xl font-bold tracking-tight text-foreground">
               OfflineClass
@@ -98,8 +115,20 @@ export default function DiscoverRoute(): React.JSX.Element {
           </div>
         </div>
 
+        {/* ── Browser mode — redirecting ───────────────────────────────── */}
+        {isBrowser && (
+          <Card className="w-full max-w-sm text-center">
+            <CardContent className="flex flex-col items-center gap-3 py-8">
+              <Loader2 className="text-primary size-5 animate-spin" />
+              <p className="text-muted-foreground text-sm">
+                Conectando ao servidor do professor…
+              </p>
+            </CardContent>
+          </Card>
+        )}
+
         {/* ── Scanning state ──────────────────────────────────────────── */}
-        {status === 'scanning' && (
+        {!isBrowser && status === 'scanning' && (
           <Card className="w-full max-w-sm text-center">
             <CardContent className="flex flex-col items-center gap-3 py-8">
               <div className="border-border bg-muted/40 flex h-12 w-12 items-center justify-center rounded-full border">
@@ -114,7 +143,7 @@ export default function DiscoverRoute(): React.JSX.Element {
         )}
 
         {/* ── Found state ─────────────────────────────────────────────── */}
-        {status === 'found' && session && (
+        {!isBrowser && status === 'found' && session && (
           <Card className="w-full max-w-sm">
             <CardHeader>
               <CardTitle>Sala encontrada</CardTitle>
@@ -130,14 +159,28 @@ export default function DiscoverRoute(): React.JSX.Element {
                 <p className="text-secondary-soft-foreground mt-1 text-lg font-bold">
                   {session.name}
                 </p>
-                <p className="text-muted-foreground mt-0.5 truncate font-mono text-xs">
+                <a
+                  href={session.url}
+                  target="_blank"
+                  rel="noreferrer"
+                  className="text-muted-foreground hover:text-primary mt-0.5 block truncate font-mono text-xs underline-offset-2 transition-colors hover:underline"
+                >
                   {session.url}
-                </p>
+                </a>
               </div>
               <Button onClick={handleJoin} className="w-full" size="lg">
-                {profile ? 'Entrar na sala' : 'Entrar na sala'}
+                Entrar na sala
                 <ArrowRight className="size-4" />
               </Button>
+              <a
+                href={session.url}
+                target="_blank"
+                rel="noreferrer"
+                className="border-input-border bg-card text-foreground hover:bg-muted active:translate-y-[2px] active:shadow-[0_1px_0_var(--input-border)] shadow-[0_4px_0_var(--input-border)] inline-flex h-11 w-full cursor-pointer items-center justify-center gap-2 whitespace-nowrap rounded-[14px] border px-5 text-base font-bold tracking-tight no-underline transition-[background-color,color,box-shadow,opacity,transform] duration-150"
+              >
+                <ExternalLink className="size-4" />
+                Abrir no navegador
+              </a>
               <Button
                 variant="ghost"
                 size="sm"
@@ -152,7 +195,7 @@ export default function DiscoverRoute(): React.JSX.Element {
         )}
 
         {/* ── Empty state ─────────────────────────────────────────────── */}
-        {status === 'empty' && (
+        {!isBrowser && status === 'empty' && (
           <Card className="w-full max-w-sm">
             <CardContent className="flex flex-col items-center gap-4 py-8 text-center">
               <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-muted">

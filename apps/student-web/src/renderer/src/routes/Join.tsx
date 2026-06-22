@@ -33,6 +33,8 @@ export default function JoinRoute(): React.JSX.Element {
   const active = useQuery({
     queryKey: ['session', 'active', teacherUrl],
     queryFn: api.sessionActive,
+    // Poll every 3s — the session might appear at any moment.
+    refetchInterval: 3000,
     retry: false
   })
 
@@ -99,12 +101,18 @@ export default function JoinRoute(): React.JSX.Element {
           {/* ── No active session ──────────────────────────────────────── */}
           {noSession && (
             <div className="flex flex-col items-center gap-4 py-4 text-center">
-              <p className="text-muted-foreground text-sm leading-relaxed">
-                O professor ainda não abriu o lobby ou a sessão já foi encerrada.
-              </p>
+              <div className="bg-muted/50 flex flex-col items-center gap-3 rounded-2xl p-4">
+                <Loader2 className="text-muted-foreground size-5 animate-spin" />
+                <p className="text-sm font-medium">
+                  Aguardando o professor abrir a sala…
+                </p>
+                <p className="text-muted-foreground text-xs leading-relaxed">
+                  O professor ainda não iniciou uma sessão. Esta tela atualiza automaticamente a cada 3 segundos.
+                </p>
+              </div>
               <Button variant="secondary" className="w-full" onClick={handleRefresh}>
                 <RefreshCw className="size-4" />
-                Verificar novamente
+                Verificar agora
               </Button>
               <Button
                 variant="ghost"
@@ -174,11 +182,6 @@ export default function JoinRoute(): React.JSX.Element {
                     Entrar na sala
                   </>
                 )}
-              </Button>
-
-              <Button type="button" variant="secondary" className="w-full" onClick={handleRefresh}>
-                <RefreshCw className="size-4" />
-                Atualizar
               </Button>
 
               <Button

@@ -66,6 +66,9 @@ export function createApi(baseUrl: string | null) {
     },
     submit: async () => {
       await jsonRequest('POST', '/api/submit')
+    },
+    leave: async () => {
+      await jsonRequest('POST', '/api/leave')
     }
   }
 }

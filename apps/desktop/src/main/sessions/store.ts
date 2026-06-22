@@ -341,12 +341,22 @@ export function joinSession(db: Db, input: JoinInput): JoinResult {
   const matricula = input.matricula.trim()
   const name = input.name.trim()
   const now = new Date()
+
+  // Prevent the same student from joining twice (browser + Electron).
+  const alreadyIn = db
+    .select({ id: students.id })
+    .from(students)
+    .where(and(eq(students.sessionId, sessionId), eq(students.matricula, matricula)))
+    .get()
+  if (alreadyIn) {
+    throw new SessionError(
+      'Você já está na sala. Saia antes de entrar novamente.',
+      'ALREADY_ACTIVE'
+    )
+  }
+
   const token = randomUUID()
 
-  // Upsert by (sessionId, matricula). Re-joining with the same matrícula
-  // refreshes the token and last-seen — handles browser refresh and network
-  // hiccups; cost is that anyone with the matricula can kick the legit
-  // student. Acceptable for the LAN academic threat model.
   const inserted = db
     .insert(students)
     .values({
@@ -357,10 +367,6 @@ export function joinSession(db: Db, input: JoinInput): JoinResult {
       token,
       joinedAt: now,
       lastSeenAt: now
-    })
-    .onConflictDoUpdate({
-      target: [students.sessionId, students.matricula],
-      set: { name, token, lastSeenAt: now }
     })
     .returning()
     .get()
@@ -374,6 +380,14 @@ export function joinSession(db: Db, input: JoinInput): JoinResult {
     studentName: inserted.name,
     studentMatricula: inserted.matricula
   }
+}
+
+/** Remove a student from the session by token. Called when the student
+    clicks "Sair da sala" in the student app. */
+export function leaveSession(db: Db, token: string): void {
+  const student = findStudentByToken(db, token)
+  if (!student) return
+  db.delete(students).where(eq(students.id, student.id)).run()
 }
 
 export function listLobbyStudents(db: Db, sessionId: string): SessionLobbyStudent[] {
