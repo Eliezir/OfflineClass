@@ -25,4 +25,10 @@ export function registerWindowHandlers(): void {
   registerHandler(IPC.WINDOW.IS_MAXIMIZED, () => {
     return { isMaximized: getMainWindow()?.isMaximized() ?? false }
   })
+
+  registerHandler(IPC.WINDOW.PRINT, () => {
+    const w = getMainWindow()
+    if (!w) return
+    w.webContents.print({ printBackground: true }, () => {})
+  })
 }

@@ -20,6 +20,9 @@ export type StudentResult = {
   name: string
   matricula: string
   submittedAt: number | null
+  joinedAt: number
+  leftAt: number | null
+  answeredCount: number
   answers: GradedAnswer[]
   total: number
   maxTotal: number

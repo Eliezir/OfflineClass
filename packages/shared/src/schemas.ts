@@ -217,6 +217,7 @@ export const SessionLobbyStudent = z.object({
   joinedAt: z.number().int(),
   lastSeenAt: z.number().int(),
   submittedAt: z.number().int().nullable(),
+  leftAt: z.number().int().nullable(),
   answeredCount: z.number().int().nonnegative()
 })
 export type SessionLobbyStudent = z.infer<typeof SessionLobbyStudent>
@@ -287,6 +288,14 @@ export const WsServerEvent = z.discriminatedUnion('type', [
   z.object({
     type: z.literal('session.ended'),
     endedAt: z.number().int()
+  }),
+  z.object({
+    type: z.literal('student.left'),
+    student: SessionLobbyStudent
+  }),
+  z.object({
+    type: z.literal('student.submitted'),
+    student: SessionLobbyStudent
   })
 ])
 export type WsServerEvent = z.infer<typeof WsServerEvent>
@@ -398,6 +407,9 @@ export const SessionAnswersReview = z.object({
   studentMatricula: z.string(),
   examTitle: z.string(),
   submittedAt: z.number().int().nullable(),
+  joinedAt: z.number().int(),
+  leftAt: z.number().int().nullable(),
+  answeredCount: z.number().int().nonnegative(),
   answers: z.array(StudentAnswerReview),
   totalScore: z.number(),
   // Points-weighted: sum of every question's points (may be fractional).

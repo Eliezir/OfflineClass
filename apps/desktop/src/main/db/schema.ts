@@ -109,7 +109,8 @@ export const students = sqliteTable(
     lastSeenAt: timestamp('last_seen_at')
       .notNull()
       .default(sql`(unixepoch() * 1000)`),
-    submittedAt: timestamp('submitted_at')
+    submittedAt: timestamp('submitted_at'),
+    leftAt: timestamp('left_at')
   },
   (t) => ({
     sessionMatriculaUnique: unique('students_session_matricula_unique').on(t.sessionId, t.matricula)

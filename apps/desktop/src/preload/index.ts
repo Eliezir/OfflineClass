@@ -93,7 +93,12 @@ const domain = {
   }
 }
 
-const api = { ...bridge, ...domain }
+const api = {
+  ...bridge,
+  ...domain,
+  print: (): Promise<void> => ipcRenderer.invoke('sessions.print'),
+  exportPdf: (): Promise<string | null> => ipcRenderer.invoke('sessions.exportPdf')
+}
 export type ApiSurface = typeof api
 
 if (process.contextIsolated) {

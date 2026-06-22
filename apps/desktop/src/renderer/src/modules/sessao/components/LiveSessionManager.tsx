@@ -2,9 +2,14 @@ import { useEffect } from 'react'
 import { useQueryClient } from '@tanstack/react-query'
 import { WsServerEvent, type SessionDetail } from '@offlineclass/shared'
 import { sessionKeys } from '../queries'
+import { notify } from '@renderer/shared/services/toast'
 
 interface LiveSessionManagerProps {
   sessionId: string
+}
+
+function timeLabel(ts: number): string {
+  return new Date(ts).toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' })
 }
 
 export function LiveSessionManager({ sessionId }: LiveSessionManagerProps): null {
@@ -32,7 +37,6 @@ export function LiveSessionManager({ sessionId }: LiveSessionManagerProps): null
 
             const message = parsedEvent.data
 
-            // When a real-time push arrives, directly update the active session cache matrix
             if (message.type === 'session.lobby.update') {
               queryClient.setQueryData<SessionDetail | null>(sessionKeys.active(), (oldData) => {
                 if (!oldData) return null
@@ -41,6 +45,28 @@ export function LiveSessionManager({ sessionId }: LiveSessionManagerProps): null
                   students: message.students
                 }
               })
+            }
+
+            if (message.type === 'student.left') {
+              const s = message.student
+              notify.warning(
+                `${s.name} saiu da sala`,
+                {
+                  description: `${s.matricula} · ${s.answeredCount} de questões respondidas · ${timeLabel(Date.now())}`,
+                  duration: 6000
+                }
+              )
+            }
+
+            if (message.type === 'student.submitted') {
+              const s = message.student
+              notify.success(
+                `${s.name} enviou a prova`,
+                {
+                  description: `${s.matricula} · ${s.answeredCount} de questões respondidas · ${timeLabel(Date.now())}`,
+                  duration: 6000
+                }
+              )
             }
           } catch (error) {
             console.error('Failed to process incoming real-time socket frame:', error)
@@ -62,6 +88,5 @@ export function LiveSessionManager({ sessionId }: LiveSessionManagerProps): null
     }
   }, [sessionId, queryClient])
 
-  // Headless pipeline component, returns no layout footprint
   return null
 }

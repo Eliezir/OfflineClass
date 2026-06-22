@@ -185,8 +185,16 @@ export async function startServer(port: number, deps: ServerDeps): Promise<Serve
     const student = findStudentByToken(db, token)
     if (!student) return c.json({ error: 'unauthorized' }, 401)
     try {
+      const sessionId = student.sessionId
+      const submittedStudent = listLobbyStudents(db, sessionId).find((s) => s.id === student.id)
       submitStudent(db, student.id)
-      broadcastLobbyUpdate(db, rooms, student.sessionId)
+      broadcastLobbyUpdate(db, rooms, sessionId)
+      if (submittedStudent) {
+        rooms.toTeachers(sessionId, {
+          type: 'student.submitted',
+          student: submittedStudent
+        } satisfies import('@offlineclass/shared').WsServerEvent)
+      }
       return c.json({ ok: true })
     } catch (err) {
       return mapSessionError(c, err)
@@ -199,8 +207,20 @@ export async function startServer(port: number, deps: ServerDeps): Promise<Serve
     const student = findStudentByToken(db, token)
     if (!student) return c.json({ error: 'unauthorized' }, 401)
     const sessionId = student.sessionId
+
+    // Capture student info BEFORE leaveSession marks leftAt (after that,
+    // listLobbyStudents excludes them so we need to build the payload now).
+    const leftStudent = listLobbyStudents(db, sessionId).find((s) => s.id === student.id)
     leaveSession(db, token)
+
+    // Broadcast updated lobby (student removed) + dedicated leave event.
     broadcastLobbyUpdate(db, rooms, sessionId)
+    if (leftStudent) {
+      rooms.toTeachers(sessionId, {
+        type: 'student.left',
+        student: leftStudent
+      } satisfies import('@offlineclass/shared').WsServerEvent)
+    }
     return c.json({ ok: true })
   })
 

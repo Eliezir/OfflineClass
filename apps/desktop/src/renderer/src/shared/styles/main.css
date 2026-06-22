@@ -496,3 +496,43 @@
   bottom: auto !important;
   transform: translateY(-50%);
 }
+
+/* ── Print / PDF export ────────────────────────────────────────────────── */
+@media print {
+  @page {
+    size: A4 portrait;
+    margin: 16mm;
+  }
+
+  body {
+    -webkit-print-color-adjust: exact;
+    print-color-adjust: exact;
+    overflow: visible !important;
+  }
+
+  /* Hide chrome — sidebar, toasts, window controls */
+  aside,
+  [data-slot="toaster"],
+  [data-sonner-toaster] {
+    display: none !important;
+  }
+
+  /* Hide all buttons */
+  button,
+  [data-slot="button"] {
+    display: none !important;
+  }
+
+  /* Let the content flow naturally */
+  main {
+    overflow: visible !important;
+    flex: none !important;
+    max-height: none !important;
+    height: auto !important;
+  }
+
+  /* Ensure cards don't split across pages */
+  .rounded-2xl {
+    break-inside: avoid;
+  }
+}
