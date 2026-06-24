@@ -29,7 +29,7 @@ export function StudentResultItem({
         selected ? 'bg-primary-soft' : 'hover:bg-muted/50'
       )}
     >
-      <StudentAvatar name={student.name} />
+      <StudentAvatar name={student.name} avatar={student.avatar} />
       <div className="min-w-0 flex-1">
         <div className="truncate text-sm font-bold">{student.name}</div>
         <div className="text-xs font-semibold text-muted-foreground">{student.matricula}</div>

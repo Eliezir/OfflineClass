@@ -1,4 +1,4 @@
-import type { Question } from '@offlineclass/shared'
+import type { AvatarConfig, Question } from '@offlineclass/shared'
 
 /* The Resultados screen works on a "graded" view-model: each question carries a
    weight (`points`, defined by the teacher when authoring the prova) and an
@@ -19,6 +19,7 @@ export type StudentResult = {
   studentId: string
   name: string
   matricula: string
+  avatar: AvatarConfig | null
   submittedAt: number | null
   joinedAt: number
   leftAt: number | null

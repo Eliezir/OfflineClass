@@ -111,7 +111,7 @@ function StudentDetail({
     <>
       {/* Hero */}
       <header className="mt-4 flex flex-wrap items-center gap-4 rounded-2xl border border-border bg-card p-5">
-        <StudentAvatar name={student.name} className="size-14 text-base" />
+        <StudentAvatar name={student.name} avatar={student.avatar} className="size-14 text-base" />
         <div className="min-w-0 flex-1">
           <h1 className="font-display text-2xl font-bold tracking-tight">{student.name}</h1>
           <p className="mt-0.5 text-sm font-semibold text-muted-foreground">

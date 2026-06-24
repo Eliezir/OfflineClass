@@ -303,7 +303,7 @@ export function CorrecaoPage({ sessionId }: CorrecaoPageProps): React.JSX.Elemen
                     onClick={() => setExpandedId(open ? null : student.studentId)}
                     className="flex w-full items-center gap-3 px-5 py-4 text-left"
                   >
-                    <StudentAvatar name={student.name} />
+                    <StudentAvatar name={student.name} avatar={student.avatar} />
                     <div className="min-w-0 flex-1">
                       <div className="truncate text-sm font-bold">{student.name}</div>
                       <div className="text-xs font-semibold text-muted-foreground">

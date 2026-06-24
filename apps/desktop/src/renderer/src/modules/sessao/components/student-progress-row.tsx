@@ -31,7 +31,7 @@ export function StudentProgressRow({
       onClick={onSelect}
       className="flex w-full items-center gap-3 border-b border-border/60 py-3 text-left transition-colors last:border-0 hover:bg-muted/40 focus-visible:bg-muted/40 focus-visible:outline-none"
     >
-      <StudentAvatar name={student.name} />
+      <StudentAvatar name={student.name} avatar={student.avatar} />
 
       <div className="min-w-0 flex-1">
         <div className="truncate text-sm font-bold">{student.name}</div>
