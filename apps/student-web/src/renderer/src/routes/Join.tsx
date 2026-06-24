@@ -110,6 +110,12 @@ export default function JoinRoute(): React.JSX.Element {
 
   return (
     <main className="flex flex-1 flex-col items-center justify-center gap-6 px-6 py-10">
+      <div className="flex flex-col items-center gap-2">
+        <img src="/logo-icon.png" alt="OfflineClass" className="size-12 rounded-2xl shadow-sm" />
+        <span className="text-muted-foreground font-display text-sm font-bold tracking-tight">
+          OfflineClass
+        </span>
+      </div>
       <Card className="w-full max-w-sm">
         <CardHeader>
           <CardTitle>Entrar na prova</CardTitle>

@@ -81,7 +81,7 @@ export function AvatarBuilder({ value, onChange, onDone, onClose }: AvatarBuilde
 
       {/* ── Preview hero ─────────────────────────────────────────────── */}
       <div
-        className="relative flex h-72 shrink-0 items-start justify-center overflow-hidden lg:h-auto lg:flex-[0_0_46%] lg:items-center"
+        className="relative flex h-72 shrink-0 items-center justify-center overflow-hidden p-8 lg:h-auto lg:flex-[0_0_46%] lg:p-12"
         style={{ background: `#${value.backgroundColor || 'a5b4fc'}` }}
       >
         {onClose && (
@@ -103,7 +103,7 @@ export function AvatarBuilder({ value, onChange, onDone, onClose }: AvatarBuilde
           <Shuffle className="size-5" />
         </button>
         <div
-          className="ab-preview mt-6 w-full lg:mt-0 lg:w-[78%] lg:max-w-[380px]"
+          className="ab-preview w-44 max-w-full lg:w-[70%] lg:max-w-[320px]"
           dangerouslySetInnerHTML={{ __html: avatarSvg(value, { background: false }) }}
         />
       </div>
