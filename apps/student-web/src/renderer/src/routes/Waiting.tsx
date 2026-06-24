@@ -94,7 +94,10 @@ export default function WaitingRoute(): React.JSX.Element {
   }
 
   function openBuilder(): void {
-    setEditAvatar(myCard?.avatar ?? randomAvatar())
+    // Seed from the current avatar (server roster → saved profile), never a fresh
+    // random — so reopening the editor doesn't change the avatar.
+    const fromProfile = me ? loadProfile(me.studentMatricula)?.avatar : null
+    setEditAvatar(myCard?.avatar ?? fromProfile ?? editAvatar)
     setBuilderOpen(true)
   }
 
@@ -196,20 +199,20 @@ export default function WaitingRoute(): React.JSX.Element {
       </Card>
 
       {builderOpen && (
-        <div className="bg-background fixed inset-0 z-50 flex flex-col">
-          <div className="min-h-0 flex-1">
+        <div className="bg-foreground/40 fixed inset-0 z-50 flex items-center justify-center p-6 sm:p-8">
+          <div className="border-border bg-background relative h-[80vh] max-h-[620px] w-full max-w-3xl overflow-hidden rounded-3xl border shadow-lg">
             <AvatarBuilder
               value={editAvatar}
               onChange={setEditAvatar}
               onDone={() => void saveAvatar()}
               onClose={() => setBuilderOpen(false)}
             />
+            {saving && (
+              <div className="bg-background/60 absolute inset-0 z-10 grid place-items-center text-sm font-bold">
+                Salvando…
+              </div>
+            )}
           </div>
-          {saving && (
-            <div className="bg-background/60 absolute inset-0 grid place-items-center text-sm font-bold">
-              Salvando…
-            </div>
-          )}
         </div>
       )}
     </main>

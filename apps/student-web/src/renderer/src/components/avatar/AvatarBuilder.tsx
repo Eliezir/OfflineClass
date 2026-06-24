@@ -76,7 +76,7 @@ export function AvatarBuilder({ value, onChange, onDone, onClose }: AvatarBuilde
   const set = (key: keyof AvatarConfig, val: string): void => onChange({ ...value, [key]: val })
 
   return (
-    <div className="flex h-full flex-col lg:flex-row">
+    <div className="flex h-full w-full flex-col lg:flex-row">
       <style>{SCOPED_CSS}</style>
 
       {/* ── Preview hero ─────────────────────────────────────────────── */}
