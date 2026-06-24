@@ -1,7 +1,7 @@
 import { useState } from 'react'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { useNavigate } from 'react-router-dom'
-import { ArrowLeft, ArrowRight, LogIn, RefreshCw, Loader2, Pencil, Shuffle } from 'lucide-react'
+import { ArrowLeft, ArrowRight, LogIn, RefreshCw, Loader2, Pencil } from 'lucide-react'
 import { JoinInput, type AvatarConfig } from '@offlineclass/shared'
 import { Avatar, randomAvatar } from '@offlineclass/avatar'
 
@@ -9,14 +9,13 @@ import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
-import { AvatarBuilder } from '@/components/avatar/AvatarBuilder'
 import { createApi } from '../lib/api'
 import { saveToken } from '../lib/session'
 import { notify } from '../lib/toast'
 import { useServerUrl } from '../lib/serverContext'
 import { loadProfile, saveProfile, getLastMatricula } from '../lib/studentProfile'
 
-type Step = 'matricula' | 'back' | 'identity' | 'avatar'
+type Step = 'matricula' | 'back' | 'identity'
 
 export default function JoinRoute(): React.JSX.Element {
   const navigate = useNavigate()
@@ -29,7 +28,6 @@ export default function JoinRoute(): React.JSX.Element {
   const [name, setName] = useState('')
   const [email, setEmail] = useState('')
   const [avatar, setAvatar] = useState<AvatarConfig>(() => randomAvatar())
-  const [builderOpen, setBuilderOpen] = useState(false)
   const [error, setError] = useState<string | null>(null)
 
   if (!teacherUrl) {
@@ -160,9 +158,9 @@ export default function JoinRoute(): React.JSX.Element {
               {/* progress (hidden on the recognized "welcome back" shortcut) */}
               {step !== 'back' && (
                 <div className="flex gap-1.5">
-                  {(['matricula', 'identity', 'avatar'] as const).map((s, i) => {
-                    const order = { matricula: 0, identity: 1, avatar: 2 }
-                    const reached = order[step as 'matricula' | 'identity' | 'avatar'] >= i
+                  {(['matricula', 'identity'] as const).map((s, i) => {
+                    const order = { matricula: 0, identity: 1 }
+                    const reached = order[step as 'matricula' | 'identity'] >= i
                     return (
                       <span
                         key={s}
@@ -243,8 +241,7 @@ export default function JoinRoute(): React.JSX.Element {
                       setError('Informe seu nome')
                       return
                     }
-                    setError(null)
-                    setStep('avatar')
+                    join()
                   }}
                 >
                   <div className="space-y-2">
@@ -265,42 +262,12 @@ export default function JoinRoute(): React.JSX.Element {
                     <Button type="button" variant="secondary" onClick={resetToMatricula}>
                       <ArrowLeft className="size-4" />
                     </Button>
-                    <Button type="submit" className="flex-1">
-                      Continuar
-                      <ArrowRight className="size-4" />
-                    </Button>
-                  </div>
-                </form>
-              )}
-
-              {/* STEP: avatar */}
-              {step === 'avatar' && (
-                <div className="space-y-4">
-                  <div className="flex flex-col items-center gap-3 text-center">
-                    <Avatar config={avatar} size={112} />
-                    <p className="text-muted-foreground text-sm">Esse é o seu avatar na sala.</p>
-                    <div className="flex gap-2">
-                      <Button variant="secondary" size="sm" onClick={() => setBuilderOpen(true)}>
-                        <Pencil className="size-3.5" />
-                        Personalizar
-                      </Button>
-                      <Button variant="secondary" size="sm" onClick={() => setAvatar(randomAvatar())}>
-                        <Shuffle className="size-3.5" />
-                        Aleatório
-                      </Button>
-                    </div>
-                  </div>
-                  {error && <p className="text-destructive text-sm font-medium">{error}</p>}
-                  <div className="flex gap-2">
-                    <Button variant="secondary" onClick={() => setStep('identity')}>
-                      <ArrowLeft className="size-4" />
-                    </Button>
-                    <Button className="flex-1" size="lg" disabled={joining} onClick={join}>
+                    <Button type="submit" className="flex-1" size="lg" disabled={joining}>
                       {joining ? <Loader2 className="size-4 animate-spin" /> : <LogIn className="size-4" />}
                       Entrar na sala
                     </Button>
                   </div>
-                </div>
+                </form>
               )}
             </div>
           )}
@@ -316,18 +283,6 @@ export default function JoinRoute(): React.JSX.Element {
           )}
         </CardContent>
       </Card>
-
-      {/* Full-screen avatar builder */}
-      {builderOpen && (
-        <div className="bg-background fixed inset-0 z-50">
-          <AvatarBuilder
-            value={avatar}
-            onChange={setAvatar}
-            onDone={() => setBuilderOpen(false)}
-            onClose={() => setBuilderOpen(false)}
-          />
-        </div>
-      )}
     </main>
   )
 }

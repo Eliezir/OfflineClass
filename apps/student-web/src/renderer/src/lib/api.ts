@@ -1,5 +1,6 @@
 import {
   AnswerInput,
+  type AvatarConfig,
   JoinInput,
   JoinResult,
   SessionPublic,
@@ -60,6 +61,9 @@ export function createApi(baseUrl: string | null) {
       StudentExam.parse(await jsonRequest('GET', '/api/exam/current')),
     heartbeat: async () => {
       await jsonRequest('POST', '/api/heartbeat')
+    },
+    updateAvatar: async (avatar: AvatarConfig) => {
+      await jsonRequest('POST', '/api/profile/avatar', { avatar })
     },
     answer: async (input: AnswerInput) => {
       await jsonRequest('POST', '/api/answers', input)
