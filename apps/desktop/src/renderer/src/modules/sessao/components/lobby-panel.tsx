@@ -5,7 +5,7 @@ import { Button } from '@renderer/shared/ui/button'
 import { EmptyState } from '@renderer/shared/ui/empty-state'
 import { useDiscoveryQuery } from '../queries'
 import type { SessionDetail } from '../types'
-import { RosterRow } from './roster-row'
+import { RosterCard } from './roster-card'
 
 type LobbyPanelProps = {
   session: SessionDetail
@@ -110,18 +110,22 @@ export function LobbyPanel({ session }: LobbyPanelProps): React.JSX.Element {
           </span>
         </div>
 
-        <div className="scrollbar-subtle mt-3 flex min-h-0 flex-1 flex-col overflow-y-auto pr-1">
-          {students.length > 0 ? (
-            students.map((s) => <RosterRow key={s.id} student={s} />)
-          ) : (
+        {students.length > 0 ? (
+          <div className="scrollbar-subtle mt-3 grid min-h-0 flex-1 content-start gap-3 overflow-y-auto pr-1 [grid-template-columns:repeat(auto-fill,minmax(132px,1fr))]">
+            {students.map((s) => (
+              <RosterCard key={s.id} student={s} />
+            ))}
+          </div>
+        ) : (
+          <div className="mt-3 flex min-h-0 flex-1 items-center justify-center">
             <EmptyState
               compact
               icon={<Users />}
               title={t`Aguardando alunos`}
               description={<Trans>Os alunos aparecem aqui assim que entram pela rede.</Trans>}
             />
-          )}
-        </div>
+          </div>
+        )}
       </section>
     </div>
   )
