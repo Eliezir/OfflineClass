@@ -1,18 +1,22 @@
 import { useState } from 'react'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { useNavigate } from 'react-router-dom'
-import { ArrowLeft, LogIn, RefreshCw, Loader2 } from 'lucide-react'
-import { JoinInput } from '@offlineclass/shared'
+import { ArrowLeft, ArrowRight, LogIn, RefreshCw, Loader2, Pencil, Shuffle } from 'lucide-react'
+import { JoinInput, type AvatarConfig } from '@offlineclass/shared'
+import { Avatar, randomAvatar } from '@offlineclass/avatar'
 
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
+import { AvatarBuilder } from '@/components/avatar/AvatarBuilder'
 import { createApi } from '../lib/api'
 import { saveToken } from '../lib/session'
 import { notify } from '../lib/toast'
 import { useServerUrl } from '../lib/serverContext'
-import { loadProfile, initials } from '../lib/studentProfile'
+import { loadProfile, saveProfile, getLastMatricula } from '../lib/studentProfile'
+
+type Step = 'matricula' | 'back' | 'identity' | 'avatar'
 
 export default function JoinRoute(): React.JSX.Element {
   const navigate = useNavigate()
@@ -20,9 +24,12 @@ export default function JoinRoute(): React.JSX.Element {
   const { teacherUrl } = useServerUrl()
   const api = createApi(teacherUrl)
 
-  const stored = loadProfile()
-  const [name, setName] = useState(stored?.name ?? '')
-  const [matricula, setMatricula] = useState(stored?.matricula ?? '')
+  const [step, setStep] = useState<Step>('matricula')
+  const [matricula, setMatricula] = useState(getLastMatricula() ?? '')
+  const [name, setName] = useState('')
+  const [email, setEmail] = useState('')
+  const [avatar, setAvatar] = useState<AvatarConfig>(() => randomAvatar())
+  const [builderOpen, setBuilderOpen] = useState(false)
   const [error, setError] = useState<string | null>(null)
 
   if (!teacherUrl) {
@@ -33,28 +40,16 @@ export default function JoinRoute(): React.JSX.Element {
   const active = useQuery({
     queryKey: ['session', 'active', teacherUrl],
     queryFn: api.sessionActive,
-    // Poll every 3s — the session might appear at any moment.
     refetchInterval: 3000,
     retry: false
   })
 
   const joinMutation = useMutation({
-    mutationFn: () => {
-      const profile = stored ?? { name, matricula }
-      const parsed = JoinInput.safeParse(profile)
-      if (!parsed.success) {
-        throw new Error(parsed.error.issues[0]?.message ?? 'Dados inválidos')
-      }
-      return api.join(parsed.data)
-    },
+    mutationFn: (input: JoinInput) => api.join(input),
     onSuccess: (res) => {
       saveToken(res.token)
       notify.success(`Bem-vindo, ${res.studentName}!`)
-      if (res.status === 'running') {
-        navigate('/test', { replace: true })
-      } else {
-        navigate('/waiting', { replace: true })
-      }
+      navigate(res.status === 'running' ? '/test' : '/waiting', { replace: true })
     },
     onError: (err: Error) => {
       setError(err.message)
@@ -62,19 +57,56 @@ export default function JoinRoute(): React.JSX.Element {
     }
   })
 
-  const handleSubmit = (e: React.FormEvent): void => {
-    e.preventDefault()
-    setError(null)
-    joinMutation.mutate()
-  }
-
-  const handleRefresh = (): void => {
-    qc.invalidateQueries({ queryKey: ['session', 'active', teacherUrl] })
-  }
+  const handleRefresh = (): void =>
+    void qc.invalidateQueries({ queryKey: ['session', 'active', teacherUrl] })
 
   const noSession = active.isError && (active.error as Error & { status?: number })?.status === 404
-  const sessionAvailable = active.data && (active.data.status === 'lobby' || active.data.status === 'running')
+  const sessionAvailable =
+    active.data && (active.data.status === 'lobby' || active.data.status === 'running')
   const examTitle = active.data?.examTitle
+
+  // ── Step transitions ──────────────────────────────────────────────────
+  function continueFromMatricula(): void {
+    const m = matricula.trim()
+    if (m.length < 2) {
+      setError('Digite sua matrícula')
+      return
+    }
+    setError(null)
+    const saved = loadProfile(m)
+    if (saved) {
+      setName(saved.name)
+      setEmail(saved.email ?? '')
+      if (saved.avatar) setAvatar(saved.avatar)
+      setStep('back')
+    } else {
+      setStep('identity')
+    }
+  }
+
+  function resetToMatricula(): void {
+    setStep('matricula')
+    setError(null)
+  }
+
+  function join(): void {
+    setError(null)
+    const input: JoinInput = {
+      name: name.trim(),
+      matricula: matricula.trim(),
+      email: email.trim() || undefined,
+      avatar
+    }
+    const parsed = JoinInput.safeParse(input)
+    if (!parsed.success) {
+      setError(parsed.error.issues[0]?.message ?? 'Dados inválidos')
+      return
+    }
+    saveProfile({ name: input.name, matricula: input.matricula, email: email.trim() || null, avatar })
+    joinMutation.mutate(parsed.data)
+  }
+
+  const joining = joinMutation.isPending
 
   return (
     <main className="flex flex-1 flex-col items-center justify-center gap-6 px-6 py-10">
@@ -90,7 +122,6 @@ export default function JoinRoute(): React.JSX.Element {
           </CardDescription>
         </CardHeader>
         <CardContent className="space-y-4">
-          {/* ── Loading ────────────────────────────────────────────────── */}
           {active.isPending && (
             <div className="flex flex-col items-center gap-3 py-6">
               <Loader2 className="text-muted-foreground size-5 animate-spin" />
@@ -98,128 +129,199 @@ export default function JoinRoute(): React.JSX.Element {
             </div>
           )}
 
-          {/* ── No active session ──────────────────────────────────────── */}
           {noSession && (
             <div className="flex flex-col items-center gap-4 py-4 text-center">
               <div className="bg-muted/50 flex flex-col items-center gap-3 rounded-2xl p-4">
                 <Loader2 className="text-muted-foreground size-5 animate-spin" />
-                <p className="text-sm font-medium">
-                  Aguardando o professor abrir a sala…
-                </p>
+                <p className="text-sm font-medium">Aguardando o professor abrir a sala…</p>
                 <p className="text-muted-foreground text-xs leading-relaxed">
-                  O professor ainda não iniciou uma sessão. Esta tela atualiza automaticamente a cada 3 segundos.
+                  Esta tela atualiza automaticamente a cada 3 segundos.
                 </p>
               </div>
               <Button variant="secondary" className="w-full" onClick={handleRefresh}>
                 <RefreshCw className="size-4" />
                 Verificar agora
               </Button>
-              <Button
-                variant="ghost"
-                size="sm"
-                className="w-full"
-                onClick={() => navigate('/', { replace: true })}
-              >
+              <Button variant="ghost" size="sm" className="w-full" onClick={() => navigate('/', { replace: true })}>
                 <ArrowLeft className="size-3.5" />
                 Voltar
               </Button>
             </div>
           )}
 
-          {/* ── Session available ──────────────────────────────────────── */}
           {sessionAvailable && (
-            <form className="space-y-4" onSubmit={handleSubmit}>
-              {/* Profile chip (if registered) */}
-              {stored ? (
-                <div className="bg-primary-soft border-primary/10 flex items-center gap-3 rounded-2xl border p-3">
-                  <span className="grid size-10 shrink-0 place-items-center rounded-full bg-primary text-sm font-bold text-primary-foreground">
-                    {initials(stored.name)}
-                  </span>
-                  <div className="min-w-0 text-left">
-                    <p className="truncate text-sm font-bold text-primary-soft-foreground">
-                      {stored.name}
-                    </p>
-                    <p className="truncate text-xs text-muted-foreground">
-                      {stored.matricula}
-                    </p>
-                  </div>
+            <div className="space-y-4">
+              {/* progress (hidden on the recognized "welcome back" shortcut) */}
+              {step !== 'back' && (
+                <div className="flex gap-1.5">
+                  {(['matricula', 'identity', 'avatar'] as const).map((s, i) => {
+                    const order = { matricula: 0, identity: 1, avatar: 2 }
+                    const reached = order[step as 'matricula' | 'identity' | 'avatar'] >= i
+                    return (
+                      <span
+                        key={s}
+                        className={`h-1.5 flex-1 rounded-full ${reached ? 'bg-primary' : 'bg-muted'}`}
+                      />
+                    )
+                  })}
                 </div>
-              ) : (
-                <>
+              )}
+
+              {/* STEP: matrícula */}
+              {step === 'matricula' && (
+                <form
+                  className="space-y-4"
+                  onSubmit={(e) => {
+                    e.preventDefault()
+                    continueFromMatricula()
+                  }}
+                >
                   <div className="space-y-2">
-                    <Label htmlFor="name">Nome completo</Label>
-                    <Input
-                      id="name"
-                      value={name}
-                      onChange={(e) => setName(e.target.value)}
-                      placeholder="Seu nome"
-                      autoFocus
-                    />
-                  </div>
-                  <div className="space-y-2">
-                    <Label htmlFor="matricula">Matrícula</Label>
+                    <Label htmlFor="matricula">Qual é a sua matrícula?</Label>
                     <Input
                       id="matricula"
                       value={matricula}
                       onChange={(e) => setMatricula(e.target.value)}
-                      placeholder="Número de matrícula"
+                      placeholder="0000-0000"
+                      className="h-12 text-center text-lg font-bold tracking-wider"
+                      autoFocus
                     />
+                    <p className="text-muted-foreground text-xs">
+                      Já entrou neste computador? Recuperamos seu perfil automaticamente.
+                    </p>
                   </div>
-                </>
+                  {error && <p className="text-destructive text-sm font-medium">{error}</p>}
+                  <Button type="submit" className="w-full" size="lg">
+                    Continuar
+                    <ArrowRight className="size-4" />
+                  </Button>
+                </form>
               )}
 
-              {error && <p className="text-destructive text-sm font-medium">{error}</p>}
-
-              <Button type="submit" className="w-full" size="lg" disabled={joinMutation.isPending}>
-                {joinMutation.isPending ? (
-                  <>
-                    <Loader2 className="size-4 animate-spin" />
-                    Entrando…
-                  </>
-                ) : (
-                  <>
-                    <LogIn className="size-4" />
+              {/* STEP: welcome back (recognized matrícula) */}
+              {step === 'back' && (
+                <div className="space-y-4">
+                  <div className="flex flex-col items-center gap-2 text-center">
+                    <Avatar config={avatar} size={96} />
+                    <span className="bg-secondary-soft text-secondary-soft-foreground mt-1 rounded-full px-3 py-1 text-xs font-bold">
+                      👋 Bem-vindo de volta!
+                    </span>
+                    <p className="text-lg font-bold">{name}</p>
+                    <p className="text-muted-foreground text-sm">Matrícula {matricula}</p>
+                    {email && <p className="text-muted-foreground text-xs">{email}</p>}
+                  </div>
+                  {error && <p className="text-destructive text-sm font-medium">{error}</p>}
+                  <Button className="w-full" size="lg" disabled={joining} onClick={join}>
+                    {joining ? <Loader2 className="size-4 animate-spin" /> : <LogIn className="size-4" />}
                     Entrar na sala
-                  </>
-                )}
-              </Button>
+                  </Button>
+                  <div className="flex gap-2">
+                    <Button variant="secondary" className="flex-1" onClick={() => setStep('identity')}>
+                      <Pencil className="size-3.5" />
+                      Editar
+                    </Button>
+                    <Button variant="secondary" className="flex-1" onClick={resetToMatricula}>
+                      Não sou eu
+                    </Button>
+                  </div>
+                </div>
+              )}
 
-              <Button
-                type="button"
-                variant="ghost"
-                size="sm"
-                className="w-full"
-                onClick={() => navigate('/', { replace: true })}
-              >
-                <ArrowLeft className="size-3.5" />
-                Voltar
-              </Button>
-            </form>
+              {/* STEP: identity (name + email) */}
+              {step === 'identity' && (
+                <form
+                  className="space-y-4"
+                  onSubmit={(e) => {
+                    e.preventDefault()
+                    if (name.trim().length < 2) {
+                      setError('Informe seu nome')
+                      return
+                    }
+                    setError(null)
+                    setStep('avatar')
+                  }}
+                >
+                  <div className="space-y-2">
+                    <Label htmlFor="name">Nome completo</Label>
+                    <Input id="name" value={name} onChange={(e) => setName(e.target.value)} placeholder="Seu nome" autoFocus />
+                  </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="email">
+                      E-mail <span className="text-muted-foreground">(opcional)</span>
+                    </Label>
+                    <Input id="email" type="email" value={email} onChange={(e) => setEmail(e.target.value)} placeholder="seu@email.com" />
+                    <p className="text-muted-foreground text-xs">
+                      O professor pode usar para enviar seu resultado. Fica salvo neste computador.
+                    </p>
+                  </div>
+                  {error && <p className="text-destructive text-sm font-medium">{error}</p>}
+                  <div className="flex gap-2">
+                    <Button type="button" variant="secondary" onClick={resetToMatricula}>
+                      <ArrowLeft className="size-4" />
+                    </Button>
+                    <Button type="submit" className="flex-1">
+                      Continuar
+                      <ArrowRight className="size-4" />
+                    </Button>
+                  </div>
+                </form>
+              )}
+
+              {/* STEP: avatar */}
+              {step === 'avatar' && (
+                <div className="space-y-4">
+                  <div className="flex flex-col items-center gap-3 text-center">
+                    <Avatar config={avatar} size={112} />
+                    <p className="text-muted-foreground text-sm">Esse é o seu avatar na sala.</p>
+                    <div className="flex gap-2">
+                      <Button variant="secondary" size="sm" onClick={() => setBuilderOpen(true)}>
+                        <Pencil className="size-3.5" />
+                        Personalizar
+                      </Button>
+                      <Button variant="secondary" size="sm" onClick={() => setAvatar(randomAvatar())}>
+                        <Shuffle className="size-3.5" />
+                        Aleatório
+                      </Button>
+                    </div>
+                  </div>
+                  {error && <p className="text-destructive text-sm font-medium">{error}</p>}
+                  <div className="flex gap-2">
+                    <Button variant="secondary" onClick={() => setStep('identity')}>
+                      <ArrowLeft className="size-4" />
+                    </Button>
+                    <Button className="flex-1" size="lg" disabled={joining} onClick={join}>
+                      {joining ? <Loader2 className="size-4 animate-spin" /> : <LogIn className="size-4" />}
+                      Entrar na sala
+                    </Button>
+                  </div>
+                </div>
+              )}
+            </div>
           )}
 
-          {/* ── Error loading (not 404) ─────────────────────────────────── */}
           {active.isError && !noSession && (
             <div className="flex flex-col items-center gap-4 py-4 text-center">
-              <p className="text-destructive text-sm">
-                Erro ao conectar: {String(active.error)}
-              </p>
+              <p className="text-destructive text-sm">Erro ao conectar: {String(active.error)}</p>
               <Button variant="secondary" className="w-full" onClick={handleRefresh}>
                 <RefreshCw className="size-4" />
                 Tentar novamente
-              </Button>
-              <Button
-                variant="ghost"
-                size="sm"
-                className="w-full"
-                onClick={() => navigate('/', { replace: true })}
-              >
-                <ArrowLeft className="size-3.5" />
-                Voltar
               </Button>
             </div>
           )}
         </CardContent>
       </Card>
+
+      {/* Full-screen avatar builder */}
+      {builderOpen && (
+        <div className="bg-background fixed inset-0 z-50">
+          <AvatarBuilder
+            value={avatar}
+            onChange={setAvatar}
+            onDone={() => setBuilderOpen(false)}
+            onClose={() => setBuilderOpen(false)}
+          />
+        </div>
+      )}
     </main>
   )
 }
