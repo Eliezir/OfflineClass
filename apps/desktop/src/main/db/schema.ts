@@ -102,6 +102,9 @@ export const students = sqliteTable(
       .references(() => examSessions.id, { onDelete: 'cascade' }),
     name: text('name').notNull(),
     matricula: text('matricula').notNull(),
+    // Optional contact + avatar. `avatar` holds a JSON-serialized AvatarConfig.
+    email: text('email'),
+    avatar: text('avatar'),
     token: text('token').notNull().unique(),
     joinedAt: timestamp('joined_at')
       .notNull()

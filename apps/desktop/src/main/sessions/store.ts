@@ -20,6 +20,7 @@ import type {
   StudentQuestion,
   StudentSessionState
 } from '@offlineclass/shared'
+import { AvatarConfig } from '@offlineclass/shared'
 
 import type { Db } from '../db/client'
 import { rowToQuestion } from '../db/questions-map'
@@ -42,6 +43,17 @@ export class SessionError extends Error {
 
 const ACTIVE_STATUSES = ['lobby', 'running'] as const
 
+/** Parse the stored avatar JSON; tolerate legacy/garbage rows by returning null. */
+function parseAvatar(raw: string | null): AvatarConfig | null {
+  if (!raw) return null
+  try {
+    const parsed = AvatarConfig.safeParse(JSON.parse(raw))
+    return parsed.success ? parsed.data : null
+  } catch {
+    return null
+  }
+}
+
 function rowToLobbyStudent(
   row: typeof students.$inferSelect,
   answeredCount = 0
@@ -50,6 +62,7 @@ function rowToLobbyStudent(
     id: row.id,
     name: row.name,
     matricula: row.matricula,
+    avatar: parseAvatar(row.avatar),
     joinedAt: row.joinedAt.getTime(),
     lastSeenAt: row.lastSeenAt.getTime(),
     submittedAt: row.submittedAt ? row.submittedAt.getTime() : null,
@@ -379,6 +392,8 @@ export function joinSession(db: Db, input: JoinInput): JoinResult {
   const sessionId = active.id
   const matricula = input.matricula.trim()
   const name = input.name.trim()
+  const email = input.email?.trim() || null
+  const avatar = input.avatar ? JSON.stringify(input.avatar) : null
   const now = new Date()
 
   // If the same student already has a record (e.g. closed the app without
@@ -392,7 +407,7 @@ export function joinSession(db: Db, input: JoinInput): JoinResult {
   if (existing) {
     const token = randomUUID()
     db.update(students)
-      .set({ name, token, lastSeenAt: now, leftAt: null })
+      .set({ name, email, avatar, token, lastSeenAt: now, leftAt: null })
       .where(eq(students.id, existing.id))
       .run()
     return {
@@ -414,6 +429,8 @@ export function joinSession(db: Db, input: JoinInput): JoinResult {
       sessionId,
       name,
       matricula,
+      email,
+      avatar,
       token,
       joinedAt: now,
       lastSeenAt: now
@@ -753,6 +770,8 @@ export function loadStudentAnswers(
     studentId,
     studentName: studentRow.name,
     studentMatricula: studentRow.matricula,
+    studentEmail: studentRow.email ?? null,
+    studentAvatar: parseAvatar(studentRow.avatar),
     examTitle: sessionRow.examTitle,
     submittedAt: studentRow.submittedAt ? studentRow.submittedAt.getTime() : null,
     joinedAt: studentRow.joinedAt.getTime(),

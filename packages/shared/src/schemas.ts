@@ -210,10 +210,31 @@ export type Exam = z.infer<typeof Exam>
 export const SessionStatus = z.enum(['lobby', 'running', 'ended'])
 export type SessionStatus = z.infer<typeof SessionStatus>
 
+// -- Student avatar --------------------------------------------------------
+
+/** DiceBear "adventurer" avatar — only the part IDs travel the LAN; the art is
+    bundled in both apps (`packages/avatar`). Empty string = "none" for the
+    optional parts (hair/glasses/earrings/features). */
+const AvatarId = z.string().max(40)
+export const AvatarConfig = z.object({
+  skinColor: AvatarId,
+  hair: AvatarId,
+  hairColor: AvatarId,
+  eyes: AvatarId,
+  eyebrows: AvatarId,
+  mouth: AvatarId,
+  glasses: AvatarId,
+  earrings: AvatarId,
+  features: AvatarId,
+  backgroundColor: AvatarId
+})
+export type AvatarConfig = z.infer<typeof AvatarConfig>
+
 export const SessionLobbyStudent = z.object({
   id: z.string(),
   name: z.string(),
   matricula: z.string(),
+  avatar: AvatarConfig.nullable(),
   joinedAt: z.number().int(),
   lastSeenAt: z.number().int(),
   submittedAt: z.number().int().nullable(),
@@ -257,7 +278,10 @@ export type SessionPublic = z.infer<typeof SessionPublic>
 
 export const JoinInput = z.object({
   name: z.string().min(2, 'Nome obrigatório').max(80),
-  matricula: z.string().min(2, 'Matrícula obrigatória').max(40)
+  matricula: z.string().min(2, 'Matrícula obrigatória').max(40),
+  // Optional contact + avatar. The teacher falls back to initials when avatar is absent.
+  email: z.string().email('E-mail inválido').max(120).optional(),
+  avatar: AvatarConfig.optional()
 })
 export type JoinInput = z.infer<typeof JoinInput>
 
@@ -405,6 +429,8 @@ export const SessionAnswersReview = z.object({
   studentId: z.string(),
   studentName: z.string(),
   studentMatricula: z.string(),
+  studentEmail: z.string().nullable(),
+  studentAvatar: AvatarConfig.nullable(),
   examTitle: z.string(),
   submittedAt: z.number().int().nullable(),
   joinedAt: z.number().int(),
