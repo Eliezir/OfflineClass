@@ -20,8 +20,10 @@ import {
 
 import type { Db } from '../db/client'
 import { resolveSession } from '../auth/sessions'
-import { examSessions } from '../db/schema'
+import { examSessions, groupMembers } from '../db/schema'
 import type { Rooms } from '../sessions/rooms'
+import * as Y from 'yjs'
+import { yjsManager } from '../sessions/yjs'
 import {
   findActiveSessionPublic,
   findStudentByToken,
@@ -88,6 +90,19 @@ export async function startServer(port: number, deps: ServerDeps): Promise<Serve
   const app = new Hono()
   const { injectWebSocket, upgradeWebSocket } = createNodeWebSocket({ app })
 
+  function broadcastGroupList(sessionId: string): void {
+    const groups = listGroups(db, sessionId)
+    rooms.toAll(sessionId, {
+      type: 'group.list',
+      groups
+    } satisfies import('@offlineclass/shared').WsServerEvent)
+  }
+
+  function broadcastLobbyAndGroups(sessionId: string): void {
+    broadcastLobbyUpdate(db, rooms, sessionId)
+    broadcastGroupList(sessionId)
+  }
+
   app.get('/api/health', (c) => c.json({ ok: true }))
 
   app.get('/api/session/active', (c) => {
@@ -112,7 +127,7 @@ export async function startServer(port: number, deps: ServerDeps): Promise<Serve
     }
     try {
       const result = joinSession(db, parsed.data)
-      broadcastLobbyUpdate(db, rooms, result.sessionId)
+      broadcastLobbyAndGroups(result.sessionId)
       return c.json(result)
     } catch (err) {
       return mapSessionError(c, err)
@@ -195,12 +210,14 @@ export async function startServer(port: number, deps: ServerDeps): Promise<Serve
       const sessionId = student.sessionId
       const submittedStudent = listLobbyStudents(db, sessionId).find((s) => s.id === student.id)
       submitStudent(db, student.id)
-      broadcastLobbyUpdate(db, rooms, sessionId)
+      broadcastLobbyAndGroups(sessionId)
       if (submittedStudent) {
-        rooms.toTeachers(sessionId, {
+        const event: WsServerEvent = {
           type: 'student.submitted',
           student: submittedStudent
-        } satisfies import('@offlineclass/shared').WsServerEvent)
+        }
+        rooms.toTeachers(sessionId, event)
+        rooms.toStudents(sessionId, event)
       }
       return c.json({ ok: true })
     } catch (err) {
@@ -218,10 +235,26 @@ export async function startServer(port: number, deps: ServerDeps): Promise<Serve
     // Capture student info BEFORE leaveSession marks leftAt (after that,
     // listLobbyStudents excludes them so we need to build the payload now).
     const leftStudent = listLobbyStudents(db, sessionId).find((s) => s.id === student.id)
+
+    // Remove from group if any
+    const memberRow = db
+      .select({ groupId: groupMembers.groupId })
+      .from(groupMembers)
+      .where(eq(groupMembers.studentId, student.id))
+      .get()
+    if (memberRow) {
+      try {
+        leaveGroup(db, memberRow.groupId, student.id)
+        rooms.updateStudentGroup(student.id, null)
+      } catch (err) {
+        console.error('Failed to remove student from group on leave:', err)
+      }
+    }
+
     leaveSession(db, token)
 
     // Broadcast updated lobby (student removed) + dedicated leave event.
-    broadcastLobbyUpdate(db, rooms, sessionId)
+    broadcastLobbyAndGroups(sessionId)
     if (leftStudent) {
       rooms.toTeachers(sessionId, {
         type: 'student.left',
@@ -232,14 +265,6 @@ export async function startServer(port: number, deps: ServerDeps): Promise<Serve
   })
 
   // ---- Groups -----------------------------------------------------------
-
-  function broadcastGroupList(sessionId: string): void {
-    const groups = listGroups(db, sessionId)
-    rooms.toAll(sessionId, {
-      type: 'group.list',
-      groups
-    } satisfies import('@offlineclass/shared').WsServerEvent)
-  }
 
   app.get('/api/groups', (c) => {
     const token = extractBearer(c)
@@ -254,6 +279,14 @@ export async function startServer(port: number, deps: ServerDeps): Promise<Serve
     if (!token) return c.json({ error: 'unauthorized' }, 401)
     const student = findStudentByToken(db, token)
     if (!student) return c.json({ error: 'unauthorized' }, 401)
+    const session = db
+      .select({ status: examSessions.status })
+      .from(examSessions)
+      .where(eq(examSessions.id, student.sessionId))
+      .get()
+    if (!session || session.status !== 'lobby') {
+      return c.json({ error: 'BAD_STATE', message: 'Grupos estão travados após o início da sessão.' }, 400)
+    }
     let body: { name?: string }
     try { body = await c.req.json() } catch { return c.json({ error: 'invalid-json' }, 400) }
     if (!body.name || body.name.trim().length < 1) {
@@ -261,7 +294,8 @@ export async function startServer(port: number, deps: ServerDeps): Promise<Serve
     }
     try {
       const group = createGroup(db, student.sessionId, body.name, student.id)
-      broadcastGroupList(student.sessionId)
+      rooms.updateStudentGroup(student.id, group.id)
+      broadcastLobbyAndGroups(student.sessionId)
       return c.json(group)
     } catch (err) {
       if (err instanceof GroupError) return c.json({ error: err.code, message: err.message }, 400)
@@ -274,10 +308,19 @@ export async function startServer(port: number, deps: ServerDeps): Promise<Serve
     if (!token) return c.json({ error: 'unauthorized' }, 401)
     const student = findStudentByToken(db, token)
     if (!student) return c.json({ error: 'unauthorized' }, 401)
+    const session = db
+      .select({ status: examSessions.status })
+      .from(examSessions)
+      .where(eq(examSessions.id, student.sessionId))
+      .get()
+    if (!session || session.status !== 'lobby') {
+      return c.json({ error: 'BAD_STATE', message: 'Grupos estão travados após o início da sessão.' }, 400)
+    }
     const groupId = c.req.param('id')
     try {
       joinGroup(db, groupId, student.id)
-      broadcastGroupList(student.sessionId)
+      rooms.updateStudentGroup(student.id, groupId)
+      broadcastLobbyAndGroups(student.sessionId)
       return c.json({ ok: true })
     } catch (err) {
       if (err instanceof GroupError) return c.json({ error: err.code, message: err.message }, 400)
@@ -290,10 +333,19 @@ export async function startServer(port: number, deps: ServerDeps): Promise<Serve
     if (!token) return c.json({ error: 'unauthorized' }, 401)
     const student = findStudentByToken(db, token)
     if (!student) return c.json({ error: 'unauthorized' }, 401)
+    const session = db
+      .select({ status: examSessions.status })
+      .from(examSessions)
+      .where(eq(examSessions.id, student.sessionId))
+      .get()
+    if (!session || session.status !== 'lobby') {
+      return c.json({ error: 'BAD_STATE', message: 'Grupos estão travados após o início da sessão.' }, 400)
+    }
     const groupId = c.req.param('id')
     try {
       leaveGroup(db, groupId, student.id)
-      broadcastGroupList(student.sessionId)
+      rooms.updateStudentGroup(student.id, null)
+      broadcastLobbyAndGroups(student.sessionId)
       return c.json({ ok: true })
     } catch (err) {
       if (err instanceof GroupError) return c.json({ error: err.code, message: err.message }, 400)
@@ -315,7 +367,7 @@ export async function startServer(port: number, deps: ServerDeps): Promise<Serve
 
       type Auth =
         | { kind: 'teacher'; sessionId: string }
-        | { kind: 'student'; studentId: string; sessionId: string }
+        | { kind: 'student'; studentId: string; sessionId: string; groupId: string | null }
       let auth: Auth | null = null
 
       if (role === 'teacher' && sessionIdParam) {
@@ -331,12 +383,38 @@ export async function startServer(port: number, deps: ServerDeps): Promise<Serve
               )
             )
             .get()
-          if (examSession) auth = { kind: 'teacher', sessionId: examSession.id }
+          if (examSession) {
+            auth = { kind: 'teacher', sessionId: examSession.id }
+          }
         }
       } else if (role === 'student') {
         const student = findStudentByToken(db, token)
         if (student) {
-          auth = { kind: 'student', studentId: student.id, sessionId: student.sessionId }
+          const sessionRow = db
+            .select({ groupMode: examSessions.groupMode })
+            .from(examSessions)
+            .where(eq(examSessions.id, student.sessionId))
+            .get()
+          const groupMode = sessionRow?.groupMode ?? 'disabled'
+
+          let groupId: string | null = null
+          if (groupMode !== 'disabled') {
+            const memberRow = db
+              .select({ groupId: groupMembers.groupId })
+              .from(groupMembers)
+              .where(eq(groupMembers.studentId, student.id))
+              .get()
+            groupId = memberRow?.groupId ?? null
+          } else {
+            groupId = student.id
+          }
+
+          auth = {
+            kind: 'student',
+            studentId: student.id,
+            sessionId: student.sessionId,
+            groupId
+          }
         }
       }
 
@@ -358,10 +436,36 @@ export async function startServer(port: number, deps: ServerDeps): Promise<Serve
               } satisfies WsServerEvent)
             )
           } else {
-            rooms.addStudent(auth.sessionId, auth.studentId, ws)
+            rooms.addStudent(auth.sessionId, auth.studentId, auth.groupId, ws)
             ws.send(
               JSON.stringify({ type: 'connection.ack', role: 'student' } satisfies WsServerEvent)
             )
+            if (auth.groupId) {
+              const doc = yjsManager.getOrCreateDoc(db, auth.groupId)
+              const state = Y.encodeStateAsUpdate(doc)
+              const payload = new Uint8Array(state.length + 1)
+              payload[0] = 0 // type 0: Sync Update
+              payload.set(state, 1)
+              ws.send(payload)
+            }
+          }
+        },
+        onMessage: (event, ws) => {
+          if (!auth) return
+          if (event.data instanceof ArrayBuffer) {
+            if (auth.kind === 'student' && auth.groupId) {
+              const data = new Uint8Array(event.data)
+              const type = data[0]
+              const payload = data.subarray(1)
+
+              if (type === 0) { // Yjs Doc Update
+                const doc = yjsManager.getOrCreateDoc(db, auth.groupId)
+                Y.applyUpdate(doc, payload)
+                rooms.broadcastYjsToGroup(auth.sessionId, auth.groupId, ws, data)
+              } else if (type === 1) { // Awareness Update
+                rooms.broadcastYjsToGroup(auth.sessionId, auth.groupId, ws, data)
+              }
+            }
           }
         },
         onClose: (_event, ws) => {
@@ -413,6 +517,11 @@ export async function startServer(port: number, deps: ServerDeps): Promise<Serve
     port,
     stop: () =>
       new Promise((resolve, reject) => {
+        try {
+          yjsManager.flushAll(db)
+        } catch (err) {
+          console.error('Failed to flush Yjs snapshots on server stop:', err)
+        }
         server.close((err) => (err ? reject(err) : resolve()))
       })
   }

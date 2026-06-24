@@ -6,7 +6,8 @@ import {
   type SessionDetail,
   type SessionResultSummary,
   type SessionSummary,
-  type WsServerEvent
+  type WsServerEvent,
+  type GroupPublic
 } from '@offlineclass/shared'
 import { getMainWindow } from '../windows'
 
@@ -25,6 +26,9 @@ import {
   startSession
 } from '../sessions/store'
 import type { Rooms } from '../sessions/rooms'
+import { listGroups, createGroup, joinGroup, leaveGroup } from '../sessions/groups'
+import { groups } from '../db/schema'
+import { eq } from 'drizzle-orm'
 
 export interface SessionsContext {
   db: Db
@@ -65,6 +69,17 @@ export function registerSessionsHandlers(ctx: SessionsContext): void {
     const ownerId = requireTeacherId(db)
     const id = typeof rawId === 'string' ? rawId : ''
     const detail = startSession(db, id, ownerId)
+    if (detail.groupMode === 'shuffle') {
+      rooms.updateAllStudentGroupsForSession(db, id)
+      rooms.toAll(id, {
+        type: 'group.list',
+        groups: listGroups(db, id)
+      })
+      rooms.toTeachers(id, {
+        type: 'session.lobby.update',
+        students: listLobbyStudents(db, id)
+      })
+    }
     const event: WsServerEvent = {
       type: 'session.started',
       startedAt: detail.startedAt ?? Date.now(),
@@ -126,6 +141,65 @@ export function registerSessionsHandlers(ctx: SessionsContext): void {
       const input = GradeAnswerInput.parse(raw)
       gradeAnswer(db, sessionId, input.studentId, input.questionId, input.score, ownerId)
       return loadStudentAnswers(db, sessionId, input.studentId, ownerId)
+    }
+  )
+
+  ipcMain.handle(
+    'sessions.createGroup',
+    async (_event, rawSessionId, rawName, rawStudentId): Promise<GroupPublic> => {
+      requireTeacherId(db)
+      const sessionId = typeof rawSessionId === 'string' ? rawSessionId : ''
+      const name = typeof rawName === 'string' ? rawName : ''
+      const studentId = typeof rawStudentId === 'string' ? rawStudentId : ''
+      const group = createGroup(db, sessionId, name, studentId)
+      if (studentId) {
+        rooms.updateStudentGroup(studentId, group.id)
+      }
+      const groupsList = listGroups(db, sessionId)
+      rooms.toAll(sessionId, { type: 'group.list', groups: groupsList })
+      rooms.toTeachers(sessionId, {
+        type: 'session.lobby.update',
+        students: listLobbyStudents(db, sessionId)
+      })
+      return group
+    }
+  )
+
+  ipcMain.handle(
+    'sessions.joinGroup',
+    async (_event, rawGroupId, rawStudentId): Promise<void> => {
+      requireTeacherId(db)
+      const groupId = typeof rawGroupId === 'string' ? rawGroupId : ''
+      const studentId = typeof rawStudentId === 'string' ? rawStudentId : ''
+      const grp = db.select({ sessionId: groups.sessionId }).from(groups).where(eq(groups.id, groupId)).get()
+      if (!grp) throw new Error('Grupo não encontrado')
+      joinGroup(db, groupId, studentId)
+      rooms.updateStudentGroup(studentId, groupId)
+      const groupsList = listGroups(db, grp.sessionId)
+      rooms.toAll(grp.sessionId, { type: 'group.list', groups: groupsList })
+      rooms.toTeachers(grp.sessionId, {
+        type: 'session.lobby.update',
+        students: listLobbyStudents(db, grp.sessionId)
+      })
+    }
+  )
+
+  ipcMain.handle(
+    'sessions.leaveGroup',
+    async (_event, rawGroupId, rawStudentId): Promise<void> => {
+      requireTeacherId(db)
+      const groupId = typeof rawGroupId === 'string' ? rawGroupId : ''
+      const studentId = typeof rawStudentId === 'string' ? rawStudentId : ''
+      const grp = db.select({ sessionId: groups.sessionId }).from(groups).where(eq(groups.id, groupId)).get()
+      if (!grp) throw new Error('Grupo não encontrado')
+      leaveGroup(db, groupId, studentId)
+      rooms.updateStudentGroup(studentId, null)
+      const groupsList = listGroups(db, grp.sessionId)
+      rooms.toAll(grp.sessionId, { type: 'group.list', groups: groupsList })
+      rooms.toTeachers(grp.sessionId, {
+        type: 'session.lobby.update',
+        students: listLobbyStudents(db, grp.sessionId)
+      })
     }
   )
 }

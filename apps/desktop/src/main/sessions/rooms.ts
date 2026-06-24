@@ -1,3 +1,5 @@
+import { eq } from 'drizzle-orm'
+import { groupMembers, groups, examSessions } from '../db/schema'
 import type { WSContext } from 'hono/ws'
 import type { WsServerEvent } from '@offlineclass/shared'
 
@@ -6,6 +8,7 @@ interface Subscription {
   role: 'teacher' | 'student'
   sessionId: string
   studentId?: string
+  groupId?: string
 }
 
 // In-memory registry of live WS subscriptions, keyed by the WSContext
@@ -19,8 +22,67 @@ export class Rooms {
     this.subs.set(ws, { ws, role: 'teacher', sessionId })
   }
 
-  addStudent(sessionId: string, studentId: string, ws: WSContext): void {
-    this.subs.set(ws, { ws, role: 'student', sessionId, studentId })
+  addStudent(sessionId: string, studentId: string, groupId: string | null, ws: WSContext): void {
+    this.subs.set(ws, { ws, role: 'student', sessionId, studentId, groupId: groupId || undefined })
+  }
+
+  updateStudentGroup(studentId: string, groupId: string | null): void {
+    for (const sub of this.subs.values()) {
+      if (sub.role === 'student' && sub.studentId === studentId) {
+        sub.groupId = groupId || undefined
+      }
+    }
+  }
+
+  updateAllStudentGroupsForSession(db: any, sessionId: string): void {
+    const memberRows = db
+      .select({
+        studentId: groupMembers.studentId,
+        groupId: groupMembers.groupId
+      })
+      .from(groupMembers)
+      .innerJoin(groups, eq(groups.id, groupMembers.groupId))
+      .where(eq(groups.sessionId, sessionId))
+      .all()
+
+    const studentToGroup = new Map<string, string>()
+    for (const r of memberRows) {
+      studentToGroup.set(r.studentId, r.groupId)
+    }
+
+    const sessionRow = db
+      .select({ groupMode: examSessions.groupMode })
+      .from(examSessions)
+      .where(eq(examSessions.id, sessionId))
+      .get()
+    const groupMode = sessionRow?.groupMode ?? 'disabled'
+
+    for (const sub of this.subs.values()) {
+      if (sub.role === 'student' && sub.sessionId === sessionId && sub.studentId) {
+        if (groupMode !== 'disabled') {
+          sub.groupId = studentToGroup.get(sub.studentId) ?? undefined
+        } else {
+          sub.groupId = sub.studentId
+        }
+      }
+    }
+  }
+
+  broadcastYjsToGroup(sessionId: string, groupId: string, senderWs: WSContext, update: Uint8Array): void {
+    for (const sub of this.subs.values()) {
+      if (
+        sub.role === 'student' &&
+        sub.sessionId === sessionId &&
+        sub.groupId === groupId &&
+        sub.ws !== senderWs
+      ) {
+        try {
+          sub.ws.send(update as any)
+        } catch {
+          // ignore broken sockets
+        }
+      }
+    }
   }
 
   remove(ws: WSContext): void {

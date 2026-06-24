@@ -123,7 +123,7 @@ export default function WaitingRoute(): React.JSX.Element {
   const myGroup = groups.find((g) => g.members.some((m) => m.studentId === myStudentId))
 
   return (
-    <main className="flex flex-1 flex-col items-center justify-center gap-6 px-6 py-10">
+    <main className="flex flex-1 flex-col items-center justify-center gap-6 px-6 py-10 overflow-y-auto">
       <Card className="w-full max-w-sm">
         <CardHeader>
           <CardTitle>Aguardando o professor</CardTitle>
@@ -140,82 +140,119 @@ export default function WaitingRoute(): React.JSX.Element {
               : 'Obtendo informações da sessão…'}
           </p>
 
-          {/* ── Groups (free mode) ───────────────────────────────────── */}
-          {groups.length > 0 && (
-            <div className="space-y-2">
+          {/* ── Groups UI ───────────────────────────────────────────── */}
+          {meQuery.data?.groupMode === 'free' && (
+            <>
+              {groups.length > 0 && (
+                <div className="space-y-2">
+                  <div className="flex items-center gap-2 text-xs font-semibold text-muted-foreground">
+                    <Users className="size-3.5" />
+                    Grupos
+                  </div>
+                  <div className="space-y-1.5">
+                    {groups.map((g) => (
+                      <div
+                        key={g.id}
+                        className="border-border flex items-center justify-between gap-2 rounded-xl border px-3 py-2"
+                      >
+                        <div className="min-w-0">
+                          <p className="truncate text-sm font-semibold">{g.name}</p>
+                          <p className="text-muted-foreground text-xs">
+                            {g.members.map((m) => m.studentName).join(', ') || 'vazio'}
+                          </p>
+                        </div>
+                        {myGroup?.id === g.id ? (
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            onClick={() => leaveGroupMutation.mutate(g.id)}
+                          >
+                            Sair
+                          </Button>
+                        ) : (
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            onClick={() => joinGroupMutation.mutate(g.id)}
+                            disabled={joinGroupMutation.isPending}
+                          >
+                            Entrar
+                          </Button>
+                        )}
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
+
+              {/* ── Create group ─────────────────────────────────────────── */}
+              <div className="border-t border-border/60 pt-3">
+                {showCreate ? (
+                  <div className="flex gap-2">
+                    <Input
+                      placeholder="Nome do grupo"
+                      value={newGroupName}
+                      onChange={(e) => setNewGroupName(e.target.value)}
+                      className="h-8 text-xs"
+                    />
+                    <Button
+                      size="sm"
+                      onClick={() => createGroupMutation.mutate()}
+                      disabled={!newGroupName.trim() || createGroupMutation.isPending}
+                    >
+                      Criar
+                    </Button>
+                    <Button variant="ghost" size="sm" onClick={() => setShowCreate(false)}>
+                      Cancelar
+                    </Button>
+                  </div>
+                ) : (
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    className="w-full"
+                    onClick={() => setShowCreate(true)}
+                  >
+                    <Plus className="size-3.5" />
+                    Criar grupo
+                  </Button>
+                )}
+              </div>
+            </>
+          )}
+
+          {meQuery.data?.groupMode === 'teacher' && (
+            <div className="border-t border-border/60 pt-3 space-y-2">
               <div className="flex items-center gap-2 text-xs font-semibold text-muted-foreground">
                 <Users className="size-3.5" />
-                Grupos
+                Grupo (Definido pelo Professor)
               </div>
-              <div className="space-y-1.5">
-                {groups.map((g) => (
-                  <div
-                    key={g.id}
-                    className="border-border flex items-center justify-between gap-2 rounded-xl border px-3 py-2"
-                  >
-                    <div className="min-w-0">
-                      <p className="truncate text-sm font-semibold">{g.name}</p>
-                      <p className="text-muted-foreground text-xs">
-                        {g.members.map((m) => m.studentName).join(', ') || 'vazio'}
-                      </p>
-                    </div>
-                    {myGroup?.id === g.id ? (
-                      <Button
-                        variant="ghost"
-                        size="sm"
-                        onClick={() => leaveGroupMutation.mutate(g.id)}
-                      >
-                        Sair
-                      </Button>
-                    ) : (
-                      <Button
-                        variant="outline"
-                        size="sm"
-                        onClick={() => joinGroupMutation.mutate(g.id)}
-                        disabled={joinGroupMutation.isPending}
-                      >
-                        Entrar
-                      </Button>
-                    )}
-                  </div>
-                ))}
-              </div>
+              {myGroup ? (
+                <div className="border-border rounded-xl border px-3 py-2 bg-primary-soft/10">
+                  <p className="text-sm font-semibold text-primary">{myGroup.name}</p>
+                  <p className="text-muted-foreground text-xs">
+                    Membros: {myGroup.members.map((m) => m.studentName).join(', ')}
+                  </p>
+                </div>
+              ) : (
+                <p className="text-xs text-muted-foreground italic">
+                  Aguardando o professor definir seu grupo...
+                </p>
+              )}
             </div>
           )}
 
-          {/* ── Create group ─────────────────────────────────────────── */}
-          <div className="border-t border-border/60 pt-3">
-            {showCreate ? (
-              <div className="flex gap-2">
-                <Input
-                  placeholder="Nome do grupo"
-                  value={newGroupName}
-                  onChange={(e) => setNewGroupName(e.target.value)}
-                  className="h-8 text-xs"
-                />
-                <Button
-                  size="sm"
-                  onClick={() => createGroupMutation.mutate()}
-                  disabled={!newGroupName.trim() || createGroupMutation.isPending}
-                >
-                  Criar
-                </Button>
-                <Button variant="ghost" size="sm" onClick={() => setShowCreate(false)}>
-                  Cancelar
-                </Button>
+          {meQuery.data?.groupMode === 'shuffle' && (
+            <div className="border-t border-border/60 pt-3 space-y-2">
+              <div className="flex items-center gap-2 text-xs font-semibold text-muted-foreground">
+                <Users className="size-3.5" />
+                Grupos (Sorteio Automático)
               </div>
-            ) : (
-              <Button
-                variant="ghost"
-                size="sm"
-                className="w-full"
-                onClick={() => setShowCreate(true)}
-              >
-                <Plus className="size-3.5" />
-                Criar grupo
-              </Button>
-            )}
-          </div>
+              <p className="text-xs text-muted-foreground italic">
+                Aguardando o professor iniciar a prova e realizar o sorteio dos grupos...
+              </p>
+            </div>
+          )}
 
           <div className="border-border bg-muted/40 mx-auto h-1 w-40 overflow-hidden rounded-full">
             <div className="bg-primary h-full w-1/3 animate-pulse" />

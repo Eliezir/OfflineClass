@@ -47,6 +47,16 @@ export function LiveSessionManager({ sessionId }: LiveSessionManagerProps): null
               })
             }
 
+            if (message.type === 'group.list') {
+              queryClient.setQueryData<SessionDetail | null>(sessionKeys.active(), (oldData) => {
+                if (!oldData) return null
+                return {
+                  ...oldData,
+                  groups: message.groups
+                }
+              })
+            }
+
             if (message.type === 'student.left') {
               const s = message.student
               notify.warning(`${s.name} saiu da sala`, {

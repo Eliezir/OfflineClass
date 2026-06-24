@@ -24,7 +24,8 @@ import type {
   SessionDetail,
   SessionResultSummary,
   SessionSummary,
-  Teacher
+  Teacher,
+  GroupPublic
 } from '@offlineclass/shared'
 
 /** Generic typed bridge — window chrome + app meta (Zod-validated contract). */
@@ -89,7 +90,13 @@ const domain = {
     studentAnswers: (sessionId: string, studentId: string): Promise<SessionAnswersReview> =>
       ipcRenderer.invoke('sessions.studentAnswers', sessionId, studentId),
     gradeAnswer: (sessionId: string, input: GradeAnswerInput): Promise<SessionAnswersReview> =>
-      ipcRenderer.invoke('sessions.gradeAnswer', sessionId, input)
+      ipcRenderer.invoke('sessions.gradeAnswer', sessionId, input),
+    createGroup: (sessionId: string, name: string, studentId: string): Promise<GroupPublic> =>
+      ipcRenderer.invoke('sessions.createGroup', sessionId, name, studentId),
+    joinGroup: (groupId: string, studentId: string): Promise<void> =>
+      ipcRenderer.invoke('sessions.joinGroup', groupId, studentId),
+    leaveGroup: (groupId: string, studentId: string): Promise<void> =>
+      ipcRenderer.invoke('sessions.leaveGroup', groupId, studentId)
   }
 }
 

@@ -2,6 +2,13 @@ import { useEffect, useMemo, useRef, useState } from 'react'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { useNavigate } from 'react-router-dom'
 import type { StudentQuestion } from '@offlineclass/shared'
+import * as Y from 'yjs'
+import { useEditor, EditorContent } from '@tiptap/react'
+import StarterKit from '@tiptap/starter-kit'
+import Collaboration from '@tiptap/extension-collaboration'
+import CollaborationCaret from '@tiptap/extension-collaboration-caret'
+import { Awareness } from 'y-protocols/awareness'
+import * as awarenessProtocol from 'y-protocols/awareness'
 
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
@@ -57,16 +64,26 @@ export default function TestRoute(): React.JSX.Element {
   const [drafts, setDrafts] = useState<Record<string, string>>({})
   const [showSubmitDialog, setShowSubmitDialog] = useState(false)
 
+  // Create Yjs Doc and shared map
+  const doc = useMemo(() => new Y.Doc(), [])
+  const answersMap = useMemo(() => doc.getMap<string>('answers'), [doc])
+  const awareness = useMemo(() => new Awareness(doc), [doc])
+
   useEffect(() => {
-    if (!meQuery.data) return
+    if (!meQuery.data || !examQuery.data) return
     setDrafts((cur) => {
       const next: Record<string, string> = { ...cur }
+      for (const q of examQuery.data.questions) {
+        if (q.kind === 'code' && q.starterCode && next[q.id] === undefined) {
+          next[q.id] = q.starterCode
+        }
+      }
       for (const a of meQuery.data.answers) {
-        if (next[a.questionId] === undefined) next[a.questionId] = a.value
+        next[a.questionId] = a.value
       }
       return next
     })
-  }, [meQuery.data?.studentId])
+  }, [meQuery.data?.studentId, examQuery.data])
 
   useEffect(() => {
     if (meQuery.data?.submittedAt) navigate('/done', { replace: true })
@@ -80,6 +97,7 @@ export default function TestRoute(): React.JSX.Element {
     }
   }, [meQuery.data, meQuery.error, navigate])
 
+  // Sync Y.Doc with socket updates
   useEffect(() => {
     const token = loadToken()
     if (!token) return
@@ -95,10 +113,85 @@ export default function TestRoute(): React.JSX.Element {
           qc.invalidateQueries({ queryKey: ['exam', 'current', teacherUrl] })
           qc.invalidateQueries({ queryKey: ['session', 'me', teacherUrl] })
         }
+        if (event.type === 'student.submitted') {
+          qc.invalidateQueries({ queryKey: ['session', 'me', teacherUrl] })
+        }
+      },
+      onBinary: (data) => {
+        if (meQuery.data?.groupMode === 'disabled') return
+        const array = new Uint8Array(data)
+        const type = array[0]
+        const payload = array.subarray(1)
+        if (type === 0) {
+          Y.applyUpdate(doc, payload, 'socket')
+        } else if (type === 1) {
+          awarenessProtocol.applyAwarenessUpdate(awareness, payload, 'socket')
+        }
       }
     })
-    return () => conn.close()
-  }, [navigate, qc, teacherUrl])
+
+    const onDocUpdate = (update: Uint8Array, origin: any) => {
+      if (origin === 'socket') return
+      const payload = new Uint8Array(update.length + 1)
+      payload[0] = 0 // type 0: Sync Update
+      payload.set(update, 1)
+      conn.sendBinary(payload)
+    }
+
+    if (meQuery.data?.groupMode && meQuery.data.groupMode !== 'disabled') {
+      doc.on('update', onDocUpdate)
+
+      // Set initial local awareness state
+      awareness.setLocalStateField('user', {
+        name: meQuery.data?.studentName ?? 'User',
+        color: ['#f43f5e', '#ec4899', '#d946ef', '#a855f7', '#8b5cf6', '#6366f1', '#3b82f6', '#0ea5e9', '#06b6d4', '#14b8a6', '#10b981', '#22c55e'][doc.clientID % 12]
+      })
+
+      // When local awareness changes, send update
+      awareness.on('update', (update: any, origin: any) => {
+        if (origin === 'socket') return
+        const { added, updated, removed } = update
+        const changedClients = added.concat(updated).concat(removed)
+        const encodedUpdate = awarenessProtocol.encodeAwarenessUpdate(awareness, changedClients)
+        const payload = new Uint8Array(encodedUpdate.length + 1)
+        payload[0] = 1 // type 1: Awareness Update
+        payload.set(encodedUpdate, 1)
+        conn.sendBinary(payload)
+      })
+    }
+
+    return () => {
+      doc.off('update', onDocUpdate)
+      conn.close()
+    }
+  }, [navigate, qc, teacherUrl, doc, awareness, meQuery.data?.groupMode, meQuery.data?.studentName])
+
+  // Observe Yjs document changes and update react-state drafts
+  useEffect(() => {
+    if (!meQuery.data || meQuery.data.groupMode === 'disabled') return
+
+    const observeAnswers = () => {
+      setDrafts((prev) => {
+        const next = { ...prev }
+        let changed = false
+        for (const key of answersMap.keys()) {
+          const val = answersMap.get(key) ?? ''
+          if (next[key] !== val) {
+            next[key] = val
+            changed = true
+          }
+        }
+        return changed ? next : prev
+      })
+    }
+
+    answersMap.observe(observeAnswers)
+    observeAnswers()
+
+    return () => {
+      answersMap.unobserve(observeAnswers)
+    }
+  }, [answersMap, meQuery.data?.groupMode])
 
   useEffect(() => {
     const interval = setInterval(() => {
@@ -127,7 +220,14 @@ export default function TestRoute(): React.JSX.Element {
 
   const debounceRefs = useRef<Record<string, ReturnType<typeof setTimeout>>>({})
   const updateDraft = (questionId: string, value: string): void => {
-    setDrafts((cur) => ({ ...cur, [questionId]: value }))
+    if (meQuery.data?.groupMode && meQuery.data.groupMode !== 'disabled') {
+      if (answersMap.get(questionId) !== value) {
+        answersMap.set(questionId, value)
+      }
+    } else {
+      setDrafts((cur) => ({ ...cur, [questionId]: value }))
+    }
+
     if (debounceRefs.current[questionId]) {
       clearTimeout(debounceRefs.current[questionId])
     }
@@ -179,7 +279,7 @@ export default function TestRoute(): React.JSX.Element {
   const answeredCount = Object.values(drafts).filter((v) => v.trim().length > 0).length
 
   return (
-    <main className="flex flex-1 flex-col pb-32">
+    <main className="flex flex-1 flex-col pb-32 overflow-y-auto">
       <div className="bg-background/95 border-border sticky top-0 z-10 border-b backdrop-blur">
         <div className="mx-auto flex max-w-2xl items-center justify-between gap-2 px-4 py-3">
           <div>
@@ -207,6 +307,10 @@ export default function TestRoute(): React.JSX.Element {
             question={q}
             value={drafts[q.id] ?? ''}
             onChange={(v) => updateDraft(q.id, v)}
+            doc={doc}
+            awareness={awareness}
+            studentName={meQuery.data?.studentName ?? 'Estudante'}
+            groupMode={meQuery.data?.groupMode ?? 'disabled'}
           />
         ))}
       </ol>
@@ -263,9 +367,22 @@ interface QuestionCardProps {
   question: StudentQuestion
   value: string
   onChange: (value: string) => void
+  doc: Y.Doc
+  awareness: any
+  studentName: string
+  groupMode: string
 }
 
-function QuestionCard({ index, question, value, onChange }: QuestionCardProps): React.JSX.Element {
+function QuestionCard({
+  index,
+  question,
+  value,
+  onChange,
+  doc,
+  awareness,
+  studentName,
+  groupMode
+}: QuestionCardProps): React.JSX.Element {
   return (
     <Card>
       <CardHeader>
@@ -273,10 +390,26 @@ function QuestionCard({ index, question, value, onChange }: QuestionCardProps): 
           {index}. {question.prompt}
         </CardTitle>
         <CardDescription>
-          {question.kind === 'mcq' ? 'Múltipla escolha' : 'Dissertativa'}
+          {question.kind === 'mcq'
+            ? 'Múltipla escolha'
+            : question.kind === 'code'
+              ? 'Código'
+              : question.kind === 'truefalse'
+                ? 'Verdadeiro ou Falso'
+                : question.kind === 'multi'
+                  ? 'Múltipla resposta'
+                  : 'Dissertativa'}
         </CardDescription>
       </CardHeader>
-      <CardContent>
+      <CardContent className="space-y-4">
+        {question.image && (
+          <img
+            src={question.image}
+            alt=""
+            className="max-h-60 rounded-xl border border-border object-contain mb-3"
+          />
+        )}
+
         {question.kind === 'mcq' ? (
           <RadioGroup value={value} onValueChange={onChange} className="space-y-2">
             {question.options.map((opt) => (
@@ -288,15 +421,159 @@ function QuestionCard({ index, question, value, onChange }: QuestionCardProps): 
               </div>
             ))}
           </RadioGroup>
+        ) : question.kind === 'truefalse' ? (
+          <RadioGroup value={value} onValueChange={onChange} className="space-y-2">
+            <div className="flex items-center gap-2">
+              <RadioGroupItem value="true" id={`q-${question.id}-true`} />
+              <Label htmlFor={`q-${question.id}-true`} className="cursor-pointer">
+                Verdadeiro
+              </Label>
+            </div>
+            <div className="flex items-center gap-2">
+              <RadioGroupItem value="false" id={`q-${question.id}-false`} />
+              <Label htmlFor={`q-${question.id}-false`} className="cursor-pointer">
+                Falso
+              </Label>
+            </div>
+          </RadioGroup>
+        ) : question.kind === 'multi' ? (
+          <div className="space-y-2">
+            {question.options.map((opt) => {
+              const selectedIds = new Set(value ? value.split(',') : [])
+              const handleCheckedChange = (checked: boolean) => {
+                if (checked) {
+                  selectedIds.add(opt.id)
+                } else {
+                  selectedIds.delete(opt.id)
+                }
+                onChange(Array.from(selectedIds).join(','))
+              }
+              return (
+                <div key={opt.id} className="flex items-center gap-2">
+                  <input
+                    type="checkbox"
+                    id={`q-${question.id}-${opt.id}`}
+                    checked={selectedIds.has(opt.id)}
+                    onChange={(e) => handleCheckedChange(e.target.checked)}
+                    className="h-4 w-4 rounded border-gray-300 text-primary focus:ring-primary bg-background border"
+                  />
+                  <Label htmlFor={`q-${question.id}-${opt.id}`} className="cursor-pointer">
+                    {opt.text}
+                  </Label>
+                </div>
+              )
+            })}
+          </div>
+        ) : groupMode !== 'disabled' ? (
+          <CollabEditor
+            questionId={question.id}
+            doc={doc}
+            awareness={awareness}
+            studentName={studentName}
+            value={value}
+            onChange={onChange}
+            kind={question.kind}
+            starterCode={'starterCode' in question ? question.starterCode : undefined}
+          />
         ) : (
           <Textarea
             value={value}
             onChange={(e) => onChange(e.target.value)}
-            rows={5}
-            placeholder="Escreva sua resposta…"
+            rows={question.kind === 'code' ? 10 : 5}
+            className={question.kind === 'code' ? 'font-mono text-xs whitespace-pre bg-background border rounded-md p-3' : ''}
+            spellCheck={question.kind !== 'code'}
+            placeholder={question.kind === 'code' ? 'Escreva seu código aqui…' : 'Escreva sua resposta…'}
           />
         )}
       </CardContent>
     </Card>
   )
 }
+
+interface CollabEditorProps {
+  questionId: string
+  doc: Y.Doc
+  awareness: any
+  studentName: string
+  value: string
+  onChange: (val: string) => void
+  disabled?: boolean
+  kind?: string
+  starterCode?: string
+}
+
+function CollabEditor({
+  questionId,
+  doc,
+  awareness,
+  studentName,
+  value: _value,
+  onChange,
+  disabled,
+  kind,
+  starterCode
+}: CollabEditorProps): React.JSX.Element {
+  const hash = studentName.split('').reduce((acc, char) => acc + char.charCodeAt(0), 0)
+  const colors = [
+    '#f43f5e',
+    '#ec4899',
+    '#d946ef',
+    '#a855f7',
+    '#8b5cf6',
+    '#6366f1',
+    '#3b82f6',
+    '#0ea5e9',
+    '#06b6d4',
+    '#14b8a6',
+    '#10b981',
+    '#22c55e',
+    '#84cc16',
+    '#eab308',
+    '#f97316'
+  ]
+  const color = colors[hash % colors.length]
+
+  const editor = useEditor({
+    extensions: [
+      StarterKit.configure({
+        history: false
+      } as any),
+      Collaboration.configure({
+        document: doc,
+        field: questionId
+      }),
+      CollaborationCaret.configure({
+        provider: { awareness },
+        user: {
+          name: studentName,
+          color: color
+        }
+      })
+    ],
+    content: starterCode,
+    editorProps: {
+      attributes: {
+        class:
+          `min-h-[150px] p-3 border rounded-md w-full bg-background focus:ring-1 focus:ring-ring focus:outline-none prose prose-sm dark:prose-invert max-w-none ${
+            kind === 'code' ? 'font-mono text-xs whitespace-pre-wrap' : ''
+          }`,
+        spellcheck: kind === 'code' ? 'false' : 'true'
+      }
+    },
+    onUpdate: ({ editor }) => {
+      const text = editor.getText()
+      onChange(text)
+    }
+  }, [doc, awareness, questionId, kind, starterCode])
+
+  if (!editor) {
+    return <p className="text-xs text-muted-foreground animate-pulse">Carregando editor colaborativo...</p>
+  }
+
+  return (
+    <div className="relative bg-background">
+      <EditorContent editor={editor} disabled={disabled} />
+    </div>
+  )
+}
+

@@ -301,3 +301,33 @@
     @apply font-mono;
   }
 }
+
+/* Tiptap Collaborative Cursor styling */
+.collaboration-cursor__caret {
+  position: relative;
+  margin-left: -1px;
+  margin-right: -1px;
+  border-left: 2px solid;
+  border-right: 2px solid;
+  border-color: currentColor;
+  word-break: normal;
+  pointer-events: none;
+}
+
+.collaboration-cursor__label {
+  position: absolute;
+  top: -1.4em;
+  left: -2px;
+  font-size: 10px;
+  font-style: normal;
+  font-weight: 600;
+  line-height: normal;
+  user-select: none;
+  color: #fff;
+  padding: 1px 4px;
+  border-radius: 3px;
+  border-top-left-radius: 0;
+  white-space: nowrap;
+  background-color: currentColor;
+}
+

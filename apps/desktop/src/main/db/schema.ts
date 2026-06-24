@@ -1,5 +1,5 @@
 import { sql } from 'drizzle-orm'
-import { integer, real, sqliteTable, text, unique } from 'drizzle-orm/sqlite-core'
+import { integer, real, sqliteTable, text, unique, blob } from 'drizzle-orm/sqlite-core'
 
 const timestamp = (column: string) => integer(column, { mode: 'timestamp_ms' })
 
@@ -173,3 +173,17 @@ export const groupMembers = sqliteTable(
     groupStudentUnique: unique('group_members_group_student_unique').on(t.groupId, t.studentId)
   })
 )
+
+export const groupYjsSnapshots = sqliteTable('group_yjs_snapshots', {
+  groupId: text('group_id')
+    .primaryKey()
+    .references(() => groups.id, { onDelete: 'cascade' }),
+  snapshot: blob('snapshot', { mode: 'buffer' }).notNull(),
+  createdAt: timestamp('created_at')
+    .notNull()
+    .default(sql`(unixepoch() * 1000)`),
+  updatedAt: timestamp('updated_at')
+    .notNull()
+    .default(sql`(unixepoch() * 1000)`)
+})
+

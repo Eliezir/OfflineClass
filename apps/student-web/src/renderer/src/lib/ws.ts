@@ -6,11 +6,13 @@ interface ConnectOptions {
   token: string
   baseUrl: string | null
   onEvent: (event: WsServerEvent) => void
+  onBinary?: (data: ArrayBuffer) => void
   onStatus?: (status: WsStatus) => void
 }
 
 export interface WsConnection {
   close: () => void
+  sendBinary: (data: Uint8Array) => void
 }
 
 export function connectStudentWs(opts: ConnectOptions): WsConnection {
@@ -34,18 +36,22 @@ export function connectStudentWs(opts: ConnectOptions): WsConnection {
   const open = (): void => {
     opts.onStatus?.('connecting')
     const ws = new WebSocket(buildUrl())
+    ws.binaryType = 'arraybuffer'
     socket = ws
     ws.onopen = () => opts.onStatus?.('open')
     ws.onmessage = (event) => {
-      if (typeof event.data !== 'string') return
-      let raw: unknown
-      try {
-        raw = JSON.parse(event.data)
-      } catch {
-        return
+      if (typeof event.data === 'string') {
+        let raw: unknown
+        try {
+          raw = JSON.parse(event.data)
+        } catch {
+          return
+        }
+        const parsed = WsServerEvent.safeParse(raw)
+        if (parsed.success) opts.onEvent(parsed.data)
+      } else if (event.data instanceof ArrayBuffer) {
+        opts.onBinary?.(event.data)
       }
-      const parsed = WsServerEvent.safeParse(raw)
-      if (parsed.success) opts.onEvent(parsed.data)
     }
     ws.onclose = () => {
       opts.onStatus?.('closed')
@@ -61,6 +67,11 @@ export function connectStudentWs(opts: ConnectOptions): WsConnection {
       closed = true
       if (reconnectTimer) clearTimeout(reconnectTimer)
       socket?.close()
+    },
+    sendBinary: (data: Uint8Array) => {
+      if (socket && socket.readyState === WebSocket.OPEN) {
+        socket.send(data as any)
+      }
     }
   }
 }

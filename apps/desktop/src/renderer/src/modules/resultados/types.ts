@@ -19,6 +19,7 @@ export type StudentResult = {
   studentId: string
   name: string
   matricula: string
+  groupName: string | null
   submittedAt: number | null
   joinedAt: number
   leftAt: number | null

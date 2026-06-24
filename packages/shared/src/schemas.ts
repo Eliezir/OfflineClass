@@ -234,6 +234,24 @@ export const SessionCreateInput = z.object({
 })
 export type SessionCreateInput = z.infer<typeof SessionCreateInput>
 
+// -- Groups -----------------------------------------------------------------
+
+export const GroupMember = z.object({
+  studentId: z.string(),
+  studentName: z.string(),
+  studentMatricula: z.string(),
+  joinedAt: z.number().int()
+})
+export type GroupMember = z.infer<typeof GroupMember>
+
+export const GroupPublic = z.object({
+  id: z.string(),
+  name: z.string(),
+  members: z.array(GroupMember),
+  createdAt: z.number().int()
+})
+export type GroupPublic = z.infer<typeof GroupPublic>
+
 export const SessionDetail = z.object({
   id: z.string(),
   examId: z.string(),
@@ -245,6 +263,7 @@ export const SessionDetail = z.object({
   maxGroupSize: z.number().int().nullable(),
   questionsCount: z.number().int().nonnegative(),
   students: z.array(SessionLobbyStudent),
+  groups: z.array(GroupPublic),
   createdAt: z.number().int(),
   startedAt: z.number().int().nullable(),
   endedAt: z.number().int().nullable()
@@ -279,23 +298,7 @@ export const JoinResult = z.object({
 })
 export type JoinResult = z.infer<typeof JoinResult>
 
-// -- Groups -----------------------------------------------------------------
 
-export const GroupMember = z.object({
-  studentId: z.string(),
-  studentName: z.string(),
-  studentMatricula: z.string(),
-  joinedAt: z.number().int()
-})
-export type GroupMember = z.infer<typeof GroupMember>
-
-export const GroupPublic = z.object({
-  id: z.string(),
-  name: z.string(),
-  members: z.array(GroupMember),
-  createdAt: z.number().int()
-})
-export type GroupPublic = z.infer<typeof GroupPublic>
 
 export const WsServerEvent = z.discriminatedUnion('type', [
   z.object({
@@ -408,7 +411,9 @@ export const StudentSessionState = z.object({
   studentName: z.string(),
   studentMatricula: z.string(),
   submittedAt: z.number().int().nullable(),
-  answers: z.array(StudentAnswerSnapshot)
+  answers: z.array(StudentAnswerSnapshot),
+  groupMode: GroupMode,
+  maxGroupSize: z.number().int().nullable()
 })
 export type StudentSessionState = z.infer<typeof StudentSessionState>
 
@@ -436,6 +441,7 @@ export const SessionAnswersReview = z.object({
   studentName: z.string(),
   studentMatricula: z.string(),
   examTitle: z.string(),
+  groupName: z.string().nullable(),
   submittedAt: z.number().int().nullable(),
   joinedAt: z.number().int(),
   leftAt: z.number().int().nullable(),
@@ -463,6 +469,7 @@ export const SessionSummary = z.object({
   durationMinutes: z.number().int(),
   studentsCount: z.number().int().nonnegative(),
   submittedCount: z.number().int().nonnegative(),
+  groupsCount: z.number().int().nonnegative(),
   createdAt: z.number().int(),
   startedAt: z.number().int().nullable(),
   endedAt: z.number().int().nullable()
