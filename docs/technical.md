@@ -382,33 +382,40 @@ draft ──► lobby ──► running ──► ended
 
 ## 11. Grupos — implementação atual
 
-### Estados implementados
+### Estados e Modos implementados
 
-- `disabled` — cada aluno é um grupo de 1 (padrão)
-- `free` — alunos criam/entram/saem de grupos no lobby
+- `disabled` — cada aluno é um grupo de 1 (padrão).
+- `free` — alunos criam, entram e saem de grupos livremente através da tela de lobby (`Waiting.tsx`).
+- `teacher` — professor arrasta alunos e gerencia a alocação de grupos no painel do lobby do desktop (`LobbyPanel`).
+- `shuffle` — o sistema divide os alunos aleatoriamente em grupos de tamanho máximo configurado ao iniciar a prova.
+- Trava de grupos — a formação de grupos é travada no momento de transição `lobby → running`.
 
-### Estados pendentes
+### Colaboração em Tempo Real (Yjs)
 
-- `teacher` — professor arrasta alunos para grupos
-- `shuffle` — sistema divide aleatoriamente ao iniciar
-- Trava de grupos no `lobby → running`
-- Yjs (colaboração em tempo real)
+A colaboração em grupo é feita em tempo real através de **WebSockets nativos** servidos em `/api/ws` no servidor Hono (`@hono/node-ws`). 
+- As mensagens trocadas via WebSocket utilizam buffers binários (`Uint8Array`) diferenciados por um byte de cabeçalho: `type 0` para atualizações de documento Yjs e `type 1` para atualizações de presença/awareness.
+- O servidor gerencia o roteamento de mensagens do grupo e mantém a instância ativa do documento em memória através do `yjsManager`.
+- **Deduplicação de Pacotes no Vite:** Para evitar conflitos de instâncias do ProseMirror/Yjs (`ystate is undefined`), a configuração do Vite do aluno (`electron.vite.config.ts`) deduplica os pacotes `yjs`, `y-protocols` e `y-prosemirror`.
+- **Questões do tipo Código:** Suportam preenchimento inicial de template (`starterCode`) e são renderizadas com fontes monoespaçadas e corretores ortográficos desativados tanto no modo individual (via `<Textarea>`) quanto no modo colaborativo (via Tiptap `CollabEditor`).
 
 ### Tabelas
 
 ```sql
 groups (id, session_id, name, created_at)
 group_members (id, group_id, student_id, joined_at) UNIQUE(group_id, student_id)
+group_yjs_snapshots (group_id, snapshot (BLOB), created_at, updated_at) UNIQUE(group_id)
 ```
 
-### API
+### API e WebSocket
 
-| Rota | Descrição |
-|---|---|
-| `GET /api/groups` | Lista grupos com membros |
-| `POST /api/groups` | Cria grupo `{ name }` |
-| `POST /api/groups/:id/join` | Entra no grupo (sai de outros) |
-| `POST /api/groups/:id/leave` | Sai do grupo (deleta grupo vazio) |
+| Recurso | Tipo | Descrição |
+|---|---|---|
+| `GET /api/groups` | HTTP | Lista grupos com membros e estado de entrega. |
+| `POST /api/groups` | HTTP | Cria grupo `{ name }`. |
+| `POST /api/groups/:id/join` | HTTP | Aluno entra no grupo (removido de outros). Atualiza WS. |
+| `POST /api/groups/:id/leave` | HTTP | Aluno sai do grupo (remove grupo se vazio). Atualiza WS. |
+| `/api/ws` | WebSocket | Canal em tempo real para sincronização Yjs, awareness e eventos (lobby/submit). |
+
 
 ---
 
@@ -494,8 +501,8 @@ pnpm --filter @offlineclass/student-web build:win
 | ✅ | Toasts ao vivo (leave, submit) |
 | ✅ | Tema Indigo Pop (claro/escuro) |
 | ✅ | Perfil do aluno (localStorage) |
-| 🚧 | Grupos — teacher-designa, shuffle |
-| 🚧 | Colaboração Yjs (tempo real) |
+| ✅ | Grupos — teacher-designa, shuffle |
+| ✅ | Colaboração Yjs (tempo real) |
 | ⏳ | Cloud sync (PowerSync) |
 | ⏳ | Envio de resultados por email |
 | ⏳ | Materiais auxiliares (PDF, vídeo) |
