@@ -295,6 +295,17 @@ export const JoinResult = z.object({
 })
 export type JoinResult = z.infer<typeof JoinResult>
 
+// Slim roster sent to students (peers see only name + avatar, never matrícula).
+export const RosterStudent = z.object({
+  id: z.string(),
+  name: z.string(),
+  avatar: AvatarConfig.nullable()
+})
+export type RosterStudent = z.infer<typeof RosterStudent>
+
+export const UpdateAvatarInput = z.object({ avatar: AvatarConfig })
+export type UpdateAvatarInput = z.infer<typeof UpdateAvatarInput>
+
 export const WsServerEvent = z.discriminatedUnion('type', [
   z.object({
     type: z.literal('connection.ack'),
@@ -303,6 +314,10 @@ export const WsServerEvent = z.discriminatedUnion('type', [
   z.object({
     type: z.literal('session.lobby.update'),
     students: z.array(SessionLobbyStudent)
+  }),
+  z.object({
+    type: z.literal('session.roster.update'),
+    students: z.array(RosterStudent)
   }),
   z.object({
     type: z.literal('session.started'),

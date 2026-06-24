@@ -14,6 +14,7 @@ import type {
   SessionResultSummary,
   SessionStatus,
   SessionSummary,
+  RosterStudent,
   StudentAnswerReview,
   StudentAnswerSnapshot,
   StudentExam,
@@ -478,6 +479,29 @@ export function listLobbyStudents(db: Db, sessionId: string): SessionLobbyStuden
   const answeredByStudent = new Map(answered.map((a) => [a.studentId, Number(a.n)]))
 
   return rows.map((r) => rowToLobbyStudent(r, answeredByStudent.get(r.id) ?? 0))
+}
+
+/** Slim roster for students (name + avatar only — no matrícula leaked to peers). */
+export function listRosterStudents(db: Db, sessionId: string): RosterStudent[] {
+  const rows = db
+    .select({ id: students.id, name: students.name, avatar: students.avatar })
+    .from(students)
+    .where(and(eq(students.sessionId, sessionId), isNull(students.leftAt)))
+    .orderBy(asc(students.joinedAt))
+    .all()
+  return rows.map((r) => ({ id: r.id, name: r.name, avatar: parseAvatar(r.avatar) }))
+}
+
+/** Update a student's avatar (from the waiting room). Returns the sessionId so
+    the caller can re-broadcast the roster, or null if the token is unknown. */
+export function updateStudentAvatar(db: Db, token: string, avatar: AvatarConfig): string | null {
+  const student = findStudentByToken(db, token)
+  if (!student) return null
+  db.update(students)
+    .set({ avatar: JSON.stringify(avatar), lastSeenAt: new Date() })
+    .where(eq(students.id, student.id))
+    .run()
+  return student.sessionId
 }
 
 export function findStudentByToken(
