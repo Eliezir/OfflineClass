@@ -4,6 +4,7 @@ import { Link } from '@tanstack/react-router'
 import { Trans, useLingui } from '@lingui/react/macro'
 import type { ExamSummary, GroupMode, SessionCreateInput } from '@offlineclass/shared'
 import { Button } from '@renderer/shared/ui/button'
+import { EmptyState } from '@renderer/shared/ui/empty-state'
 import { Input } from '@renderer/shared/ui/input'
 import { Label } from '@renderer/shared/ui/label'
 import { Segmented } from '@renderer/shared/ui/segmented'
@@ -48,53 +49,47 @@ export function NoSession({
   // Fall back to the first prova until the teacher picks one explicitly.
   const selectedId = provaId || provas[0]?.id || ''
 
-  return (
-    <div className="relative isolate flex flex-1 flex-col items-center justify-center px-6 py-10">
-      <div
-        aria-hidden
-        className="pointer-events-none absolute -z-10 size-[32rem] max-w-full rounded-full bg-primary/10 blur-[120px]"
-      />
+  if (loadingProvas) {
+    return (
+      <div className="flex flex-1 items-center justify-center text-muted-foreground">
+        <Loader2 className="size-6 animate-spin" />
+      </div>
+    )
+  }
 
-      {loadingProvas ? (
-        <div className="flex h-40 items-center justify-center text-muted-foreground">
-          <Loader2 className="size-6 animate-spin" />
-        </div>
-      ) : !hasProvas ? (
-        /* No active session AND no exams — a single, create-exam-focused state. */
-        <>
-          <span className="grid size-12 place-items-center rounded-2xl bg-primary-soft text-primary-soft-foreground [&_svg]:size-6">
-            <Radio />
-          </span>
-          <h2 className="mt-4 font-display text-2xl font-bold tracking-tight">
-            <Trans>Não é possível criar uma sessão</Trans>
-          </h2>
-          <p className="mt-1.5 max-w-sm text-balance text-center text-sm text-muted-foreground">
-            <Trans>
-              Você precisa de pelo menos uma prova para abrir uma sessão. Crie uma prova para
-              começar.
-            </Trans>
-          </p>
-          <Button asChild className="mt-6" size="lg">
+  // No active session AND no exams — a single, create-exam-focused empty state.
+  if (!hasProvas) {
+    return (
+      <EmptyState
+        glow
+        icon={<Radio />}
+        title={t`Não é possível criar uma sessão`}
+        description={
+          <Trans>
+            Você precisa de pelo menos uma prova para abrir uma sessão. Crie uma prova para começar.
+          </Trans>
+        }
+        action={
+          <Button asChild size="lg">
             <Link to="/provas">
               <Plus />
               <Trans>Nova prova</Trans>
             </Link>
           </Button>
-        </>
-      ) : (
-        /* No active session, but exams exist — pick one and open the room. */
-        <div className="flex w-full max-w-md flex-col items-center">
-          <span className="grid size-12 place-items-center rounded-2xl bg-primary-soft text-primary-soft-foreground [&_svg]:size-6">
-            <Radio />
-          </span>
-          <h2 className="mt-4 font-display text-2xl font-bold tracking-tight">
-            <Trans>Nenhuma sessão ativa</Trans>
-          </h2>
-          <p className="mt-1.5 max-w-sm text-balance text-center text-sm text-muted-foreground">
-            <Trans>Escolha uma prova e abra a sala para os alunos entrarem pela rede.</Trans>
-          </p>
+        }
+      />
+    )
+  }
 
-          <div className="mt-6 w-full space-y-5 rounded-2xl border border-border bg-card p-5">
+  // No active session, but exams exist — pick one and open the room.
+  return (
+    <EmptyState
+      glow
+      icon={<Radio />}
+      title={t`Nenhuma sessão ativa`}
+      description={<Trans>Escolha uma prova e abra a sala para os alunos entrarem pela rede.</Trans>}
+      footer={
+        <div className="mt-2 w-full max-w-md space-y-5 rounded-2xl border border-border bg-card p-5 text-left">
           <div className="space-y-1.5">
             <Label htmlFor="sessao-prova">
               <Trans>Prova</Trans>
@@ -205,9 +200,8 @@ export function NoSession({
           </Button>
 
           {error && <p className="text-center text-sm font-semibold text-destructive">{error}</p>}
-          </div>
         </div>
-      )}
-    </div>
+      }
+    />
   )
 }
