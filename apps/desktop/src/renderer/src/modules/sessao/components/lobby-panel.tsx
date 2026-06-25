@@ -30,6 +30,7 @@ import {
 import { useDiscoveryQuery } from '../queries'
 import type { SessionDetail } from '../types'
 import { RosterRow } from './roster-row'
+import { StudentAvatar } from './student-avatar'
 
 type LobbyPanelProps = {
   session: SessionDetail
@@ -129,6 +130,7 @@ function GroupCard({
               {groupMode !== 'disabled' && (
                 <GripVertical className="size-3.5 shrink-0 text-muted-foreground/60" />
               )}
+              <StudentAvatar name={m.studentName} avatar={m.avatar} className="size-6" />
               <span className="truncate font-medium">{m.studentName}</span>
             </div>
             {groupMode !== 'disabled' && (

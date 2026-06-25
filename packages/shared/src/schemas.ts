@@ -261,6 +261,7 @@ export const GroupMember = z.object({
   studentId: z.string(),
   studentName: z.string(),
   studentMatricula: z.string(),
+  avatar: AvatarConfig.nullable(),
   joinedAt: z.number().int()
 })
 export type GroupMember = z.infer<typeof GroupMember>

@@ -3,6 +3,7 @@ import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { useNavigate } from 'react-router-dom'
 import { LogOut, Plus, Users, Pencil, Trash2, Check, X, AlertCircle } from 'lucide-react'
 import type { GroupPublic } from '@offlineclass/shared'
+import { Avatar } from '@offlineclass/avatar'
 
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
@@ -303,12 +304,13 @@ export default function WaitingRoute(): React.JSX.Element {
                                 return (
                                   <span
                                     key={m.studentId}
-                                    className={`inline-flex items-center gap-0.5 rounded px-1.5 py-0.5 text-[11px] font-medium ${
+                                    className={`inline-flex items-center gap-1 rounded px-1.5 py-0.5 text-[11px] font-medium ${
                                       isMe
                                         ? 'bg-primary/15 text-primary font-bold border border-primary/25'
                                         : 'bg-muted text-muted-foreground'
                                     }`}
                                   >
+                                    {m.avatar && <Avatar config={m.avatar} size={16} />}
                                     {m.studentName}
                                     {isMe && <span className="text-[9px] font-normal opacity-85">(Você)</span>}
                                   </span>
@@ -442,9 +444,17 @@ export default function WaitingRoute(): React.JSX.Element {
               {myGroup ? (
                 <div className="border-border rounded-xl border px-3 py-2 bg-primary-soft/10">
                   <p className="text-sm font-semibold text-primary">{myGroup.name}</p>
-                  <p className="text-muted-foreground text-xs">
-                    Membros: {myGroup.members.map((m) => m.studentName).join(', ')}
-                  </p>
+                  <div className="mt-1 flex flex-wrap items-center gap-1">
+                    {myGroup.members.map((m) => (
+                      <span
+                        key={m.studentId}
+                        className="bg-muted text-muted-foreground inline-flex items-center gap-1 rounded px-1.5 py-0.5 text-[11px] font-medium"
+                      >
+                        {m.avatar && <Avatar config={m.avatar} size={16} />}
+                        {m.studentName}
+                      </span>
+                    ))}
+                  </div>
                 </div>
               ) : (
                 <p className="text-xs text-muted-foreground italic">
@@ -477,12 +487,13 @@ export default function WaitingRoute(): React.JSX.Element {
                       return (
                         <span
                           key={m.studentId}
-                          className={`inline-flex items-center gap-0.5 rounded px-1.5 py-0.5 text-[11px] font-medium ${
+                          className={`inline-flex items-center gap-1 rounded px-1.5 py-0.5 text-[11px] font-medium ${
                             isMe
                               ? 'bg-primary/15 text-primary font-bold border border-primary/25'
                               : 'bg-muted text-muted-foreground'
                           }`}
                         >
+                          {m.avatar && <Avatar config={m.avatar} size={16} />}
                           {m.studentName}
                           {isMe && <span className="text-[9px] font-normal opacity-85">(Você)</span>}
                         </span>

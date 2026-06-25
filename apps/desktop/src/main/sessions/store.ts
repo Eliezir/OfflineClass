@@ -47,7 +47,7 @@ export class SessionError extends Error {
 const ACTIVE_STATUSES = ['lobby', 'running'] as const
 
 /** Parse the stored avatar JSON; tolerate legacy/garbage rows by returning null. */
-function parseAvatar(raw: string | null): AvatarConfig | null {
+export function parseAvatar(raw: string | null): AvatarConfig | null {
   if (!raw) return null
   try {
     const parsed = AvatarConfig.safeParse(JSON.parse(raw))
