@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { ClipboardList, Loader2, Plus, Radio } from 'lucide-react'
+import { Loader2, Plus, Radio } from 'lucide-react'
 import { Link } from '@tanstack/react-router'
 import { Trans, useLingui } from '@lingui/react/macro'
 import type { ExamSummary, GroupMode, SessionCreateInput } from '@offlineclass/shared'
@@ -62,8 +62,8 @@ export function NoSession({
       ) : !hasProvas ? (
         /* No active session AND no exams — a single, create-exam-focused state. */
         <>
-          <span className="grid size-12 place-items-center rounded-2xl bg-tertiary-soft text-tertiary-soft-foreground [&_svg]:size-6">
-            <ClipboardList />
+          <span className="grid size-12 place-items-center rounded-2xl bg-primary-soft text-primary-soft-foreground [&_svg]:size-6">
+            <Radio />
           </span>
           <h2 className="mt-4 font-display text-2xl font-bold tracking-tight">
             <Trans>Não é possível criar uma sessão</Trans>
