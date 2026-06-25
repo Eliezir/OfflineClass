@@ -36,15 +36,15 @@ export function leaveGroup(db: Db, groupId: string, studentId: string): void {
   db.delete(groupMembers)
     .where(and(eq(groupMembers.groupId, groupId), eq(groupMembers.studentId, studentId)))
     .run()
-  // Delete empty groups.
-  const remaining = db
-    .select({ n: groupMembers.id })
-    .from(groupMembers)
-    .where(eq(groupMembers.groupId, groupId))
-    .all()
-  if (remaining.length === 0) {
-    db.delete(groups).where(eq(groups.id, groupId)).run()
-  }
+}
+
+export function deleteGroup(db: Db, groupId: string): void {
+  db.delete(groupMembers).where(eq(groupMembers.groupId, groupId)).run()
+  db.delete(groups).where(eq(groups.id, groupId)).run()
+}
+
+export function renameGroup(db: Db, groupId: string, name: string): void {
+  db.update(groups).set({ name: name.trim() }).where(eq(groups.id, groupId)).run()
 }
 
 function leaveAllGroups(db: Db, sessionId: string, studentId: string): void {

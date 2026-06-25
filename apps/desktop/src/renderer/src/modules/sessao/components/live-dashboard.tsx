@@ -61,15 +61,21 @@ export function LiveDashboard({
         </div>
 
         <div className="scrollbar-subtle min-h-0 flex-1 overflow-y-auto pr-1">
-          {session.students.map((s) => (
-            <StudentProgressRow
-              key={s.id}
-              student={s}
-              questionsCount={session.questionsCount}
-              now={now}
-              onSelect={() => onSelectStudent(s.id)}
-            />
-          ))}
+          {session.students.map((s) => {
+            const studentGroup = session.groups?.find((g) =>
+              g.members.some((m) => m.studentId === s.id)
+            )
+            return (
+              <StudentProgressRow
+                key={s.id}
+                student={s}
+                groupName={studentGroup?.name}
+                questionsCount={session.questionsCount}
+                now={now}
+                onSelect={() => onSelectStudent(s.id)}
+              />
+            )
+          })}
         </div>
 
         <p className="shrink-0 pt-2 text-xs font-semibold text-muted-foreground">

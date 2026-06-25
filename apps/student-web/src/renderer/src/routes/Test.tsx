@@ -6,9 +6,10 @@ import * as Y from 'yjs'
 import { useEditor, EditorContent } from '@tiptap/react'
 import StarterKit from '@tiptap/starter-kit'
 import Collaboration from '@tiptap/extension-collaboration'
-import CollaborationCaret from '@tiptap/extension-collaboration-caret'
+import CollaborationCursor from '@tiptap/extension-collaboration-cursor'
 import { Awareness } from 'y-protocols/awareness'
 import * as awarenessProtocol from 'y-protocols/awareness'
+import { Users, Bold, Italic, Code } from 'lucide-react'
 
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
@@ -61,13 +62,33 @@ export default function TestRoute(): React.JSX.Element {
     retry: false
   })
 
+  const groupsQuery = useQuery({
+    queryKey: ['groups', teacherUrl],
+    queryFn: api.groups.list,
+    enabled: !!teacherUrl && meQuery.data?.groupMode !== 'disabled',
+    retry: false
+  })
+
   const [drafts, setDrafts] = useState<Record<string, string>>({})
   const [showSubmitDialog, setShowSubmitDialog] = useState(false)
 
-  // Create Yjs Doc and shared map
-  const doc = useMemo(() => new Y.Doc(), [])
-  const answersMap = useMemo(() => doc.getMap<string>('answers'), [doc])
-  const awareness = useMemo(() => new Awareness(doc), [doc])
+  const [ydoc, setYdoc] = useState<Y.Doc | null>(null)
+  const [awareness, setAwareness] = useState<any>(null)
+
+  useEffect(() => {
+    const doc = new Y.Doc()
+    const aware = new Awareness(doc)
+    setYdoc(doc)
+    setAwareness(aware)
+
+    return () => {
+      aware.destroy()
+      doc.destroy()
+    }
+  }, [])
+
+  const answersMap = useMemo(() => ydoc?.getMap<string>('answers') ?? null, [ydoc])
+
 
   useEffect(() => {
     if (!meQuery.data || !examQuery.data) return
@@ -99,6 +120,8 @@ export default function TestRoute(): React.JSX.Element {
 
   // Sync Y.Doc with socket updates
   useEffect(() => {
+    if (!ydoc || !awareness) return
+
     const token = loadToken()
     if (!token) return
     const conn = connectStudentWs({
@@ -113,6 +136,9 @@ export default function TestRoute(): React.JSX.Element {
           qc.invalidateQueries({ queryKey: ['exam', 'current', teacherUrl] })
           qc.invalidateQueries({ queryKey: ['session', 'me', teacherUrl] })
         }
+        if (event.type === 'group.list') {
+          qc.setQueryData(['groups', teacherUrl], event.groups)
+        }
         if (event.type === 'student.submitted') {
           qc.invalidateQueries({ queryKey: ['session', 'me', teacherUrl] })
         }
@@ -123,7 +149,7 @@ export default function TestRoute(): React.JSX.Element {
         const type = array[0]
         const payload = array.subarray(1)
         if (type === 0) {
-          Y.applyUpdate(doc, payload, 'socket')
+          Y.applyUpdate(ydoc, payload, 'socket')
         } else if (type === 1) {
           awarenessProtocol.applyAwarenessUpdate(awareness, payload, 'socket')
         }
@@ -139,12 +165,12 @@ export default function TestRoute(): React.JSX.Element {
     }
 
     if (meQuery.data?.groupMode && meQuery.data.groupMode !== 'disabled') {
-      doc.on('update', onDocUpdate)
+      ydoc.on('update', onDocUpdate)
 
       // Set initial local awareness state
       awareness.setLocalStateField('user', {
         name: meQuery.data?.studentName ?? 'User',
-        color: ['#f43f5e', '#ec4899', '#d946ef', '#a855f7', '#8b5cf6', '#6366f1', '#3b82f6', '#0ea5e9', '#06b6d4', '#14b8a6', '#10b981', '#22c55e'][doc.clientID % 12]
+        color: ['#f43f5e', '#ec4899', '#d946ef', '#a855f7', '#8b5cf6', '#6366f1', '#3b82f6', '#0ea5e9', '#06b6d4', '#14b8a6', '#10b981', '#22c55e'][ydoc.clientID % 12]
       })
 
       // When local awareness changes, send update
@@ -161,14 +187,14 @@ export default function TestRoute(): React.JSX.Element {
     }
 
     return () => {
-      doc.off('update', onDocUpdate)
+      ydoc.off('update', onDocUpdate)
       conn.close()
     }
-  }, [navigate, qc, teacherUrl, doc, awareness, meQuery.data?.groupMode, meQuery.data?.studentName])
+  }, [navigate, qc, teacherUrl, ydoc, awareness, meQuery.data?.groupMode, meQuery.data?.studentName])
 
   // Observe Yjs document changes and update react-state drafts
   useEffect(() => {
-    if (!meQuery.data || meQuery.data.groupMode === 'disabled') return
+    if (!meQuery.data || meQuery.data.groupMode === 'disabled' || !answersMap) return
 
     const observeAnswers = () => {
       setDrafts((prev) => {
@@ -220,7 +246,7 @@ export default function TestRoute(): React.JSX.Element {
 
   const debounceRefs = useRef<Record<string, ReturnType<typeof setTimeout>>>({})
   const updateDraft = (questionId: string, value: string): void => {
-    if (meQuery.data?.groupMode && meQuery.data.groupMode !== 'disabled') {
+    if (meQuery.data?.groupMode && meQuery.data.groupMode !== 'disabled' && answersMap) {
       if (answersMap.get(questionId) !== value) {
         answersMap.set(questionId, value)
       }
@@ -278,14 +304,35 @@ export default function TestRoute(): React.JSX.Element {
   const exam = examQuery.data
   const answeredCount = Object.values(drafts).filter((v) => v.trim().length > 0).length
 
+  const groups = groupsQuery.data ?? []
+  const myStudentId = meQuery.data?.studentId
+  const myGroup = groups.find((g) => g.members.some((m) => m.studentId === myStudentId))
+
   return (
     <main className="flex flex-1 flex-col pb-32 overflow-y-auto">
       <div className="bg-background/95 border-border sticky top-0 z-10 border-b backdrop-blur">
         <div className="mx-auto flex max-w-2xl items-center justify-between gap-2 px-4 py-3">
-          <div>
-            <p className="text-muted-foreground text-xs uppercase tracking-widest">
-              {meQuery.data?.studentName} · {meQuery.data?.studentMatricula}
-            </p>
+          <div className="space-y-1">
+            {myGroup ? (
+              <div className="flex flex-col gap-0.5">
+                <div className="flex items-center gap-1.5 flex-wrap">
+                  <p className="text-muted-foreground text-xs uppercase tracking-widest font-semibold">
+                    {meQuery.data?.studentName} · {meQuery.data?.studentMatricula}
+                  </p>
+                  <span className="bg-primary/10 text-primary border border-primary/20 rounded px-1.5 py-0.5 text-[9px] font-bold uppercase tracking-wider flex items-center gap-1 shrink-0 animate-in fade-in duration-200">
+                    <Users className="size-2.5" />
+                    {myGroup.name}
+                  </span>
+                </div>
+                <p className="text-[10px] text-muted-foreground/80 leading-none">
+                  <span className="font-semibold">Membros:</span> {myGroup.members.map((m) => m.studentId === myStudentId ? `${m.studentName} (Você)` : m.studentName).join(', ')}
+                </p>
+              </div>
+            ) : (
+              <p className="text-muted-foreground text-xs uppercase tracking-widest">
+                {meQuery.data?.studentName} · {meQuery.data?.studentMatricula}
+              </p>
+            )}
             <h1 className="text-base font-semibold">{exam.examTitle}</h1>
           </div>
           <div className="text-right">
@@ -307,7 +354,7 @@ export default function TestRoute(): React.JSX.Element {
             question={q}
             value={drafts[q.id] ?? ''}
             onChange={(v) => updateDraft(q.id, v)}
-            doc={doc}
+            doc={ydoc}
             awareness={awareness}
             studentName={meQuery.data?.studentName ?? 'Estudante'}
             groupMode={meQuery.data?.groupMode ?? 'disabled'}
@@ -367,7 +414,7 @@ interface QuestionCardProps {
   question: StudentQuestion
   value: string
   onChange: (value: string) => void
-  doc: Y.Doc
+  doc: Y.Doc | null
   awareness: any
   studentName: string
   groupMode: string
@@ -492,7 +539,7 @@ function QuestionCard({
 
 interface CollabEditorProps {
   questionId: string
-  doc: Y.Doc
+  doc: Y.Doc | null
   awareness: any
   studentName: string
   value: string
@@ -533,28 +580,60 @@ function CollabEditor({
   ]
   const color = colors[hash % colors.length]
 
+  const [activeUsers, setActiveUsers] = useState<{ name: string; color: string }[]>([])
+
+  useEffect(() => {
+    if (!awareness) return
+
+    const updateUsers = () => {
+      const states = Array.from(awareness.getStates().values()) as any[]
+      const users = states
+        .filter((state) => state.user && state.user.name)
+        .map((state) => ({
+          name: state.user.name,
+          color: state.user.color || '#8b5cf6'
+        }))
+      // Filter out duplicate users in the same editor
+      const uniqueUsers = users.filter((u, index, self) =>
+        self.findIndex((t) => t.name === u.name) === index
+      )
+      setActiveUsers(uniqueUsers)
+    }
+
+    awareness.on('change', updateUsers)
+    updateUsers()
+
+    return () => {
+      awareness.off('change', updateUsers)
+    }
+  }, [awareness])
+
   const editor = useEditor({
     extensions: [
       StarterKit.configure({
         history: false
       } as any),
-      Collaboration.configure({
-        document: doc,
-        field: questionId
-      }),
-      CollaborationCaret.configure({
-        provider: { awareness },
-        user: {
-          name: studentName,
-          color: color
-        }
-      })
+      ...(doc && awareness
+        ? [
+            Collaboration.configure({
+              document: doc,
+              field: questionId
+            }),
+            CollaborationCursor.configure({
+              provider: { awareness },
+              user: {
+                name: studentName,
+                color: color
+              }
+            })
+          ]
+        : [])
     ],
     content: starterCode,
     editorProps: {
       attributes: {
         class:
-          `min-h-[150px] p-3 border rounded-md w-full bg-background focus:ring-1 focus:ring-ring focus:outline-none prose prose-sm dark:prose-invert max-w-none ${
+          `min-h-[150px] p-3 w-full bg-background focus:outline-none prose prose-sm dark:prose-invert max-w-none ${
             kind === 'code' ? 'font-mono text-xs whitespace-pre-wrap' : ''
           }`,
         spellcheck: kind === 'code' ? 'false' : 'true'
@@ -571,8 +650,85 @@ function CollabEditor({
   }
 
   return (
-    <div className="relative bg-background">
-      <EditorContent editor={editor} disabled={disabled} />
+    <div className="relative bg-muted/40 dark:bg-muted/10 border border-border/60 rounded-xl overflow-hidden p-4 md:p-6 flex flex-col gap-4">
+      {/* Canvas Header (Collaborators list + Online status indicator) */}
+      <div className="flex items-center justify-between gap-4 select-none">
+        {/* Status Indicator */}
+        <div className="flex items-center gap-2 bg-background/80 backdrop-blur-xs border border-border/40 rounded-full px-3 py-1 shadow-2xs">
+          <span className="relative flex size-2">
+            <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-emerald-400 opacity-75"></span>
+            <span className="relative inline-flex rounded-full size-2 bg-emerald-500"></span>
+          </span>
+          <span className="text-[10px] font-bold text-muted-foreground uppercase tracking-wider">
+            Modo Colaborativo
+          </span>
+        </div>
+
+        {/* Collaborators Avatars */}
+        {activeUsers.length > 0 && (
+          <div className="flex -space-x-1.5 overflow-hidden bg-background/80 backdrop-blur-xs border border-border/40 rounded-full p-0.5 shadow-2xs">
+            {activeUsers.map((u, i) => {
+              const initials = u.name.split(' ').map((n) => n[0]).slice(0, 2).join('')
+              return (
+                <div
+                  key={i}
+                  className="inline-flex size-6 rounded-full ring-2 ring-background flex items-center justify-center text-[10px] font-extrabold text-white uppercase select-none transition-all hover:scale-125 hover:z-10 cursor-help"
+                  style={{ backgroundColor: u.color }}
+                  title={u.name}
+                >
+                  {initials}
+                </div>
+              )
+            })}
+          </div>
+        )}
+      </div>
+
+      {/* Floating Canvas Document Sheet wrapper */}
+      <div className="w-full flex-1 flex flex-col items-center">
+        {/* The Page Sheet */}
+        <div className="w-full max-w-2xl bg-card border border-border/80 rounded-lg shadow-xs focus-within:shadow-md focus-within:border-primary/50 transition-all duration-250 overflow-hidden flex flex-col">
+          
+          {/* Editor Toolbar (anchored inside the document sheet at the top) */}
+          <div className="flex items-center gap-1 px-4 py-2 border-b border-border bg-muted/20 shrink-0 select-none">
+            <Button
+              type="button"
+              variant="ghost"
+              size="icon"
+              className={`size-8 rounded-md transition-colors ${editor.isActive('bold') ? 'bg-background text-primary border border-border/40 shadow-2xs font-bold' : 'text-muted-foreground hover:bg-muted/50'}`}
+              onClick={() => editor.chain().focus().toggleBold().run()}
+              title="Negrito (Ctrl+B)"
+            >
+              <Bold className="size-4" />
+            </Button>
+            <Button
+              type="button"
+              variant="ghost"
+              size="icon"
+              className={`size-8 rounded-md transition-colors ${editor.isActive('italic') ? 'bg-background text-primary border border-border/40 shadow-2xs' : 'text-muted-foreground hover:bg-muted/50'}`}
+              onClick={() => editor.chain().focus().toggleItalic().run()}
+              title="Itálico (Ctrl+I)"
+            >
+              <Italic className="size-4" />
+            </Button>
+            <Button
+              type="button"
+              variant="ghost"
+              size="icon"
+              className={`size-8 rounded-md transition-colors ${editor.isActive('code') ? 'bg-background text-primary border border-border/40 shadow-2xs' : 'text-muted-foreground hover:bg-muted/50'}`}
+              onClick={() => editor.chain().focus().toggleCode().run()}
+              title="Código em linha (Ctrl+E)"
+            >
+              <Code className="size-4" />
+            </Button>
+          </div>
+
+          {/* Paper Editor Page Body */}
+          <div className="p-6 md:p-8 min-h-[180px] w-full text-foreground">
+            <EditorContent editor={editor} disabled={disabled} />
+          </div>
+        </div>
+      </div>
     </div>
   )
 }

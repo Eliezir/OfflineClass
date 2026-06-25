@@ -1,8 +1,31 @@
 import { useState } from 'react'
-import { Check, Clock, Copy, Loader2, LogIn, QrCode, Users, Plus } from 'lucide-react'
+import {
+  Check,
+  Clock,
+  Copy,
+  Loader2,
+  LogIn,
+  QrCode,
+  Users,
+  Plus,
+  GripVertical,
+  Info,
+  ChevronRight,
+  User,
+  X,
+  UserMinus
+} from 'lucide-react'
 import { Trans, useLingui } from '@lingui/react/macro'
 import { Button } from '@renderer/shared/ui/button'
 import { EmptyState } from '@renderer/shared/ui/empty-state'
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogDescription,
+  DialogFooter
+} from '@renderer/shared/ui/dialog'
 import { useDiscoveryQuery } from '../queries'
 import type { SessionDetail } from '../types'
 import { RosterRow } from './roster-row'
@@ -16,10 +39,25 @@ interface GroupCardProps {
   groupMode: string
   onDropStudent: (studentId: string) => void
   onRemoveStudent: (studentId: string) => void
+  onStudentContextMenu: (
+    e: React.MouseEvent,
+    studentId: string,
+    studentName: string,
+    groupId: string
+  ) => void
+  onDeleteGroup: (groupId: string) => void
 }
 
-function GroupCard({ group, groupMode, onDropStudent, onRemoveStudent }: GroupCardProps): React.JSX.Element {
+function GroupCard({
+  group,
+  groupMode,
+  onDropStudent,
+  onRemoveStudent,
+  onStudentContextMenu,
+  onDeleteGroup
+}: GroupCardProps): React.JSX.Element {
   const [isOver, setIsOver] = useState(false)
+  const { t } = useLingui()
 
   return (
     <div
@@ -46,11 +84,27 @@ function GroupCard({ group, groupMode, onDropStudent, onRemoveStudent }: GroupCa
         isOver ? 'border-primary bg-primary-soft/10 shadow-sm' : 'border-border bg-card'
       }`}
     >
-      <div className="flex items-center justify-between">
+      <div className="flex items-center justify-between gap-2">
         <h3 className="font-bold text-sm truncate max-w-40">{group.name}</h3>
-        <span className="inline-flex items-center rounded-full bg-muted px-2 py-0.5 text-[10px] font-semibold text-muted-foreground">
-          {group.members.length} membros
-        </span>
+        <div className="flex items-center gap-1.5 shrink-0">
+          <span className="inline-flex items-center rounded-full bg-muted px-2 py-0.5 text-[10px] font-semibold text-muted-foreground">
+            {group.members.length} membros
+          </span>
+          {groupMode === 'teacher' && (
+            <button
+              type="button"
+              onClick={() => {
+                if (confirm(t`Tem certeza que deseja excluir o grupo "${group.name}"?`)) {
+                  onDeleteGroup(group.id)
+                }
+              }}
+              className="text-muted-foreground hover:text-destructive hover:bg-muted p-1 rounded-lg transition-colors focus:outline-none"
+              title={t`Excluir grupo`}
+            >
+              <X className="size-3.5" />
+            </button>
+          )}
+        </div>
       </div>
       <div className="flex-1 space-y-1 mt-1">
         {group.members.map((m) => (
@@ -63,11 +117,23 @@ function GroupCard({ group, groupMode, onDropStudent, onRemoveStudent }: GroupCa
                 e.dataTransfer.setData('fromGroupId', group.id)
               }
             }}
+            onContextMenu={(e) => {
+              if (groupMode === 'teacher') {
+                onStudentContextMenu(e, m.studentId, m.studentName, group.id)
+              }
+            }}
             className={`flex items-center justify-between px-2.5 py-1.5 rounded-lg border border-border/40 text-xs bg-muted/20 ${
-              groupMode === 'teacher' ? 'cursor-grab active:cursor-grabbing hover:bg-muted/40 hover:border-border transition-colors' : ''
+              groupMode === 'teacher'
+                ? 'cursor-grab active:cursor-grabbing hover:bg-muted/40 hover:border-border transition-colors'
+                : ''
             }`}
           >
-            <span className="truncate max-w-44 font-medium">{m.studentName}</span>
+            <div className="flex items-center gap-1.5 min-w-0 flex-1">
+              {groupMode === 'teacher' && (
+                <GripVertical className="size-3.5 shrink-0 text-muted-foreground/60" />
+              )}
+              <span className="truncate font-medium">{m.studentName}</span>
+            </div>
             {groupMode === 'teacher' && (
               <button
                 type="button"
@@ -97,6 +163,34 @@ export function LobbyPanel({ session }: LobbyPanelProps): React.JSX.Element {
   const [newGroupName, setNewGroupName] = useState('')
   const [showCreate, setShowCreate] = useState(false)
   const [isUnassignedOver, setIsUnassignedOver] = useState(false)
+  const [showBanner, setShowBanner] = useState(true)
+  const [studentToKick, setStudentToKick] = useState<{ id: string; name: string } | null>(null)
+
+  const [contextMenu, setContextMenu] = useState<{
+    x: number
+    y: number
+    studentId: string
+    studentName: string
+    currentGroupId: string | null
+  } | null>(null)
+
+  const handleStudentContextMenu = (
+    e: React.MouseEvent,
+    studentId: string,
+    studentName: string,
+    currentGroupId: string | null
+  ) => {
+    e.preventDefault()
+    setContextMenu({
+      x: e.clientX,
+      y: e.clientY,
+      studentId,
+      studentName,
+      currentGroupId
+    })
+  }
+
+  const closeContextMenu = () => setContextMenu(null)
 
   // Match the scheme the QR encodes — the LAN server is HTTPS-only, so a
   // scheme-less address would resolve to http and fail to connect.
@@ -146,8 +240,16 @@ export function LobbyPanel({ session }: LobbyPanelProps): React.JSX.Element {
     }
   }
 
+  const handleDeleteGroup = async (groupId: string) => {
+    try {
+      await window.api.sessions.deleteGroup(groupId)
+    } catch (err) {
+      console.error(err)
+    }
+  }
+
   return (
-    <div className="grid min-h-0 flex-1 grid-cols-1 gap-5 lg:grid-cols-[360px_1fr]">
+    <div className="grid min-h-0 flex-1 grid-cols-1 gap-5 lg:grid-cols-[360px_1fr] overflow-y-auto lg:overflow-y-hidden pr-1">
       {/* Join info */}
       <section className="flex flex-col gap-4 rounded-2xl border border-border bg-card p-5">
         <h2 className="text-sm font-bold">
@@ -212,7 +314,7 @@ export function LobbyPanel({ session }: LobbyPanelProps): React.JSX.Element {
       </section>
 
       {/* Roster */}
-      <section className="flex min-h-0 flex-col rounded-2xl border border-border bg-card p-5">
+      <section className="flex min-h-0 flex-1 flex-col rounded-2xl border border-border bg-card p-5">
         {session.groupMode === 'disabled' ? (
           <>
             <div className="flex shrink-0 items-center justify-between gap-3">
@@ -239,136 +341,353 @@ export function LobbyPanel({ session }: LobbyPanelProps): React.JSX.Element {
             </div>
           </>
         ) : (
-          <div className="flex flex-1 min-h-0 gap-6">
-            {/* Left Column: Unassigned Students */}
-            <div
-              onDragOver={(e) => {
-                if (session.groupMode === 'teacher') e.preventDefault()
+          <div className="flex flex-col flex-1 min-h-0">
+            <div className="flex flex-col md:flex-row flex-1 min-h-0 gap-6">
+              {/* Left Column: Unassigned Students */}
+              <div className="w-full md:w-80 flex md:shrink-0 flex-col min-h-[250px] md:min-h-0">
+                <div className="flex shrink-0 items-center justify-between gap-3 mb-3">
+                  <h2 className="text-sm font-bold flex items-center gap-2">
+                    <User className="size-4 text-muted-foreground/80" />
+                    <Trans>Sem grupo ({unassignedStudents.length})</Trans>
+                  </h2>
+                </div>
+
+                <div
+                  onDragOver={(e) => {
+                    if (session.groupMode === 'teacher') e.preventDefault()
+                  }}
+                  onDragEnter={() => {
+                    if (session.groupMode === 'teacher') setIsUnassignedOver(true)
+                  }}
+                  onDragLeave={() => {
+                    setIsUnassignedOver(false)
+                  }}
+                  onDrop={async (e) => {
+                    if (session.groupMode === 'teacher') {
+                      e.preventDefault()
+                      setIsUnassignedOver(false)
+                      const studentId = e.dataTransfer.getData('studentId')
+                      const fromGroupId = e.dataTransfer.getData('fromGroupId')
+                      if (studentId && fromGroupId) {
+                        try {
+                          await window.api.sessions.leaveGroup(fromGroupId, studentId)
+                        } catch (err) {
+                          console.error(err)
+                        }
+                      }
+                    }
+                  }}
+                  className={`scrollbar-subtle flex-1 overflow-y-auto space-y-1.5 pr-1 rounded-xl transition-colors p-2 ${
+                    isUnassignedOver
+                      ? 'border-2 border-dashed border-primary bg-primary-soft/10'
+                      : 'border-2 border-dashed border-transparent'
+                  }`}
+                >
+                  {unassignedStudents.length > 0 ? (
+                    unassignedStudents.map((s) => (
+                      <div
+                        key={s.id}
+                        draggable={session.groupMode === 'teacher'}
+                        onDragStart={(e) => {
+                          e.dataTransfer.setData('studentId', s.id)
+                          e.dataTransfer.setData('fromGroupId', '')
+                        }}
+                        onContextMenu={(e) => {
+                          if (session.groupMode === 'teacher') {
+                            handleStudentContextMenu(e, s.id, s.name, null)
+                          }
+                        }}
+                        className={`flex items-center gap-1.5 ${
+                          session.groupMode === 'teacher'
+                            ? 'cursor-grab active:cursor-grabbing hover:bg-muted/40 rounded-xl transition-colors px-2 border border-transparent hover:border-border/40'
+                            : ''
+                        }`}
+                      >
+                        {session.groupMode === 'teacher' && (
+                          <GripVertical className="size-4 shrink-0 text-muted-foreground/60" />
+                        )}
+                        <div className="flex-1 min-w-0">
+                          <RosterRow student={s} />
+                        </div>
+                      </div>
+                    ))
+                  ) : (
+                    <p className="text-xs text-muted-foreground italic text-center py-6">
+                      <Trans>Todos os alunos possuem grupo</Trans>
+                    </p>
+                  )}
+                </div>
+              </div>
+
+              {/* Right Column: Groups Grid */}
+              <div className="flex-1 flex flex-col min-h-[350px] md:min-h-0">
+                <div className="flex shrink-0 items-center justify-between gap-3 mb-3">
+                  <h2 className="text-sm font-bold flex items-center gap-2">
+                    <Users className="size-4" />
+                    <Trans>Grupos ({groups.length})</Trans>
+                  </h2>
+                  {session.groupMode === 'teacher' && (
+                    <Button size="xs" variant="outline" onClick={() => setShowCreate(true)}>
+                      <Plus className="size-3.5" />
+                      <Trans>Novo Grupo</Trans>
+                    </Button>
+                  )}
+                </div>
+
+                <div className="scrollbar-subtle flex-1 overflow-y-auto pr-1 flex flex-col gap-4">
+                  {groups.length > 0 ? (
+                    groups.map((g) => (
+                      <GroupCard
+                        key={g.id}
+                        group={g}
+                        groupMode={session.groupMode}
+                        onDropStudent={(studentId) => handleDropToGroup(studentId, g.id)}
+                        onRemoveStudent={(studentId) => handleRemoveFromGroup(g.id, studentId)}
+                        onStudentContextMenu={(e, studentId, studentName, groupId) =>
+                          handleStudentContextMenu(e, studentId, studentName, groupId)
+                        }
+                        onDeleteGroup={handleDeleteGroup}
+                      />
+                    ))
+                  ) : (
+                    <div className="w-full py-12">
+                      <EmptyState
+                        compact
+                        icon={<Users />}
+                        title={t`Nenhum grupo`}
+                        description={
+                          session.groupMode === 'teacher' ? (
+                            <Trans>Crie grupos e arraste alunos para eles.</Trans>
+                          ) : session.groupMode === 'shuffle' ? (
+                            <Trans>Os grupos serão sorteados e formados automaticamente ao iniciar a prova.</Trans>
+                          ) : (
+                            <Trans>Os alunos criarão grupos no lobby.</Trans>
+                          )
+                        }
+                      />
+                    </div>
+                  )}
+                </div>
+              </div>
+            </div>
+
+            {/* Banner Informativo / Instrução para o Professor */}
+            {session.groupMode === 'teacher' && showBanner && (
+              <div className="flex items-start gap-2.5 rounded-xl border border-primary/20 bg-primary-soft/10 p-3.5 mt-4 text-xs text-primary-soft-foreground leading-relaxed animate-in fade-in slide-in-from-bottom-1 duration-200 shrink-0">
+                <Info className="size-4 shrink-0 text-primary mt-0.5" />
+                <div className="flex-1">
+                  <strong className="font-semibold">
+                    <Trans>Modo de Grupos Controlado pelo Professor:</Trans>
+                  </strong>{' '}
+                  <Trans>
+                    Organize os alunos arrastando-os entre as colunas "Sem grupo" e os grupos
+                    criados (lastro visual com o indicador de arrastar). Você também pode clicar com
+                    o botão direito sobre qualquer aluno para acessar ações rápidas como remoção de
+                    grupo ou remoção da sala.
+                  </Trans>
+                </div>
+                <button
+                  type="button"
+                  onClick={() => setShowBanner(false)}
+                  className="text-primary hover:bg-primary-soft/20 p-1 rounded-lg transition-colors focus:outline-none shrink-0 ml-2"
+                  title={t`Fechar aviso`}
+                >
+                  <X className="size-4" />
+                </button>
+              </div>
+            )}
+          </div>
+        )}
+      </section>
+
+      {/* Dialog para criação de grupo */}
+      <Dialog
+        open={showCreate}
+        onOpenChange={(open) => {
+          setShowCreate(open)
+          if (!open) setNewGroupName('')
+        }}
+      >
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle>
+              <Trans>Novo Grupo</Trans>
+            </DialogTitle>
+            <DialogDescription>
+              <Trans>Insira o nome do novo grupo para esta sessão de prova.</Trans>
+            </DialogDescription>
+          </DialogHeader>
+          <div className="py-2">
+            <input
+              type="text"
+              placeholder={t`Nome do grupo`}
+              value={newGroupName}
+              onChange={(e) => setNewGroupName(e.target.value)}
+              className="w-full h-10 rounded-lg border border-input-border bg-input px-3 text-sm font-semibold focus:outline-none focus:ring-1 focus:ring-primary"
+              onKeyDown={(e) => {
+                if (e.key === 'Enter') handleCreateGroup()
               }}
-              onDragEnter={() => {
-                if (session.groupMode === 'teacher') setIsUnassignedOver(true)
+              autoFocus
+            />
+          </div>
+          <DialogFooter>
+            <Button
+              variant="ghost"
+              onClick={() => {
+                setShowCreate(false)
+                setNewGroupName('')
               }}
-              onDragLeave={() => {
-                setIsUnassignedOver(false)
-              }}
-              onDrop={async (e) => {
-                if (session.groupMode === 'teacher') {
-                  e.preventDefault()
-                  setIsUnassignedOver(false)
-                  const studentId = e.dataTransfer.getData('studentId')
-                  const fromGroupId = e.dataTransfer.getData('fromGroupId')
-                  if (studentId && fromGroupId) {
+            >
+              <Trans>Cancelar</Trans>
+            </Button>
+            <Button onClick={handleCreateGroup} disabled={!newGroupName.trim()}>
+              <Trans>Criar grupo</Trans>
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Menu de contexto customizado */}
+      {contextMenu && (
+        <>
+          <div
+            className="fixed inset-0 z-50"
+            onClick={closeContextMenu}
+            onContextMenu={(e) => {
+              e.preventDefault()
+              closeContextMenu()
+            }}
+          />
+          <div
+            className="fixed z-50 min-w-38 bg-popover text-popover-foreground border border-border shadow-md rounded-xl p-2 animate-in fade-in zoom-in-95 duration-200 flex flex-col"
+            style={{ left: contextMenu.x, top: contextMenu.y }}
+          >
+            <div className="px-2.5 py-1.5 text-[10px] font-bold text-muted-foreground uppercase border-b border-border/40 mb-1 truncate max-w-48">
+              {contextMenu.studentName}
+            </div>
+
+            {groups.length > 0 && (
+              <div className="relative group/submenu">
+                <button
+                  type="button"
+                  className="w-full flex items-center justify-between px-2.5 py-1.5 text-xs font-medium hover:bg-muted rounded-lg text-left"
+                >
+                  <span>
+                    <Trans>Enviar para grupo</Trans>
+                  </span>
+                  <ChevronRight className="size-3" />
+                </button>
+                <div className="absolute left-full top-0 pl-1.5 hidden group-hover/submenu:flex z-[60]">
+                  <div className="flex flex-col min-w-40 bg-popover text-popover-foreground border border-border shadow-md rounded-xl p-1 max-h-48 overflow-y-auto">
+                    {groups.map((g) => {
+                      const isDisabled = g.id === contextMenu.currentGroupId
+                      return (
+                        <button
+                          key={g.id}
+                          type="button"
+                          disabled={isDisabled}
+                          onClick={async () => {
+                            closeContextMenu()
+                            try {
+                              await window.api.sessions.joinGroup(g.id, contextMenu.studentId)
+                            } catch (err) {
+                              console.error(err)
+                            }
+                          }}
+                          className={`w-full px-2.5 py-1.5 text-xs font-medium rounded-lg text-left truncate ${
+                            isDisabled
+                              ? 'opacity-50 cursor-not-allowed text-muted-foreground'
+                              : 'hover:bg-muted'
+                          }`}
+                        >
+                          {g.name}
+                        </button>
+                      )
+                    })}
+                  </div>
+                </div>
+              </div>
+            )}
+
+            {contextMenu.currentGroupId && (
+              <button
+                type="button"
+                onClick={async () => {
+                  closeContextMenu()
+                  if (contextMenu.currentGroupId) {
                     try {
-                      await window.api.sessions.leaveGroup(fromGroupId, studentId)
+                      await window.api.sessions.leaveGroup(
+                        contextMenu.currentGroupId,
+                        contextMenu.studentId
+                      )
                     } catch (err) {
                       console.error(err)
                     }
                   }
+                }}
+                className="w-full px-2.5 py-1.5 text-xs font-medium hover:bg-muted rounded-lg text-left"
+              >
+                <Trans>Remover do grupo</Trans>
+              </button>
+            )}
+
+            <button
+              type="button"
+              onClick={() => {
+                closeContextMenu()
+                setStudentToKick({ id: contextMenu.studentId, name: contextMenu.studentName })
+              }}
+              className="w-full px-2.5 py-1.5 text-xs font-medium text-destructive hover:bg-destructive/10 rounded-lg text-left border-t border-border/40 mt-1 pt-1.5"
+            >
+              <Trans>Remover da sala</Trans>
+            </button>
+          </div>
+        </>
+      )}
+
+      {/* Dialog para confirmação de remoção de aluno da sala */}
+      <Dialog
+        open={studentToKick !== null}
+        onOpenChange={(open) => {
+          if (!open) setStudentToKick(null)
+        }}
+      >
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle className="text-destructive flex items-center gap-2">
+              <UserMinus className="size-5" />
+              <Trans>Remover Aluno</Trans>
+            </DialogTitle>
+            <DialogDescription>
+              <Trans>
+                Tem certeza que deseja remover <strong>{studentToKick?.name}</strong> da sala de
+                aula? Esta ação irá desconectá-lo desta sessão.
+              </Trans>
+            </DialogDescription>
+          </DialogHeader>
+          <DialogFooter className="mt-2">
+            <Button variant="ghost" onClick={() => setStudentToKick(null)}>
+              <Trans>Cancelar</Trans>
+            </Button>
+            <Button
+              variant="destructive"
+              onClick={async () => {
+                if (studentToKick) {
+                  try {
+                    await window.api.sessions.kickStudent(session.id, studentToKick.id)
+                  } catch (err) {
+                    console.error(err)
+                  } finally {
+                    setStudentToKick(null)
+                  }
                 }
               }}
-              className={`w-80 flex shrink-0 flex-col min-h-0 rounded-xl border p-4 transition-colors ${
-                isUnassignedOver ? 'border-primary bg-primary-soft/10' : 'border-border/60 bg-muted/20'
-              }`}
             >
-              <div className="flex shrink-0 items-center justify-between gap-3 mb-3">
-                <h2 className="text-xs font-bold text-muted-foreground uppercase tracking-wider">
-                  <Trans>Sem grupo ({unassignedStudents.length})</Trans>
-                </h2>
-              </div>
-              <div className="scrollbar-subtle flex-1 overflow-y-auto space-y-1.5 pr-1">
-                {unassignedStudents.length > 0 ? (
-                  unassignedStudents.map((s) => (
-                    <div
-                      key={s.id}
-                      draggable={session.groupMode === 'teacher'}
-                      onDragStart={(e) => {
-                        e.dataTransfer.setData('studentId', s.id)
-                        e.dataTransfer.setData('fromGroupId', '')
-                      }}
-                      className={session.groupMode === 'teacher' ? 'cursor-grab active:cursor-grabbing hover:bg-muted/40 rounded-xl transition-colors' : ''}
-                    >
-                      <RosterRow student={s} />
-                    </div>
-                  ))
-                ) : (
-                  <p className="text-xs text-muted-foreground italic text-center py-6">
-                    <Trans>Todos os alunos possuem grupo</Trans>
-                  </p>
-                )}
-              </div>
-            </div>
-
-            {/* Right Column: Groups Grid */}
-            <div className="flex-1 flex flex-col min-h-0">
-              <div className="flex shrink-0 items-center justify-between gap-3 mb-3">
-                <h2 className="text-sm font-bold flex items-center gap-2">
-                  <Users className="size-4" />
-                  <Trans>Grupos ({groups.length})</Trans>
-                </h2>
-                {session.groupMode === 'teacher' && (
-                  <div className="flex items-center gap-2">
-                    {showCreate ? (
-                      <div className="flex items-center gap-1.5 animate-in fade-in slide-in-from-top-1 duration-200">
-                        <input
-                          type="text"
-                          placeholder={t`Nome do grupo`}
-                          value={newGroupName}
-                          onChange={(e) => setNewGroupName(e.target.value)}
-                          className="h-8 rounded-lg border border-input-border bg-input px-2 text-xs font-semibold focus:outline-none focus:ring-1 focus:ring-primary w-36"
-                          onKeyDown={(e) => {
-                            if (e.key === 'Enter') handleCreateGroup()
-                          }}
-                        />
-                        <Button size="xs" onClick={handleCreateGroup} disabled={!newGroupName.trim()}>
-                          <Trans>Criar</Trans>
-                        </Button>
-                        <Button size="xs" variant="ghost" onClick={() => {
-                          setShowCreate(false)
-                          setNewGroupName('')
-                        }}>
-                          <Trans>Cancelar</Trans>
-                        </Button>
-                      </div>
-                    ) : (
-                      <Button size="xs" variant="outline" onClick={() => setShowCreate(true)}>
-                        <Plus className="size-3.5" />
-                        <Trans>Novo Grupo</Trans>
-                      </Button>
-                    )}
-                  </div>
-                )}
-              </div>
-
-              <div className="scrollbar-subtle flex-1 overflow-y-auto pr-1 grid grid-cols-1 sm:grid-cols-2 gap-4">
-                {groups.length > 0 ? (
-                  groups.map((g) => (
-                    <GroupCard
-                      key={g.id}
-                      group={g}
-                      groupMode={session.groupMode}
-                      onDropStudent={(studentId) => handleDropToGroup(studentId, g.id)}
-                      onRemoveStudent={(studentId) => handleRemoveFromGroup(g.id, studentId)}
-                    />
-                  ))
-                ) : (
-                  <div className="col-span-full py-12">
-                    <EmptyState
-                      compact
-                      icon={<Users />}
-                      title={t`Nenhum grupo`}
-                      description={
-                        session.groupMode === 'teacher'
-                          ? <Trans>Crie grupos e arraste alunos para eles.</Trans>
-                          : <Trans>Os alunos criarão grupos no lobby.</Trans>
-                      }
-                    />
-                  </div>
-                )}
-              </div>
-            </div>
-          </div>
-        )}
-      </section>
+              <Trans>Remover da sala</Trans>
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   )
 }

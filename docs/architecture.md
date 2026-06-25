@@ -157,7 +157,7 @@ Pure SPA. Served by the desktop's Hono server over LAN (HTTPS). Loads in a PC br
 
 - React 19 + Tailwind v4 + shadcn (radix-nova preset) + react-router-dom (HashRouter)
 - Yjs client (`yjs` + `y-protocols/awareness`) utilizing native HTML5 WebSockets over `/api/ws`
-- Tiptap for the essay/code editor with `@tiptap/extension-collaboration` and `@tiptap/extension-collaboration-caret` bound to the shared `Y.Doc`
+- Tiptap for the essay/code editor with `@tiptap/extension-collaboration` and `@tiptap/extension-collaboration-cursor` bound to the shared `Y.Doc`
 - `react-nice-avatar` (or equivalent SVG generative avatar) for the lobby
 - TanStack Query for HTTP calls (`/api/join`, `/api/heartbeat`, `/api/answers`)
 - No build-time backend coupling: the SPA is statically served and discovers the backend by virtue of being served from it (same origin)
@@ -693,7 +693,7 @@ Each phase maps to a milestone in the GitHub backlog. Issues are labeled by `are
 | Server (desktop + cloud) | Hono | Tiny, web-standards-based, runs on Node and Bun if needed |
 | Real-time transport | WebSocket (`@hono/node-ws` / browser WebSocket) | Unified channel for session events, awareness, and Yjs updates; in-memory `Rooms` registry for fan-out |
 | Real-time collab | Yjs + native WebSocket + `y-protocols/awareness` | CRDT + presence over native WebSocket; Hono upgrade route at `/api/ws` |
-| Rich editor | Tiptap + `extension-collaboration` + `extension-collaboration-caret` | Plugs into the shared Y.Doc; collaborative caret positioning |
+| Rich editor | Tiptap + `extension-collaboration` + `extension-collaboration-cursor` | Plugs into the shared Y.Doc; collaborative caret positioning |
 | Local DB | better-sqlite3 + Drizzle | Synchronous SQLite on the main process; Drizzle for typed migrations |
 | Cloud DB | Postgres + Drizzle | Mirrors desktop's ORM; same migration tooling |
 | Schemas | Zod (in `packages/shared`) | Validates wire format on both ends of every boundary (HTTP inputs, WS messages) |

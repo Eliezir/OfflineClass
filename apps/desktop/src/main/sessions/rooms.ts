@@ -89,6 +89,19 @@ export class Rooms {
     this.subs.delete(ws)
   }
 
+  kickStudent(studentId: string): void {
+    for (const [ws, sub] of this.subs.entries()) {
+      if (sub.role === 'student' && sub.studentId === studentId) {
+        try {
+          ws.close(4000, 'Kicked by teacher')
+        } catch {
+          // ignore
+        }
+        this.subs.delete(ws)
+      }
+    }
+  }
+
   private emit(predicate: (s: Subscription) => boolean, payload: string): void {
     for (const sub of this.subs.values()) {
       if (!predicate(sub)) continue

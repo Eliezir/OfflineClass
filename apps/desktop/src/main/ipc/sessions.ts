@@ -26,8 +26,8 @@ import {
   startSession
 } from '../sessions/store'
 import type { Rooms } from '../sessions/rooms'
-import { listGroups, createGroup, joinGroup, leaveGroup } from '../sessions/groups'
-import { groups } from '../db/schema'
+import { listGroups, createGroup, joinGroup, leaveGroup, deleteGroup } from '../sessions/groups'
+import { groups, students, groupMembers } from '../db/schema'
 import { eq } from 'drizzle-orm'
 
 export interface SessionsContext {
@@ -199,6 +199,78 @@ export function registerSessionsHandlers(ctx: SessionsContext): void {
       rooms.toTeachers(grp.sessionId, {
         type: 'session.lobby.update',
         students: listLobbyStudents(db, grp.sessionId)
+      })
+    }
+  )
+
+  ipcMain.handle(
+    'sessions.deleteGroup',
+    async (_event, rawGroupId): Promise<void> => {
+      requireTeacherId(db)
+      const groupId = typeof rawGroupId === 'string' ? rawGroupId : ''
+      const grp = db.select({ sessionId: groups.sessionId }).from(groups).where(eq(groups.id, groupId)).get()
+      if (!grp) throw new Error('Grupo não encontrado')
+
+      // 1. Update rooms for all students in group
+      const members = db
+        .select({ studentId: groupMembers.studentId })
+        .from(groupMembers)
+        .where(eq(groupMembers.groupId, groupId))
+        .all()
+      for (const m of members) {
+        rooms.updateStudentGroup(m.studentId, null)
+      }
+
+      // 2. Delete group from DB
+      deleteGroup(db, groupId)
+
+      // 3. Broadcast
+      const groupsList = listGroups(db, grp.sessionId)
+      rooms.toAll(grp.sessionId, { type: 'group.list', groups: groupsList })
+      rooms.toTeachers(grp.sessionId, {
+        type: 'session.lobby.update',
+        students: listLobbyStudents(db, grp.sessionId)
+      })
+    }
+  )
+
+  ipcMain.handle(
+    'sessions.kickStudent',
+    async (_event, rawSessionId, rawStudentId): Promise<void> => {
+      requireTeacherId(db)
+      const sessionId = typeof rawSessionId === 'string' ? rawSessionId : ''
+      const studentId = typeof rawStudentId === 'string' ? rawStudentId : ''
+
+      // 1. Remove student from group if any
+      const memberRow = db
+        .select({ groupId: groupMembers.groupId })
+        .from(groupMembers)
+        .where(eq(groupMembers.studentId, studentId))
+        .get()
+      if (memberRow) {
+        try {
+          leaveGroup(db, memberRow.groupId, studentId)
+          rooms.updateStudentGroup(studentId, null)
+        } catch (err) {
+          console.error('Failed to remove student from group on kick:', err)
+        }
+      }
+
+      // 2. Mark student as left in the DB
+      db.update(students)
+        .set({ leftAt: new Date() })
+        .where(eq(students.id, studentId))
+        .run()
+
+      // 3. Force disconnect/kick WebSocket
+      rooms.kickStudent(studentId)
+
+      // 4. Broadcast updated list to teacher & students
+      const groupsList = listGroups(db, sessionId)
+      rooms.toAll(sessionId, { type: 'group.list', groups: groupsList })
+      rooms.toTeachers(sessionId, {
+        type: 'session.lobby.update',
+        students: listLobbyStudents(db, sessionId)
       })
     }
   )

@@ -20,7 +20,7 @@ import {
 
 import type { Db } from '../db/client'
 import { resolveSession } from '../auth/sessions'
-import { examSessions, groupMembers } from '../db/schema'
+import { examSessions, groupMembers, groups } from '../db/schema'
 import type { Rooms } from '../sessions/rooms'
 import * as Y from 'yjs'
 import { yjsManager } from '../sessions/yjs'
@@ -42,6 +42,8 @@ import {
   joinGroup,
   leaveGroup,
   listGroups,
+  deleteGroup,
+  renameGroup,
   GroupError
 } from '../sessions/groups'
 
@@ -287,6 +289,18 @@ export async function startServer(port: number, deps: ServerDeps): Promise<Serve
     if (!session || session.status !== 'lobby') {
       return c.json({ error: 'BAD_STATE', message: 'Grupos estão travados após o início da sessão.' }, 400)
     }
+
+    // Prevent creating a group if the student is already in one
+    const existingGroup = db
+      .select({ groupId: groupMembers.groupId })
+      .from(groupMembers)
+      .innerJoin(groups, eq(groups.id, groupMembers.groupId))
+      .where(and(eq(groups.sessionId, student.sessionId), eq(groupMembers.studentId, student.id)))
+      .get()
+    if (existingGroup) {
+      return c.json({ error: 'ALREADY_IN_GROUP', message: 'Você já está em um grupo. Saia do grupo atual para criar outro.' }, 400)
+    }
+
     let body: { name?: string }
     try { body = await c.req.json() } catch { return c.json({ error: 'invalid-json' }, 400) }
     if (!body.name || body.name.trim().length < 1) {
@@ -301,6 +315,7 @@ export async function startServer(port: number, deps: ServerDeps): Promise<Serve
       if (err instanceof GroupError) return c.json({ error: err.code, message: err.message }, 400)
       throw err
     }
+
   })
 
   app.post('/api/groups/:id/join', (c) => {
@@ -352,6 +367,81 @@ export async function startServer(port: number, deps: ServerDeps): Promise<Serve
       throw err
     }
   })
+
+  app.patch('/api/groups/:id', async (c) => {
+    const token = extractBearer(c)
+    if (!token) return c.json({ error: 'unauthorized' }, 401)
+    const student = findStudentByToken(db, token)
+    if (!student) return c.json({ error: 'unauthorized' }, 401)
+    const session = db
+      .select({ status: examSessions.status })
+      .from(examSessions)
+      .where(eq(examSessions.id, student.sessionId))
+      .get()
+    if (!session || session.status !== 'lobby') {
+      return c.json({ error: 'BAD_STATE', message: 'Grupos estão travados após o início da sessão.' }, 400)
+    }
+    const groupId = c.req.param('id')
+    // Verify membership
+    const membership = db
+      .select()
+      .from(groupMembers)
+      .where(and(eq(groupMembers.groupId, groupId), eq(groupMembers.studentId, student.id)))
+      .get()
+    if (!membership) {
+      return c.json({ error: 'FORBIDDEN', message: 'Apenas membros do grupo podem editá-lo.' }, 403)
+    }
+    let body: { name?: string }
+    try { body = await c.req.json() } catch { return c.json({ error: 'invalid-json' }, 400) }
+    if (!body.name || body.name.trim().length < 1) {
+      return c.json({ error: 'invalid-input', message: 'Nome do grupo obrigatório' }, 400)
+    }
+    renameGroup(db, groupId, body.name)
+    broadcastLobbyAndGroups(student.sessionId)
+    return c.json({ ok: true })
+  })
+
+  app.delete('/api/groups/:id', (c) => {
+    const token = extractBearer(c)
+    if (!token) return c.json({ error: 'unauthorized' }, 401)
+    const student = findStudentByToken(db, token)
+    if (!student) return c.json({ error: 'unauthorized' }, 401)
+    const session = db
+      .select({ status: examSessions.status })
+      .from(examSessions)
+      .where(eq(examSessions.id, student.sessionId))
+      .get()
+    if (!session || session.status !== 'lobby') {
+      return c.json({ error: 'BAD_STATE', message: 'Grupos estão travados após o início da sessão.' }, 400)
+    }
+    const groupId = c.req.param('id')
+    // Verify membership
+    const membership = db
+      .select()
+      .from(groupMembers)
+      .where(and(eq(groupMembers.groupId, groupId), eq(groupMembers.studentId, student.id)))
+      .get()
+    if (!membership) {
+      return c.json({ error: 'FORBIDDEN', message: 'Apenas membros do grupo podem excluí-lo.' }, 403)
+    }
+    // Get all group members to update their socket room context
+    const members = db
+      .select({ studentId: groupMembers.studentId })
+      .from(groupMembers)
+      .where(eq(groupMembers.groupId, groupId))
+      .all()
+
+    deleteGroup(db, groupId)
+
+    // Update socket room mapping for each member
+    for (const m of members) {
+      rooms.updateStudentGroup(m.studentId, null)
+    }
+
+    broadcastLobbyAndGroups(student.sessionId)
+    return c.json({ ok: true })
+  })
+
 
   // ---- WebSocket --------------------------------------------------------
   // MUST come before the static / SPA-fallback handlers below: Hono matches

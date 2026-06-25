@@ -96,7 +96,11 @@ const domain = {
     joinGroup: (groupId: string, studentId: string): Promise<void> =>
       ipcRenderer.invoke('sessions.joinGroup', groupId, studentId),
     leaveGroup: (groupId: string, studentId: string): Promise<void> =>
-      ipcRenderer.invoke('sessions.leaveGroup', groupId, studentId)
+      ipcRenderer.invoke('sessions.leaveGroup', groupId, studentId),
+    deleteGroup: (groupId: string): Promise<void> =>
+      ipcRenderer.invoke('sessions.deleteGroup', groupId),
+    kickStudent: (sessionId: string, studentId: string): Promise<void> =>
+      ipcRenderer.invoke('sessions.kickStudent', sessionId, studentId)
   }
 }
 
