@@ -35,6 +35,7 @@ export function toStudentResult(review: SessionAnswersReview): StudentResult {
     name: review.studentName,
     matricula: review.studentMatricula,
     avatar: review.studentAvatar,
+    groupName: review.groupName,
     submittedAt: review.submittedAt,
     joinedAt: review.joinedAt,
     leftAt: review.leftAt,

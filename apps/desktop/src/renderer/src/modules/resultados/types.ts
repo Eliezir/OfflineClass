@@ -20,6 +20,7 @@ export type StudentResult = {
   name: string
   matricula: string
   avatar: AvatarConfig | null
+  groupName: string | null
   submittedAt: number | null
   joinedAt: number
   leftAt: number | null

@@ -21,8 +21,10 @@ import {
 
 import type { Db } from '../db/client'
 import { resolveSession } from '../auth/sessions'
-import { examSessions } from '../db/schema'
+import { examSessions, groupMembers, groups } from '../db/schema'
 import type { Rooms } from '../sessions/rooms'
+import * as Y from 'yjs'
+import { yjsManager } from '../sessions/yjs'
 import {
   findActiveSessionPublic,
   findStudentByToken,
@@ -38,6 +40,15 @@ import {
   submitStudent,
   updateStudentAvatar
 } from '../sessions/store'
+import {
+  createGroup,
+  joinGroup,
+  leaveGroup,
+  listGroups,
+  deleteGroup,
+  renameGroup,
+  GroupError
+} from '../sessions/groups'
 
 export interface ServerHandle {
   port: number
@@ -90,6 +101,19 @@ export async function startServer(port: number, deps: ServerDeps): Promise<Serve
   const app = new Hono()
   const { injectWebSocket, upgradeWebSocket } = createNodeWebSocket({ app })
 
+  function broadcastGroupList(sessionId: string): void {
+    const groups = listGroups(db, sessionId)
+    rooms.toAll(sessionId, {
+      type: 'group.list',
+      groups
+    } satisfies import('@offlineclass/shared').WsServerEvent)
+  }
+
+  function broadcastLobbyAndGroups(sessionId: string): void {
+    broadcastLobbyUpdate(db, rooms, sessionId)
+    broadcastGroupList(sessionId)
+  }
+
   app.get('/api/health', (c) => c.json({ ok: true }))
 
   app.get('/api/session/active', (c) => {
@@ -114,7 +138,7 @@ export async function startServer(port: number, deps: ServerDeps): Promise<Serve
     }
     try {
       const result = joinSession(db, parsed.data)
-      broadcastLobbyUpdate(db, rooms, result.sessionId)
+      broadcastLobbyAndGroups(result.sessionId)
       return c.json(result)
     } catch (err) {
       return mapSessionError(c, err)
@@ -204,6 +228,26 @@ export async function startServer(port: number, deps: ServerDeps): Promise<Serve
     try {
       saveAnswer(db, student.id, parsed.data.questionId, parsed.data.value)
       broadcastLobbyUpdate(db, rooms, student.sessionId)
+
+      // Also reflect the answer in the group's Y.Doc so the teacher monitor
+      // receives it via IPC push — even if the student's Yjs WS path failed.
+      const memberRow = db
+        .select({ groupId: groupMembers.groupId })
+        .from(groupMembers)
+        .where(eq(groupMembers.studentId, student.id))
+        .get()
+      if (memberRow?.groupId) {
+        try {
+          const doc = yjsManager.getOrCreateDoc(db, memberRow.groupId)
+          doc.transact(() => {
+            doc.getMap<string>('answers').set(parsed.data.questionId, parsed.data.value)
+          }, 'rest-api')
+          console.log(`[/api/answers] Updated yjsManager for group=${memberRow.groupId} q=${parsed.data.questionId}`)
+        } catch (err) {
+          console.error('[/api/answers] Failed to update yjsManager:', err)
+        }
+      }
+
       return c.json({ ok: true })
     } catch (err) {
       return mapSessionError(c, err)
@@ -219,12 +263,14 @@ export async function startServer(port: number, deps: ServerDeps): Promise<Serve
       const sessionId = student.sessionId
       const submittedStudent = listLobbyStudents(db, sessionId).find((s) => s.id === student.id)
       submitStudent(db, student.id)
-      broadcastLobbyUpdate(db, rooms, sessionId)
+      broadcastLobbyAndGroups(sessionId)
       if (submittedStudent) {
-        rooms.toTeachers(sessionId, {
+        const event: WsServerEvent = {
           type: 'student.submitted',
           student: submittedStudent
-        } satisfies import('@offlineclass/shared').WsServerEvent)
+        }
+        rooms.toTeachers(sessionId, event)
+        rooms.toStudents(sessionId, event)
       }
       return c.json({ ok: true })
     } catch (err) {
@@ -242,10 +288,26 @@ export async function startServer(port: number, deps: ServerDeps): Promise<Serve
     // Capture student info BEFORE leaveSession marks leftAt (after that,
     // listLobbyStudents excludes them so we need to build the payload now).
     const leftStudent = listLobbyStudents(db, sessionId).find((s) => s.id === student.id)
+
+    // Remove from group if any
+    const memberRow = db
+      .select({ groupId: groupMembers.groupId })
+      .from(groupMembers)
+      .where(eq(groupMembers.studentId, student.id))
+      .get()
+    if (memberRow) {
+      try {
+        leaveGroup(db, memberRow.groupId, student.id)
+        rooms.updateStudentGroup(student.id, null)
+      } catch (err) {
+        console.error('Failed to remove student from group on leave:', err)
+      }
+    }
+
     leaveSession(db, token)
 
     // Broadcast updated lobby (student removed) + dedicated leave event.
-    broadcastLobbyUpdate(db, rooms, sessionId)
+    broadcastLobbyAndGroups(sessionId)
     if (leftStudent) {
       rooms.toTeachers(sessionId, {
         type: 'student.left',
@@ -254,6 +316,183 @@ export async function startServer(port: number, deps: ServerDeps): Promise<Serve
     }
     return c.json({ ok: true })
   })
+
+  // ---- Groups -----------------------------------------------------------
+
+  app.get('/api/groups', (c) => {
+    const token = extractBearer(c)
+    if (!token) return c.json({ error: 'unauthorized' }, 401)
+    const student = findStudentByToken(db, token)
+    if (!student) return c.json({ error: 'unauthorized' }, 401)
+    return c.json(listGroups(db, student.sessionId))
+  })
+
+  app.post('/api/groups', async (c) => {
+    const token = extractBearer(c)
+    if (!token) return c.json({ error: 'unauthorized' }, 401)
+    const student = findStudentByToken(db, token)
+    if (!student) return c.json({ error: 'unauthorized' }, 401)
+    const session = db
+      .select({ status: examSessions.status })
+      .from(examSessions)
+      .where(eq(examSessions.id, student.sessionId))
+      .get()
+    if (!session || session.status !== 'lobby') {
+      return c.json({ error: 'BAD_STATE', message: 'Grupos estão travados após o início da sessão.' }, 400)
+    }
+
+    // Prevent creating a group if the student is already in one
+    const existingGroup = db
+      .select({ groupId: groupMembers.groupId })
+      .from(groupMembers)
+      .innerJoin(groups, eq(groups.id, groupMembers.groupId))
+      .where(and(eq(groups.sessionId, student.sessionId), eq(groupMembers.studentId, student.id)))
+      .get()
+    if (existingGroup) {
+      return c.json({ error: 'ALREADY_IN_GROUP', message: 'Você já está em um grupo. Saia do grupo atual para criar outro.' }, 400)
+    }
+
+    let body: { name?: string }
+    try { body = await c.req.json() } catch { return c.json({ error: 'invalid-json' }, 400) }
+    if (!body.name || body.name.trim().length < 1) {
+      return c.json({ error: 'invalid-input', message: 'Nome do grupo obrigatório' }, 400)
+    }
+    try {
+      const group = createGroup(db, student.sessionId, body.name, student.id)
+      rooms.updateStudentGroup(student.id, group.id)
+      broadcastLobbyAndGroups(student.sessionId)
+      return c.json(group)
+    } catch (err) {
+      if (err instanceof GroupError) return c.json({ error: err.code, message: err.message }, 400)
+      throw err
+    }
+
+  })
+
+  app.post('/api/groups/:id/join', (c) => {
+    const token = extractBearer(c)
+    if (!token) return c.json({ error: 'unauthorized' }, 401)
+    const student = findStudentByToken(db, token)
+    if (!student) return c.json({ error: 'unauthorized' }, 401)
+    const session = db
+      .select({ status: examSessions.status })
+      .from(examSessions)
+      .where(eq(examSessions.id, student.sessionId))
+      .get()
+    if (!session || session.status !== 'lobby') {
+      return c.json({ error: 'BAD_STATE', message: 'Grupos estão travados após o início da sessão.' }, 400)
+    }
+    const groupId = c.req.param('id')
+    try {
+      joinGroup(db, groupId, student.id)
+      rooms.updateStudentGroup(student.id, groupId)
+      broadcastLobbyAndGroups(student.sessionId)
+      return c.json({ ok: true })
+    } catch (err) {
+      if (err instanceof GroupError) return c.json({ error: err.code, message: err.message }, 400)
+      throw err
+    }
+  })
+
+  app.post('/api/groups/:id/leave', (c) => {
+    const token = extractBearer(c)
+    if (!token) return c.json({ error: 'unauthorized' }, 401)
+    const student = findStudentByToken(db, token)
+    if (!student) return c.json({ error: 'unauthorized' }, 401)
+    const session = db
+      .select({ status: examSessions.status })
+      .from(examSessions)
+      .where(eq(examSessions.id, student.sessionId))
+      .get()
+    if (!session || session.status !== 'lobby') {
+      return c.json({ error: 'BAD_STATE', message: 'Grupos estão travados após o início da sessão.' }, 400)
+    }
+    const groupId = c.req.param('id')
+    try {
+      leaveGroup(db, groupId, student.id)
+      rooms.updateStudentGroup(student.id, null)
+      broadcastLobbyAndGroups(student.sessionId)
+      return c.json({ ok: true })
+    } catch (err) {
+      if (err instanceof GroupError) return c.json({ error: err.code, message: err.message }, 400)
+      throw err
+    }
+  })
+
+  app.patch('/api/groups/:id', async (c) => {
+    const token = extractBearer(c)
+    if (!token) return c.json({ error: 'unauthorized' }, 401)
+    const student = findStudentByToken(db, token)
+    if (!student) return c.json({ error: 'unauthorized' }, 401)
+    const session = db
+      .select({ status: examSessions.status })
+      .from(examSessions)
+      .where(eq(examSessions.id, student.sessionId))
+      .get()
+    if (!session || session.status !== 'lobby') {
+      return c.json({ error: 'BAD_STATE', message: 'Grupos estão travados após o início da sessão.' }, 400)
+    }
+    const groupId = c.req.param('id')
+    // Verify membership
+    const membership = db
+      .select()
+      .from(groupMembers)
+      .where(and(eq(groupMembers.groupId, groupId), eq(groupMembers.studentId, student.id)))
+      .get()
+    if (!membership) {
+      return c.json({ error: 'FORBIDDEN', message: 'Apenas membros do grupo podem editá-lo.' }, 403)
+    }
+    let body: { name?: string }
+    try { body = await c.req.json() } catch { return c.json({ error: 'invalid-json' }, 400) }
+    if (!body.name || body.name.trim().length < 1) {
+      return c.json({ error: 'invalid-input', message: 'Nome do grupo obrigatório' }, 400)
+    }
+    renameGroup(db, groupId, body.name)
+    broadcastLobbyAndGroups(student.sessionId)
+    return c.json({ ok: true })
+  })
+
+  app.delete('/api/groups/:id', (c) => {
+    const token = extractBearer(c)
+    if (!token) return c.json({ error: 'unauthorized' }, 401)
+    const student = findStudentByToken(db, token)
+    if (!student) return c.json({ error: 'unauthorized' }, 401)
+    const session = db
+      .select({ status: examSessions.status })
+      .from(examSessions)
+      .where(eq(examSessions.id, student.sessionId))
+      .get()
+    if (!session || session.status !== 'lobby') {
+      return c.json({ error: 'BAD_STATE', message: 'Grupos estão travados após o início da sessão.' }, 400)
+    }
+    const groupId = c.req.param('id')
+    // Verify membership
+    const membership = db
+      .select()
+      .from(groupMembers)
+      .where(and(eq(groupMembers.groupId, groupId), eq(groupMembers.studentId, student.id)))
+      .get()
+    if (!membership) {
+      return c.json({ error: 'FORBIDDEN', message: 'Apenas membros do grupo podem excluí-lo.' }, 403)
+    }
+    // Get all group members to update their socket room context
+    const members = db
+      .select({ studentId: groupMembers.studentId })
+      .from(groupMembers)
+      .where(eq(groupMembers.groupId, groupId))
+      .all()
+
+    deleteGroup(db, groupId)
+
+    // Update socket room mapping for each member
+    for (const m of members) {
+      rooms.updateStudentGroup(m.studentId, null)
+    }
+
+    broadcastLobbyAndGroups(student.sessionId)
+    return c.json({ ok: true })
+  })
+
 
   // ---- WebSocket --------------------------------------------------------
   // MUST come before the static / SPA-fallback handlers below: Hono matches
@@ -268,8 +507,8 @@ export async function startServer(port: number, deps: ServerDeps): Promise<Serve
       const sessionIdParam = c.req.query('sessionId')
 
       type Auth =
-        | { kind: 'teacher'; sessionId: string }
-        | { kind: 'student'; studentId: string; sessionId: string }
+        | { kind: 'teacher'; sessionId: string; groupId?: string | null }
+        | { kind: 'student'; studentId: string; sessionId: string; groupId: string | null }
       let auth: Auth | null = null
 
       if (role === 'teacher' && sessionIdParam) {
@@ -285,12 +524,38 @@ export async function startServer(port: number, deps: ServerDeps): Promise<Serve
               )
             )
             .get()
-          if (examSession) auth = { kind: 'teacher', sessionId: examSession.id }
+          if (examSession) {
+            auth = { kind: 'teacher', sessionId: examSession.id }
+          }
         }
       } else if (role === 'student') {
         const student = findStudentByToken(db, token)
         if (student) {
-          auth = { kind: 'student', studentId: student.id, sessionId: student.sessionId }
+          const sessionRow = db
+            .select({ groupMode: examSessions.groupMode })
+            .from(examSessions)
+            .where(eq(examSessions.id, student.sessionId))
+            .get()
+          const groupMode = sessionRow?.groupMode ?? 'disabled'
+
+          let groupId: string | null = null
+          if (groupMode !== 'disabled') {
+            const memberRow = db
+              .select({ groupId: groupMembers.groupId })
+              .from(groupMembers)
+              .where(eq(groupMembers.studentId, student.id))
+              .get()
+            groupId = memberRow?.groupId ?? null
+          } else {
+            groupId = student.id
+          }
+
+          auth = {
+            kind: 'student',
+            studentId: student.id,
+            sessionId: student.sessionId,
+            groupId
+          }
         }
       }
 
@@ -312,7 +577,7 @@ export async function startServer(port: number, deps: ServerDeps): Promise<Serve
               } satisfies WsServerEvent)
             )
           } else {
-            rooms.addStudent(auth.sessionId, auth.studentId, ws)
+            rooms.addStudent(auth.sessionId, auth.studentId, auth.groupId, ws)
             ws.send(
               JSON.stringify({ type: 'connection.ack', role: 'student' } satisfies WsServerEvent)
             )
@@ -322,6 +587,71 @@ export async function startServer(port: number, deps: ServerDeps): Promise<Serve
                 students: listRosterStudents(db, auth.sessionId)
               } satisfies WsServerEvent)
             )
+            if (auth.groupId) {
+              const doc = yjsManager.getOrCreateDoc(db, auth.groupId)
+              const state = Y.encodeStateAsUpdate(doc)
+              const payload = new Uint8Array(state.length + 1)
+              payload[0] = 0 // type 0: Sync Update
+              payload.set(state, 1)
+              ws.send(payload)
+            }
+          }
+        },
+        onMessage: (event, ws) => {
+          if (!auth) return
+          if (typeof event.data !== 'string') {
+            const sub = rooms.getSubscription(ws)
+            const groupId = sub?.groupId ?? auth.groupId
+            if (groupId) {
+              const data = event.data instanceof Uint8Array
+                ? event.data
+                : new Uint8Array(event.data as ArrayBuffer)
+              const type = data[0]
+              const payload = data.subarray(1)
+
+              const studentId = auth.kind === 'student' ? auth.studentId : 'N/A'
+              console.log(`[WS Main Server] Received binary update: type=${type}, size=${payload.length} bytes, from role=${auth.kind}, studentId=${studentId}, resolved groupId=${groupId}`)
+
+              if (type === 0) { // Yjs Doc Update
+                const doc = yjsManager.getOrCreateDoc(db, groupId)
+                try {
+                  Y.applyUpdate(doc, payload)
+                  console.log(`[WS Main Server] Successfully applied Yjs update to group=${groupId}`)
+                } catch (err) {
+                  console.error(`[WS Main Server] Failed to apply Yjs update to group=${groupId}:`, err)
+                }
+                rooms.broadcastYjsToGroup(auth.sessionId, groupId, ws, data)
+              } else if (type === 1) { // Awareness Update
+                rooms.broadcastYjsToGroup(auth.sessionId, groupId, ws, data)
+                // Also forward to teacher renderer via IPC (bypasses WS binary issues)
+                rooms.broadcastAwarenessIpc(groupId, payload)
+              }
+            } else {
+              console.warn(`[WS Main Server] Ignored binary update from role=${auth.kind} because groupId could not be resolved. (subFound=${!!sub})`)
+            }
+          } else {
+            // Text frame from client
+            try {
+              const msg = JSON.parse(event.data.toString())
+              console.log(`[WS Main Server] Received text message:`, msg)
+              if (msg.type === 'watch-group' && auth.kind === 'teacher') {
+                auth.groupId = msg.groupId
+                rooms.watchGroup(auth.sessionId, msg.groupId, ws)
+
+                console.log(`[WS Main Server] Teacher is now watching group=${msg.groupId}. Sending initial document state...`)
+
+                // Send the initial document state for the group to the teacher
+                const doc = yjsManager.getOrCreateDoc(db, msg.groupId)
+                const state = Y.encodeStateAsUpdate(doc)
+                const payload = new Uint8Array(state.length + 1)
+                payload[0] = 0 // type 0: Sync Update
+                payload.set(state, 1)
+                ws.send(payload)
+                console.log(`[WS Main Server] Initial document state sent to teacher for group=${msg.groupId}. State size=${state.length} bytes`)
+              }
+            } catch (err) {
+              console.error('[WS Main Server] Failed to parse text message:', err)
+            }
           }
         },
         onClose: (_event, ws) => {
@@ -373,6 +703,11 @@ export async function startServer(port: number, deps: ServerDeps): Promise<Serve
     port,
     stop: () =>
       new Promise((resolve, reject) => {
+        try {
+          yjsManager.flushAll(db)
+        } catch (err) {
+          console.error('Failed to flush Yjs snapshots on server stop:', err)
+        }
         server.close((err) => (err ? reject(err) : resolve()))
       })
   }

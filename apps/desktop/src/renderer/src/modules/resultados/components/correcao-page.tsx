@@ -306,8 +306,14 @@ export function CorrecaoPage({ sessionId }: CorrecaoPageProps): React.JSX.Elemen
                     <StudentAvatar name={student.name} avatar={student.avatar} />
                     <div className="min-w-0 flex-1">
                       <div className="truncate text-sm font-bold">{student.name}</div>
-                      <div className="text-xs font-semibold text-muted-foreground">
-                        {student.matricula}
+                      <div className="text-xs font-semibold text-muted-foreground flex items-center gap-1.5 flex-wrap">
+                        <span>{student.matricula}</span>
+                        {student.groupName && (
+                          <>
+                            <span className="text-border/80" aria-hidden>•</span>
+                            <span className="text-primary font-bold text-[10px] bg-primary-soft/30 px-1.5 py-0.5 rounded-full">{student.groupName}</span>
+                          </>
+                        )}
                       </div>
                     </div>
                     <div className="flex shrink-0 items-center gap-3">

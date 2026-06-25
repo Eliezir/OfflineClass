@@ -46,6 +46,12 @@ export default function JoinRoute(): React.JSX.Element {
     mutationFn: (input: JoinInput) => api.join(input),
     onSuccess: (res) => {
       saveToken(res.token)
+      saveProfile({
+        name: res.studentName,
+        matricula: res.studentMatricula,
+        email: email.trim() || null,
+        avatar
+      })
       notify.success(`Bem-vindo, ${res.studentName}!`)
       navigate(res.status === 'running' ? '/test' : '/waiting', { replace: true })
     },
@@ -107,7 +113,7 @@ export default function JoinRoute(): React.JSX.Element {
   const joining = joinMutation.isPending
 
   return (
-    <main className="flex flex-1 flex-col items-center justify-center gap-6 px-6 py-10">
+    <main className="flex flex-1 flex-col items-center justify-center gap-6 overflow-y-auto px-6 py-10">
       <div className="flex flex-col items-center gap-2">
         <img src="/logo-icon.png" alt="OfflineClass" className="size-12 rounded-2xl shadow-sm" />
         <span className="text-muted-foreground font-display text-sm font-bold tracking-tight">

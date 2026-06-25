@@ -1,8 +1,8 @@
 {
   "version": "6",
   "dialect": "sqlite",
-  "id": "e7421031-8ce4-49f9-9cb7-bf6d3289dd38",
-  "prevId": "869e75d0-2bb9-4fba-89f7-84e18bf8840a",
+  "id": "1b800b02-abd2-45b6-beec-cbaef347d19c",
+  "prevId": "646758d6-ca60-47b0-a33e-1d1c45565b65",
   "tables": {
     "answers": {
       "name": "answers",
@@ -375,6 +375,60 @@
       "uniqueConstraints": {},
       "checkConstraints": {}
     },
+    "group_yjs_snapshots": {
+      "name": "group_yjs_snapshots",
+      "columns": {
+        "group_id": {
+          "name": "group_id",
+          "type": "text",
+          "primaryKey": true,
+          "notNull": true,
+          "autoincrement": false
+        },
+        "snapshot": {
+          "name": "snapshot",
+          "type": "blob",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false
+        },
+        "created_at": {
+          "name": "created_at",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false,
+          "default": "(unixepoch() * 1000)"
+        },
+        "updated_at": {
+          "name": "updated_at",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false,
+          "default": "(unixepoch() * 1000)"
+        }
+      },
+      "indexes": {},
+      "foreignKeys": {
+        "group_yjs_snapshots_group_id_groups_id_fk": {
+          "name": "group_yjs_snapshots_group_id_groups_id_fk",
+          "tableFrom": "group_yjs_snapshots",
+          "tableTo": "groups",
+          "columnsFrom": [
+            "group_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "cascade",
+          "onUpdate": "no action"
+        }
+      },
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {},
+      "checkConstraints": {}
+    },
     "groups": {
       "name": "groups",
       "columns": {
@@ -568,6 +622,20 @@
           "type": "text",
           "primaryKey": false,
           "notNull": true,
+          "autoincrement": false
+        },
+        "email": {
+          "name": "email",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false,
+          "autoincrement": false
+        },
+        "avatar": {
+          "name": "avatar",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false,
           "autoincrement": false
         },
         "token": {

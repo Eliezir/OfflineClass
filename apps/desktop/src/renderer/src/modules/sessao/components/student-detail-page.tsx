@@ -74,6 +74,7 @@ export function StudentDetailPage({ studentId }: StudentDetailPageProps): React.
       ) : (
         <StudentDetail
           student={student}
+          groupName={session?.groups?.find((g) => g.members.some((m) => m.studentId === studentId))?.name}
           questionsCount={session?.questionsCount ?? review?.answers.length ?? 0}
           review={review}
           now={now}
@@ -87,6 +88,7 @@ export function StudentDetailPage({ studentId }: StudentDetailPageProps): React.
 
 function StudentDetail({
   student,
+  groupName,
   questionsCount,
   review,
   now,
@@ -94,6 +96,7 @@ function StudentDetail({
   studentId
 }: {
   student: SessionLobbyStudent
+  groupName?: string
   questionsCount: number
   review: SessionAnswersReview | null
   now: number
@@ -113,7 +116,14 @@ function StudentDetail({
       <header className="mt-4 flex flex-wrap items-center gap-4 rounded-2xl border border-border bg-card p-5">
         <StudentAvatar name={student.name} avatar={student.avatar} className="size-14 text-base" />
         <div className="min-w-0 flex-1">
-          <h1 className="font-display text-2xl font-bold tracking-tight">{student.name}</h1>
+          <h1 className="font-display text-2xl font-bold tracking-tight flex items-center gap-2">
+            <span>{student.name}</span>
+            {groupName && (
+              <span className="inline-flex shrink-0 items-center rounded bg-primary-soft px-2 py-0.5 text-xs font-bold text-primary-soft-foreground uppercase tracking-wider">
+                {groupName}
+              </span>
+            )}
+          </h1>
           <p className="mt-0.5 text-sm font-semibold text-muted-foreground">
             {student.matricula} · <Trans>entrou {formatRelativeTime(student.joinedAt)}</Trans>
             {status !== 'submitted' && (

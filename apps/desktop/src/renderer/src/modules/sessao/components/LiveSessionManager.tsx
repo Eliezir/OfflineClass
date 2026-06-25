@@ -47,26 +47,30 @@ export function LiveSessionManager({ sessionId }: LiveSessionManagerProps): null
               })
             }
 
+            if (message.type === 'group.list') {
+              queryClient.setQueryData<SessionDetail | null>(sessionKeys.active(), (oldData) => {
+                if (!oldData) return null
+                return {
+                  ...oldData,
+                  groups: message.groups
+                }
+              })
+            }
+
             if (message.type === 'student.left') {
               const s = message.student
-              notify.warning(
-                `${s.name} saiu da sala`,
-                {
-                  description: `${s.matricula} · ${s.answeredCount} de questões respondidas · ${timeLabel(Date.now())}`,
-                  duration: 6000
-                }
-              )
+              notify.warning(`${s.name} saiu da sala`, {
+                description: `${s.matricula} · ${s.answeredCount} de questões respondidas · ${timeLabel(Date.now())}`,
+                duration: 6000
+              })
             }
 
             if (message.type === 'student.submitted') {
               const s = message.student
-              notify.success(
-                `${s.name} enviou a prova`,
-                {
-                  description: `${s.matricula} · ${s.answeredCount} de questões respondidas · ${timeLabel(Date.now())}`,
-                  duration: 6000
-                }
-              )
+              notify.success(`${s.name} enviou a prova`, {
+                description: `${s.matricula} · ${s.answeredCount} de questões respondidas · ${timeLabel(Date.now())}`,
+                duration: 6000
+              })
             }
           } catch (error) {
             console.error('Failed to process incoming real-time socket frame:', error)

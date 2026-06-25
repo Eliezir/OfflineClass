@@ -40,8 +40,22 @@
     {
       "idx": 5,
       "version": "6",
-      "when": 1782281801981,
-      "tag": "0005_shocking_riptide",
+      "when": 1782164960561,
+      "tag": "0005_bitter_orphan",
+      "breakpoints": true
+    },
+    {
+      "idx": 6,
+      "version": "6",
+      "when": 1782264721006,
+      "tag": "0006_yellow_invisible_woman",
+      "breakpoints": true
+    },
+    {
+      "idx": 7,
+      "version": "6",
+      "when": 1782417121881,
+      "tag": "0007_lumpy_manta",
       "breakpoints": true
     }
   ]
