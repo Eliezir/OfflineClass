@@ -12,6 +12,7 @@ import { useActiveSessionQuery, useCreateSession, useEndSession, useStartSession
 import { useSessaoClock } from '../use-sessao-clock'
 import { Countdown } from './countdown'
 import { LiveDashboard } from './live-dashboard'
+import { GroupRealtimeMonitor } from './group-realtime-monitor'
 import { LobbyPanel } from './lobby-panel'
 import { NoSession } from './no-session'
 import { SessionEnded } from './session-ended'
@@ -30,6 +31,7 @@ export function SessaoPage({ initialExamId }: { initialExamId?: string } = {}): 
   // After a running session ends we keep its detail locally to show the summary
   // (the active query goes null once it's no longer lobby/running).
   const [endedDetail, setEndedDetail] = useState<SessionDetail | null>(null)
+  const [selectedGroupId, setSelectedGroupId] = useState<string | null>(null)
   const { now } = useSessaoClock()
 
   const session = endedDetail ?? active ?? null
@@ -37,20 +39,24 @@ export function SessaoPage({ initialExamId }: { initialExamId?: string } = {}): 
 
   function handleOpen(input: SessionCreateInput): void {
     setEndedDetail(null)
+    setSelectedGroupId(null)
     create.mutate(input)
   }
   function handleStart(): void {
+    setSelectedGroupId(null)
     if (active) start.mutate(active.id)
   }
   async function handleEnd(): Promise<void> {
     if (!active) return
     const detail = await end.mutateAsync(active.id)
     setEndedDetail(detail)
+    setSelectedGroupId(null)
   }
   async function handleCancel(): Promise<void> {
     if (!active) return
     await end.mutateAsync(active.id)
     setEndedDetail(null)
+    setSelectedGroupId(null)
   }
   function openStudent(studentId: string): void {
     navigate({ to: '/sessao/$studentId', params: { studentId } })
@@ -122,9 +128,29 @@ export function SessaoPage({ initialExamId }: { initialExamId?: string } = {}): 
       ) : phase === 'lobby' && session ? (
         <LobbyPanel session={session} />
       ) : phase === 'running' && session ? (
-        <LiveDashboard session={session} now={now} onSelectStudent={openStudent} />
+        selectedGroupId ? (
+          <GroupRealtimeMonitor
+            groupId={selectedGroupId}
+            session={session}
+            onBack={() => setSelectedGroupId(null)}
+            onSelectStudent={openStudent}
+          />
+        ) : (
+          <LiveDashboard
+            session={session}
+            now={now}
+            onSelectStudent={openStudent}
+            onSelectGroup={setSelectedGroupId}
+          />
+        )
       ) : phase === 'ended' && session ? (
-        <SessionEnded session={session} onNew={() => setEndedDetail(null)} />
+        <SessionEnded
+          session={session}
+          onNew={() => {
+            setEndedDetail(null)
+            setSelectedGroupId(null)
+          }}
+        />
       ) : null}
       {active && <LiveSessionManager sessionId={active.id} />}
     </main>

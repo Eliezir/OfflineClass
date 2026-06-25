@@ -1,4 +1,4 @@
-import { ipcMain } from 'electron'
+import { ipcMain, type WebContents } from 'electron'
 import {
   GradeAnswerInput,
   SessionCreateInput,
@@ -29,6 +29,11 @@ import type { Rooms } from '../sessions/rooms'
 import { listGroups, createGroup, joinGroup, leaveGroup, deleteGroup } from '../sessions/groups'
 import { groups, students, groupMembers } from '../db/schema'
 import { eq } from 'drizzle-orm'
+import { yjsManager } from '../sessions/yjs'
+import * as Y from 'yjs'
+
+// Registry: groupId -> Map of WebContents -> its onUpdate listener
+const yjsIpcSubscribers = new Map<string, Map<WebContents, (update: Uint8Array, origin: unknown) => void>>()
 
 export interface SessionsContext {
   db: Db
@@ -272,6 +277,111 @@ export function registerSessionsHandlers(ctx: SessionsContext): void {
         type: 'session.lobby.update',
         students: listLobbyStudents(db, sessionId)
       })
+    }
+  )
+
+  // ── Yjs IPC transport for teacher monitor ──────────────────────────────
+  // Returns the full serialised Y.Doc state so the renderer can initialise its
+  // local copy without going through the WebSocket path.
+  ipcMain.handle(
+    'sessions.getGroupYjsSnapshot',
+    (_event, rawGroupId): Uint8Array => {
+      requireTeacherId(db)
+      const groupId = typeof rawGroupId === 'string' ? rawGroupId : ''
+      const doc = yjsManager.getOrCreateDoc(db, groupId)
+      const state = Y.encodeStateAsUpdate(doc)
+      console.log(`[IPC] getGroupYjsSnapshot group=${groupId} size=${state.length}`)
+      return state
+    }
+  )
+
+  ipcMain.handle(
+    'sessions.subscribeGroupYjs',
+    (event, rawGroupId): void => {
+      requireTeacherId(db)
+      const groupId = typeof rawGroupId === 'string' ? rawGroupId : ''
+
+      // Get or create the subscriber map for this group
+      if (!yjsIpcSubscribers.has(groupId)) {
+        yjsIpcSubscribers.set(groupId, new Map())
+      }
+      const groupSubs = yjsIpcSubscribers.get(groupId)!
+
+      // If already subscribed, remove old listener first to avoid duplicates
+      const existingListener = groupSubs.get(event.sender)
+      if (existingListener) {
+        const doc = yjsManager.getOrCreateDoc(db, groupId)
+        doc.off('update', existingListener)
+      }
+
+      console.log(`[IPC] Teacher renderer subscribed to Yjs updates for group=${groupId}`)
+
+      // Push updates to this subscriber whenever the server-side doc changes.
+      const doc = yjsManager.getOrCreateDoc(db, groupId)
+      const onUpdate = (update: Uint8Array, origin: unknown): void => {
+        if (origin === 'ipc-push') return // avoid loops
+        if (event.sender.isDestroyed()) {
+          doc.off('update', onUpdate)
+          groupSubs.delete(event.sender)
+          return
+        }
+        try {
+          event.sender.send('group.yjs.update', groupId, update)
+        } catch {
+          doc.off('update', onUpdate)
+          groupSubs.delete(event.sender)
+        }
+      }
+
+      doc.on('update', onUpdate)
+      groupSubs.set(event.sender, onUpdate)
+
+      // Cleanup when renderer window closes
+      event.sender.once('destroyed', () => {
+        doc.off('update', onUpdate)
+        groupSubs.delete(event.sender)
+        console.log(`[IPC] Teacher renderer unsubscribed (destroyed) from group=${groupId}`)
+      })
+    }
+  )
+
+  ipcMain.handle(
+    'sessions.unsubscribeGroupYjs',
+    (event, rawGroupId): void => {
+      const groupId = typeof rawGroupId === 'string' ? rawGroupId : ''
+      const groupSubs = yjsIpcSubscribers.get(groupId)
+      if (groupSubs) {
+        const listener = groupSubs.get(event.sender)
+        if (listener) {
+          const doc = yjsManager.getOrCreateDoc(db, groupId)
+          doc.off('update', listener)
+          groupSubs.delete(event.sender)
+        }
+      }
+      console.log(`[IPC] Teacher renderer unsubscribed from group=${groupId}`)
+    }
+  )
+
+  // ── Awareness IPC transport ──────────────────────────────────────────────
+  // Renderer subscribes to receive student awareness updates (cursor positions,
+  // presence) forwarded from the server via IPC — no WS binary needed.
+  ipcMain.handle(
+    'sessions.subscribeGroupAwareness',
+    (event, rawGroupId): void => {
+      requireTeacherId(db)
+      const groupId = typeof rawGroupId === 'string' ? rawGroupId : ''
+      rooms.subscribeAwarenessIpc(groupId, event.sender)
+      event.sender.once('destroyed', () => rooms.unsubscribeAwarenessIpc(groupId, event.sender))
+      console.log(`[IPC] Teacher renderer subscribed to awareness for group=${groupId}`)
+    }
+  )
+
+  ipcMain.handle(
+    'sessions.unsubscribeGroupAwareness',
+    (event, rawGroupId): void => {
+      const groupId = typeof rawGroupId === 'string' ? rawGroupId : ''
+      rooms.unsubscribeAwarenessIpc(groupId, event.sender)
+      console.log(`[IPC] Teacher renderer unsubscribed from awareness group=${groupId}`)
     }
   )
 }

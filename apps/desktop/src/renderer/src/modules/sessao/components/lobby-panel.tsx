@@ -13,7 +13,8 @@ import {
   ChevronRight,
   User,
   X,
-  UserMinus
+  UserMinus,
+  Trash2
 } from 'lucide-react'
 import { Trans, useLingui } from '@lingui/react/macro'
 import { Button } from '@renderer/shared/ui/button'
@@ -45,7 +46,7 @@ interface GroupCardProps {
     studentName: string,
     groupId: string
   ) => void
-  onDeleteGroup: (groupId: string) => void
+  onDeleteGroup: (groupId: string, groupName: string) => void
 }
 
 function GroupCard({
@@ -62,16 +63,16 @@ function GroupCard({
   return (
     <div
       onDragOver={(e) => {
-        if (groupMode === 'teacher') e.preventDefault()
+        if (groupMode !== 'disabled') e.preventDefault()
       }}
       onDragEnter={() => {
-        if (groupMode === 'teacher') setIsOver(true)
+        if (groupMode !== 'disabled') setIsOver(true)
       }}
       onDragLeave={() => {
         setIsOver(false)
       }}
       onDrop={(e) => {
-        if (groupMode === 'teacher') {
+        if (groupMode !== 'disabled') {
           e.preventDefault()
           setIsOver(false)
           const studentId = e.dataTransfer.getData('studentId')
@@ -90,14 +91,10 @@ function GroupCard({
           <span className="inline-flex items-center rounded-full bg-muted px-2 py-0.5 text-[10px] font-semibold text-muted-foreground">
             {group.members.length} membros
           </span>
-          {groupMode === 'teacher' && (
+          {groupMode !== 'disabled' && (
             <button
               type="button"
-              onClick={() => {
-                if (confirm(t`Tem certeza que deseja excluir o grupo "${group.name}"?`)) {
-                  onDeleteGroup(group.id)
-                }
-              }}
+              onClick={() => onDeleteGroup(group.id, group.name)}
               className="text-muted-foreground hover:text-destructive hover:bg-muted p-1 rounded-lg transition-colors focus:outline-none"
               title={t`Excluir grupo`}
             >
@@ -110,31 +107,31 @@ function GroupCard({
         {group.members.map((m) => (
           <div
             key={m.studentId}
-            draggable={groupMode === 'teacher'}
+            draggable={groupMode !== 'disabled'}
             onDragStart={(e) => {
-              if (groupMode === 'teacher') {
+              if (groupMode !== 'disabled') {
                 e.dataTransfer.setData('studentId', m.studentId)
                 e.dataTransfer.setData('fromGroupId', group.id)
               }
             }}
             onContextMenu={(e) => {
-              if (groupMode === 'teacher') {
+              if (groupMode !== 'disabled') {
                 onStudentContextMenu(e, m.studentId, m.studentName, group.id)
               }
             }}
             className={`flex items-center justify-between px-2.5 py-1.5 rounded-lg border border-border/40 text-xs bg-muted/20 ${
-              groupMode === 'teacher'
+              groupMode !== 'disabled'
                 ? 'cursor-grab active:cursor-grabbing hover:bg-muted/40 hover:border-border transition-colors'
                 : ''
             }`}
           >
             <div className="flex items-center gap-1.5 min-w-0 flex-1">
-              {groupMode === 'teacher' && (
+              {groupMode !== 'disabled' && (
                 <GripVertical className="size-3.5 shrink-0 text-muted-foreground/60" />
               )}
               <span className="truncate font-medium">{m.studentName}</span>
             </div>
-            {groupMode === 'teacher' && (
+            {groupMode !== 'disabled' && (
               <button
                 type="button"
                 onClick={() => onRemoveStudent(m.studentId)}
@@ -165,6 +162,7 @@ export function LobbyPanel({ session }: LobbyPanelProps): React.JSX.Element {
   const [isUnassignedOver, setIsUnassignedOver] = useState(false)
   const [showBanner, setShowBanner] = useState(true)
   const [studentToKick, setStudentToKick] = useState<{ id: string; name: string } | null>(null)
+  const [groupToDelete, setGroupToDelete] = useState<{ id: string; name: string } | null>(null)
 
   const [contextMenu, setContextMenu] = useState<{
     x: number
@@ -354,26 +352,24 @@ export function LobbyPanel({ session }: LobbyPanelProps): React.JSX.Element {
 
                 <div
                   onDragOver={(e) => {
-                    if (session.groupMode === 'teacher') e.preventDefault()
+                    e.preventDefault()
                   }}
                   onDragEnter={() => {
-                    if (session.groupMode === 'teacher') setIsUnassignedOver(true)
+                    setIsUnassignedOver(true)
                   }}
                   onDragLeave={() => {
                     setIsUnassignedOver(false)
                   }}
                   onDrop={async (e) => {
-                    if (session.groupMode === 'teacher') {
-                      e.preventDefault()
-                      setIsUnassignedOver(false)
-                      const studentId = e.dataTransfer.getData('studentId')
-                      const fromGroupId = e.dataTransfer.getData('fromGroupId')
-                      if (studentId && fromGroupId) {
-                        try {
-                          await window.api.sessions.leaveGroup(fromGroupId, studentId)
-                        } catch (err) {
-                          console.error(err)
-                        }
+                    e.preventDefault()
+                    setIsUnassignedOver(false)
+                    const studentId = e.dataTransfer.getData('studentId')
+                    const fromGroupId = e.dataTransfer.getData('fromGroupId')
+                    if (studentId && fromGroupId) {
+                      try {
+                        await window.api.sessions.leaveGroup(fromGroupId, studentId)
+                      } catch (err) {
+                        console.error(err)
                       }
                     }
                   }}
@@ -387,27 +383,19 @@ export function LobbyPanel({ session }: LobbyPanelProps): React.JSX.Element {
                     unassignedStudents.map((s) => (
                       <div
                         key={s.id}
-                        draggable={session.groupMode === 'teacher'}
+                        draggable={true}
                         onDragStart={(e) => {
                           e.dataTransfer.setData('studentId', s.id)
                           e.dataTransfer.setData('fromGroupId', '')
                         }}
                         onContextMenu={(e) => {
-                          if (session.groupMode === 'teacher') {
-                            handleStudentContextMenu(e, s.id, s.name, null)
-                          }
+                          handleStudentContextMenu(e, s.id, s.name, null)
                         }}
-                        className={`flex items-center gap-1.5 ${
-                          session.groupMode === 'teacher'
-                            ? 'cursor-grab active:cursor-grabbing hover:bg-muted/40 rounded-xl transition-colors px-2 border border-transparent hover:border-border/40'
-                            : ''
-                        }`}
+                        className="flex items-center gap-1.5 cursor-grab active:cursor-grabbing hover:bg-muted/40 rounded-xl transition-colors px-2 border border-transparent hover:border-border/40"
                       >
-                        {session.groupMode === 'teacher' && (
-                          <GripVertical className="size-4 shrink-0 text-muted-foreground/60" />
-                        )}
+                        <GripVertical className="size-4 shrink-0 text-muted-foreground/60" />
                         <div className="flex-1 min-w-0">
-                          <RosterRow student={s} />
+                           <RosterRow student={s} />
                         </div>
                       </div>
                     ))
@@ -446,7 +434,7 @@ export function LobbyPanel({ session }: LobbyPanelProps): React.JSX.Element {
                         onStudentContextMenu={(e, studentId, studentName, groupId) =>
                           handleStudentContextMenu(e, studentId, studentName, groupId)
                         }
-                        onDeleteGroup={handleDeleteGroup}
+                        onDeleteGroup={(groupId, name) => setGroupToDelete({ id: groupId, name })}
                       />
                     ))
                   ) : (
@@ -455,15 +443,7 @@ export function LobbyPanel({ session }: LobbyPanelProps): React.JSX.Element {
                         compact
                         icon={<Users />}
                         title={t`Nenhum grupo`}
-                        description={
-                          session.groupMode === 'teacher' ? (
-                            <Trans>Crie grupos e arraste alunos para eles.</Trans>
-                          ) : session.groupMode === 'shuffle' ? (
-                            <Trans>Os grupos serão sorteados e formados automaticamente ao iniciar a prova.</Trans>
-                          ) : (
-                            <Trans>Os alunos criarão grupos no lobby.</Trans>
-                          )
-                        }
+                        description={<Trans>Crie grupos e arraste alunos para eles.</Trans>}
                       />
                     </div>
                   )}
@@ -684,6 +664,44 @@ export function LobbyPanel({ session }: LobbyPanelProps): React.JSX.Element {
               }}
             >
               <Trans>Remover da sala</Trans>
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Dialog para confirmação de exclusão de grupo */}
+      <Dialog
+        open={groupToDelete !== null}
+        onOpenChange={(open) => {
+          if (!open) setGroupToDelete(null)
+        }}
+      >
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle className="text-destructive flex items-center gap-2">
+              <Trash2 className="size-5" />
+              <Trans>Excluir Grupo</Trans>
+            </DialogTitle>
+            <DialogDescription>
+              <Trans>
+                Tem certeza que deseja excluir o grupo <strong>{groupToDelete?.name}</strong>? Os alunos deste grupo voltarão para a lista de alunos sem grupo.
+              </Trans>
+            </DialogDescription>
+          </DialogHeader>
+          <DialogFooter className="mt-2">
+            <Button variant="ghost" onClick={() => setGroupToDelete(null)}>
+              <Trans>Cancelar</Trans>
+            </Button>
+            <Button
+              variant="destructive"
+              onClick={async () => {
+                if (groupToDelete) {
+                  await handleDeleteGroup(groupToDelete.id)
+                  setGroupToDelete(null)
+                }
+              }}
+            >
+              <Trans>Excluir grupo</Trans>
             </Button>
           </DialogFooter>
         </DialogContent>

@@ -100,7 +100,29 @@ const domain = {
     deleteGroup: (groupId: string): Promise<void> =>
       ipcRenderer.invoke('sessions.deleteGroup', groupId),
     kickStudent: (sessionId: string, studentId: string): Promise<void> =>
-      ipcRenderer.invoke('sessions.kickStudent', sessionId, studentId)
+      ipcRenderer.invoke('sessions.kickStudent', sessionId, studentId),
+    getGroupYjsSnapshot: (groupId: string): Promise<Uint8Array> =>
+      ipcRenderer.invoke('sessions.getGroupYjsSnapshot', groupId),
+    subscribeGroupYjs: (groupId: string): Promise<void> =>
+      ipcRenderer.invoke('sessions.subscribeGroupYjs', groupId),
+    unsubscribeGroupYjs: (groupId: string): Promise<void> =>
+      ipcRenderer.invoke('sessions.unsubscribeGroupYjs', groupId),
+    onGroupYjsUpdate: (handler: (groupId: string, update: Uint8Array) => void): (() => void) => {
+      const listener = (_e: IpcRendererEvent, groupId: string, update: Uint8Array): void =>
+        handler(groupId, update)
+      ipcRenderer.on('group.yjs.update', listener)
+      return () => ipcRenderer.removeListener('group.yjs.update', listener)
+    },
+    subscribeGroupAwareness: (groupId: string): Promise<void> =>
+      ipcRenderer.invoke('sessions.subscribeGroupAwareness', groupId),
+    unsubscribeGroupAwareness: (groupId: string): Promise<void> =>
+      ipcRenderer.invoke('sessions.unsubscribeGroupAwareness', groupId),
+    onGroupAwarenessUpdate: (handler: (groupId: string, encoded: Uint8Array) => void): (() => void) => {
+      const listener = (_e: IpcRendererEvent, groupId: string, encoded: Uint8Array): void =>
+        handler(groupId, encoded)
+      ipcRenderer.on('group.awareness.update', listener)
+      return () => ipcRenderer.removeListener('group.awareness.update', listener)
+    }
   }
 }
 

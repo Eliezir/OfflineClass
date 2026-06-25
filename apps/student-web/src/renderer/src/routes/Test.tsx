@@ -9,7 +9,7 @@ import Collaboration from '@tiptap/extension-collaboration'
 import CollaborationCursor from '@tiptap/extension-collaboration-cursor'
 import { Awareness } from 'y-protocols/awareness'
 import * as awarenessProtocol from 'y-protocols/awareness'
-import { Users, Bold, Italic, Code } from 'lucide-react'
+import { Users, Bold, Italic, Code, RefreshCw, ArrowLeft, AlertCircle } from 'lucide-react'
 
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
@@ -293,10 +293,49 @@ export default function TestRoute(): React.JSX.Element {
   }
   if (examQuery.error || !examQuery.data) {
     return (
-      <main className="p-8">
-        <p className="text-destructive text-sm">
-          Erro ao carregar prova: {String(examQuery.error)}
-        </p>
+      <main className="flex flex-1 items-center justify-center p-6 bg-background">
+        <div className="w-full max-w-md rounded-2xl border border-border bg-card p-6 shadow-md text-center flex flex-col items-center gap-4 animate-in fade-in zoom-in-95 duration-200">
+          <div className="inline-flex size-12 items-center justify-center rounded-full bg-destructive/10 text-destructive">
+            <AlertCircle className="size-6" />
+          </div>
+          
+          <div className="space-y-1.5">
+            <h2 className="text-lg font-bold text-foreground">Não foi possível carregar a prova</h2>
+            <p className="text-sm text-muted-foreground leading-relaxed">
+              Ocorreu um erro ao buscar os dados da prova. Por favor, verifique se a sessão já foi iniciada pelo professor ou tente novamente.
+            </p>
+            {examQuery.error && (
+              <div className="mt-2 rounded-lg bg-muted/40 border border-border/50 p-2.5 text-xs text-destructive font-mono break-all text-left">
+                {String(examQuery.error)}
+              </div>
+            )}
+          </div>
+
+          <div className="flex flex-col sm:flex-row gap-3 w-full mt-2">
+            <Button
+              variant="outline"
+              onClick={() => {
+                clearToken()
+                navigate('/', { replace: true })
+              }}
+              className="flex-1 flex items-center justify-center gap-2 h-10 font-bold"
+            >
+              <ArrowLeft className="size-4" />
+              Retornar ao início
+            </Button>
+            <Button
+              variant="default"
+              onClick={() => {
+                examQuery.refetch()
+                meQuery.refetch()
+              }}
+              className="flex-1 flex items-center justify-center gap-2 h-10 font-bold"
+            >
+              <RefreshCw className="size-4" />
+              Atualizar tela
+            </Button>
+          </div>
+        </div>
       </main>
     )
   }

@@ -197,6 +197,26 @@ export async function startServer(port: number, deps: ServerDeps): Promise<Serve
     try {
       saveAnswer(db, student.id, parsed.data.questionId, parsed.data.value)
       broadcastLobbyUpdate(db, rooms, student.sessionId)
+
+      // Also reflect the answer in the group's Y.Doc so the teacher monitor
+      // receives it via IPC push — even if the student's Yjs WS path failed.
+      const memberRow = db
+        .select({ groupId: groupMembers.groupId })
+        .from(groupMembers)
+        .where(eq(groupMembers.studentId, student.id))
+        .get()
+      if (memberRow?.groupId) {
+        try {
+          const doc = yjsManager.getOrCreateDoc(db, memberRow.groupId)
+          doc.transact(() => {
+            doc.getMap<string>('answers').set(parsed.data.questionId, parsed.data.value)
+          }, 'rest-api')
+          console.log(`[/api/answers] Updated yjsManager for group=${memberRow.groupId} q=${parsed.data.questionId}`)
+        } catch (err) {
+          console.error('[/api/answers] Failed to update yjsManager:', err)
+        }
+      }
+
       return c.json({ ok: true })
     } catch (err) {
       return mapSessionError(c, err)
@@ -456,7 +476,7 @@ export async function startServer(port: number, deps: ServerDeps): Promise<Serve
       const sessionIdParam = c.req.query('sessionId')
 
       type Auth =
-        | { kind: 'teacher'; sessionId: string }
+        | { kind: 'teacher'; sessionId: string; groupId?: string | null }
         | { kind: 'student'; studentId: string; sessionId: string; groupId: string | null }
       let auth: Auth | null = null
 
@@ -542,19 +562,58 @@ export async function startServer(port: number, deps: ServerDeps): Promise<Serve
         },
         onMessage: (event, ws) => {
           if (!auth) return
-          if (event.data instanceof ArrayBuffer) {
-            if (auth.kind === 'student' && auth.groupId) {
-              const data = new Uint8Array(event.data)
+          if (typeof event.data !== 'string') {
+            const sub = rooms.getSubscription(ws)
+            const groupId = sub?.groupId ?? auth.groupId
+            if (groupId) {
+              const data = event.data instanceof Uint8Array
+                ? event.data
+                : new Uint8Array(event.data as ArrayBuffer)
               const type = data[0]
               const payload = data.subarray(1)
 
+              const studentId = auth.kind === 'student' ? auth.studentId : 'N/A'
+              console.log(`[WS Main Server] Received binary update: type=${type}, size=${payload.length} bytes, from role=${auth.kind}, studentId=${studentId}, resolved groupId=${groupId}`)
+
               if (type === 0) { // Yjs Doc Update
-                const doc = yjsManager.getOrCreateDoc(db, auth.groupId)
-                Y.applyUpdate(doc, payload)
-                rooms.broadcastYjsToGroup(auth.sessionId, auth.groupId, ws, data)
+                const doc = yjsManager.getOrCreateDoc(db, groupId)
+                try {
+                  Y.applyUpdate(doc, payload)
+                  console.log(`[WS Main Server] Successfully applied Yjs update to group=${groupId}`)
+                } catch (err) {
+                  console.error(`[WS Main Server] Failed to apply Yjs update to group=${groupId}:`, err)
+                }
+                rooms.broadcastYjsToGroup(auth.sessionId, groupId, ws, data)
               } else if (type === 1) { // Awareness Update
-                rooms.broadcastYjsToGroup(auth.sessionId, auth.groupId, ws, data)
+                rooms.broadcastYjsToGroup(auth.sessionId, groupId, ws, data)
+                // Also forward to teacher renderer via IPC (bypasses WS binary issues)
+                rooms.broadcastAwarenessIpc(groupId, payload)
               }
+            } else {
+              console.warn(`[WS Main Server] Ignored binary update from role=${auth.kind} because groupId could not be resolved. (subFound=${!!sub})`)
+            }
+          } else {
+            // Text frame from client
+            try {
+              const msg = JSON.parse(event.data.toString())
+              console.log(`[WS Main Server] Received text message:`, msg)
+              if (msg.type === 'watch-group' && auth.kind === 'teacher') {
+                auth.groupId = msg.groupId
+                rooms.watchGroup(auth.sessionId, msg.groupId, ws)
+
+                console.log(`[WS Main Server] Teacher is now watching group=${msg.groupId}. Sending initial document state...`)
+
+                // Send the initial document state for the group to the teacher
+                const doc = yjsManager.getOrCreateDoc(db, msg.groupId)
+                const state = Y.encodeStateAsUpdate(doc)
+                const payload = new Uint8Array(state.length + 1)
+                payload[0] = 0 // type 0: Sync Update
+                payload.set(state, 1)
+                ws.send(payload)
+                console.log(`[WS Main Server] Initial document state sent to teacher for group=${msg.groupId}. State size=${state.length} bytes`)
+              }
+            } catch (err) {
+              console.error('[WS Main Server] Failed to parse text message:', err)
             }
           }
         },

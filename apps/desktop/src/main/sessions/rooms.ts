@@ -2,8 +2,9 @@ import { eq } from 'drizzle-orm'
 import { groupMembers, groups, examSessions } from '../db/schema'
 import type { WSContext } from 'hono/ws'
 import type { WsServerEvent } from '@offlineclass/shared'
+import type { WebContents } from 'electron'
 
-interface Subscription {
+export interface Subscription {
   ws: WSContext
   role: 'teacher' | 'student'
   sessionId: string
@@ -17,19 +18,40 @@ interface Subscription {
 // the Hono server (subscribing new sockets on /api/ws).
 export class Rooms {
   private subs = new Map<WSContext, Subscription>()
+  // groupId -> WebContents subscribed to awareness updates via IPC
+  private awarenessIpcSubs = new Map<string, Set<WebContents>>()
+
+  getSubscription(ws: WSContext): Subscription | undefined {
+    return this.subs.get(ws)
+  }
 
   addTeacher(sessionId: string, ws: WSContext): void {
     this.subs.set(ws, { ws, role: 'teacher', sessionId })
+    console.log(`[Rooms] Registered teacher for session=${sessionId}. Total subs=${this.subs.size}`)
   }
 
   addStudent(sessionId: string, studentId: string, groupId: string | null, ws: WSContext): void {
     this.subs.set(ws, { ws, role: 'student', sessionId, studentId, groupId: groupId || undefined })
+    console.log(`[Rooms] Registered student=${studentId} for session=${sessionId} group=${groupId}. Total subs=${this.subs.size}`)
+  }
+
+  watchGroup(_sessionId: string, groupId: string, ws: WSContext): void {
+    const sub = this.subs.get(ws)
+    if (sub && sub.role === 'teacher') {
+      sub.groupId = groupId
+      console.log(`[Rooms] Teacher registered to watch group=${groupId}`)
+    } else {
+      console.warn(`[Rooms] watchGroup failed. subFound=${!!sub} role=${sub?.role}`)
+    }
   }
 
   updateStudentGroup(studentId: string, groupId: string | null): void {
+    console.log(`[Rooms] Updating group for student=${studentId} to group=${groupId}`)
     for (const sub of this.subs.values()) {
       if (sub.role === 'student' && sub.studentId === studentId) {
+        const oldGroup = sub.groupId
         sub.groupId = groupId || undefined
+        console.log(`[Rooms] Student=${studentId} group updated from=${oldGroup} to=${groupId}`)
       }
     }
   }
@@ -69,24 +91,51 @@ export class Rooms {
   }
 
   broadcastYjsToGroup(sessionId: string, groupId: string, senderWs: WSContext, update: Uint8Array): void {
+    let sentCount = 0
+    let totalMatchedGroup = 0
     for (const sub of this.subs.values()) {
-      if (
-        sub.role === 'student' &&
-        sub.sessionId === sessionId &&
-        sub.groupId === groupId &&
-        sub.ws !== senderWs
-      ) {
-        try {
-          sub.ws.send(update as any)
-        } catch {
-          // ignore broken sockets
+      if (sub.sessionId === sessionId && sub.groupId === groupId) {
+        totalMatchedGroup++
+        if (sub.ws !== senderWs) {
+          try {
+            sub.ws.send(update as any)
+            sentCount++
+          } catch (err) {
+            console.error(`[Rooms] Failed to send Yjs update to client (role=${sub.role}):`, err)
+          }
         }
       }
     }
+    console.log(`[Rooms] broadcastYjsToGroup: session=${sessionId}, group=${groupId}, size=${update.length} bytes. Sent to ${sentCount}/${totalMatchedGroup} clients in group (excluding sender).`)
   }
 
   remove(ws: WSContext): void {
     this.subs.delete(ws)
+  }
+
+  // ── Awareness IPC push ───────────────────────────────────────────────────
+  subscribeAwarenessIpc(groupId: string, wc: WebContents): void {
+    if (!this.awarenessIpcSubs.has(groupId)) {
+      this.awarenessIpcSubs.set(groupId, new Set())
+    }
+    this.awarenessIpcSubs.get(groupId)!.add(wc)
+  }
+
+  unsubscribeAwarenessIpc(groupId: string, wc: WebContents): void {
+    this.awarenessIpcSubs.get(groupId)?.delete(wc)
+  }
+
+  broadcastAwarenessIpc(groupId: string, encodedAwareness: Uint8Array): void {
+    const subs = this.awarenessIpcSubs.get(groupId)
+    if (!subs || subs.size === 0) return
+    for (const wc of Array.from(subs)) {
+      if (wc.isDestroyed()) { subs.delete(wc); continue }
+      try {
+        wc.send('group.awareness.update', groupId, encodedAwareness)
+      } catch {
+        subs.delete(wc)
+      }
+    }
   }
 
   kickStudent(studentId: string): void {

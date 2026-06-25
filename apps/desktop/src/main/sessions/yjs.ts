@@ -1,10 +1,11 @@
 import { randomUUID } from 'node:crypto'
 import * as Y from 'yjs'
-import { eq } from 'drizzle-orm'
+import { eq, inArray } from 'drizzle-orm'
 import {
   groupYjsSnapshots,
   groupMembers,
-  answers
+  answers,
+  questions
 } from '../db/schema'
 import type { Db } from '../db/client'
 
@@ -63,6 +64,45 @@ class YjsManager {
           .get()
         if (row && row.snapshot) {
           Y.applyUpdate(newDoc, new Uint8Array(row.snapshot as Buffer))
+          console.log(`[YjsManager] Loaded Yjs snapshot for group=${groupId}`)
+        } else {
+          // If no snapshot exists, populate Yjs Doc from existing answers in the database
+          const members = db
+            .select({ studentId: groupMembers.studentId })
+            .from(groupMembers)
+            .where(eq(groupMembers.groupId, groupId))
+            .all()
+          if (members.length > 0) {
+            const studentIds = members.map((m) => m.studentId)
+            const dbAnswers = db
+              .select({
+                questionId: answers.questionId,
+                value: answers.value,
+                kind: questions.kind
+              })
+              .from(answers)
+              .innerJoin(questions, eq(questions.id, answers.questionId))
+              .where(inArray(answers.studentId, studentIds))
+              .all()
+
+            console.log(`[YjsManager] No snapshot found for group=${groupId}. Seeding Y.Doc from ${dbAnswers.length} DB answers.`)
+
+            newDoc.transact(() => {
+              const answersMap = newDoc.getMap<string>('answers')
+              for (const ans of dbAnswers) {
+                if (ans.kind === 'essay' || ans.kind === 'code') {
+                  const xmlFragment = newDoc.getXmlFragment(ans.questionId)
+                  if (xmlFragment.length === 0) {
+                    const yXmlText = new Y.XmlText()
+                    yXmlText.insert(0, ans.value)
+                    xmlFragment.insert(0, [yXmlText])
+                  }
+                } else {
+                  answersMap.set(ans.questionId, ans.value)
+                }
+              }
+            })
+          }
         }
       } catch (err) {
         console.error(`Failed to load Yjs snapshot for group ${groupId}:`, err)

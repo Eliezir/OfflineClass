@@ -138,12 +138,13 @@ Discover (mDNS) → Join (POST /api/join) → Waiting (WS) → Test (GET/POST /a
 | `teachers` | Contas locais do professor |
 | `teacher_sessions` | Sessões de login do professor |
 | `exams` | Provas (título, descrição) |
-| `questions` | Questões (MCQ, dissertativa, código) |
+| `questions` | Questões (MCQ, multi, truefalse, dissertativa, código) |
 | `exam_sessions` | Sessões de prova (lobby → running → ended) |
 | `students` | Alunos por sessão (matrícula, token, timestamps) |
-| `answers` | Respostas dos alunos |
+| `answers` | Respostas dos alunos (por estudante, por questão) |
 | `groups` | Grupos de alunos |
 | `group_members` | Membros de cada grupo |
+| `group_yjs_snapshots` | Snapshot binário do `Y.Doc` de cada grupo (BLOB, debounce 2 s) |
 
 ### Convenções
 
@@ -314,6 +315,8 @@ window.api.window.close()
 | `student.submitted` | `{ student }` | Aluno envia prova |
 | `group.list` | `{ groups }` | Grupos são alterados |
 
+> **Nota:** Yjs Doc updates e Awareness updates do monitor de grupo chegam ao renderer do professor via **IPC push** (`group.yjs.update` e `group.awareness.update`), não via este WebSocket.
+
 ### Servidor → Aluno
 
 | Evento | Payload | Quando |
@@ -349,12 +352,21 @@ window.api.window.close()
 ### IPC do professor (main ↔ renderer)
 
 | Canal | Descrição |
-|---|---|
+|------|------|
 | `auth.register/login/me/logout/getToken` | Autenticação |
 | `exams.list/get/create/update/delete/duplicate` | CRUD de provas |
 | `questions.add/update/delete/reorder` | CRUD de questões |
 | `sessions.list/create/get/active/start/end` | Ciclo de sessão |
 | `sessions.studentAnswers/gradeAnswer` | Correção |
+| `sessions.broadcastLobby` | Broadcast manual do lobby |
+| `sessions.createGroup/joinGroup/leaveGroup/deleteGroup/kickStudent` | Gerenciamento de grupos |
+| `sessions.getGroupYjsSnapshot(groupId)` | Retorna `Uint8Array` com estado serializado do `Y.Doc` do grupo |
+| `sessions.subscribeGroupYjs(groupId)` | Registra renderer como subscriber de push do Y.Doc; envia evento `group.yjs.update` a cada update |
+| `sessions.unsubscribeGroupYjs(groupId)` | Remove subscription de Y.Doc |
+| `sessions.onGroupYjsUpdate(handler)` | Escuta evento push `group.yjs.update` no renderer; retorna `unsubscribe` |
+| `sessions.subscribeGroupAwareness(groupId)` | Registra renderer como subscriber de awareness; envia `group.awareness.update` a cada update de presença |
+| `sessions.unsubscribeGroupAwareness(groupId)` | Remove subscription de awareness |
+| `sessions.onGroupAwarenessUpdate(handler)` | Escuta evento push `group.awareness.update`; retorna `unsubscribe` |
 | `discovery.getStatus` | IP, porta, QR |
 | `window:minimize/maximize-toggle/close/is-maximized` | Controles de janela |
 | `window:print` / `sessions.exportPdf` | Impressão/PDF |
@@ -390,13 +402,61 @@ draft ──► lobby ──► running ──► ended
 - `shuffle` — o sistema divide os alunos aleatoriamente em grupos de tamanho máximo configurado ao iniciar a prova.
 - Trava de grupos — a formação de grupos é travada no momento de transição `lobby → running`.
 
+### Padronização do Lobby
+- Toda a interface de gerenciamento de grupos no lobby (`LobbyPanel`) foi unificada para todos os modos de grupo (`free`, `shuffle`, `teacher`), exibindo a coluna de alunos sem grupo e a lista de grupos. 
+- **Restrição de Ações:** O botão **"Novo Grupo"** e o banner informativo sobre controle pelo professor são ocultados nos modos `free` (onde a criação é descentralizada no aluno) e `shuffle` (criação automática), aparecendo de forma restrita apenas quando `session.groupMode === 'teacher'`.
+
+### Monitoramento de Grupos em Tempo Real
+- **Dashboard Ativo:** Na fase em curso (`running`), se a sessão de prova for em grupo, a listagem de progresso de alunos é dividida em cartões de grupos (`LiveDashboard`), permitindo ao professor clicar em **"Abrir Y.Doc (Tempo Real)"** para monitorar a colaboração.
+- **IPC-only (sem WebSocket no professor):** O `GroupRealtimeMonitor` usa exclusivamente IPC para sincronização — `getGroupYjsSnapshot`, `subscribeGroupYjs`/`onGroupYjsUpdate` para o doc, e `subscribeGroupAwareness`/`onGroupAwarenessUpdate` para cursores e presença. Não há conexão WebSocket do lado do professor para o monitor.
+- **TipTap Colaborativo (Modo Leitura):** Questões dissertativas e de código são exibidas em editores TipTap de leitura (`editable: false`) acoplados ao `Y.Doc` e `Awareness` local. Updates IPC disparam `Y.applyUpdate()` / `awarenessProtocol.applyAwarenessUpdate()` na instância local — TipTap e `CollaborationCursor` refletem automaticamente.
+- **Respostas MCQ/Truefalse/Multi:** Exibidas a partir do observer `ydoc.getMap('answers').observe()`, que dispara `setAnswers()` React sempre que o Y.Map muda via IPC push.
+- **Navegação:** O painel lateral esquerdo lista todos os integrantes do grupo com respectivo progresso e botão de ação rápida para detalhar o estudante.
+
 ### Colaboração em Tempo Real (Yjs)
 
-A colaboração em grupo é feita em tempo real através de **WebSockets nativos** servidos em `/api/ws` no servidor Hono (`@hono/node-ws`). 
-- As mensagens trocadas via WebSocket utilizam buffers binários (`Uint8Array`) diferenciados por um byte de cabeçalho: `type 0` para atualizações de documento Yjs e `type 1` para atualizações de presença/awareness.
-- O servidor gerencia o roteamento de mensagens do grupo e mantém a instância ativa do documento em memória através do `yjsManager`.
-- **Deduplicação de Pacotes no Vite:** Para evitar conflitos de instâncias do ProseMirror/Yjs (`ystate is undefined`), a configuração do Vite do aluno (`electron.vite.config.ts`) deduplica os pacotes `yjs`, `y-protocols` e `y-prosemirror`.
-- **Questões do tipo Código:** Suportam preenchimento inicial de template (`starterCode`) e são renderizadas com fontes monoespaçadas e corretores ortográficos desativados tanto no modo individual (via `<Textarea>`) quanto no modo colaborativo (via Tiptap `CollabEditor`).
+A colaboração em grupo usa **duas camadas de transporte** separadas por papel:
+
+#### Aluno → Servidor (WebSocket binário)
+
+Alunos conectam a `/api/ws?role=student&token=...` e trocam frames binários com byte de cabeçalho:
+
+| Byte `[0]` | Tipo | Conteúdo |
+|---|---|---|
+| `0` | Yjs Doc Update | Delta do `Y.Doc` do grupo (respostas MCQ/texto) |
+| `1` | Awareness Update | Codificado por `y-protocols/awareness` (cursores, presença) |
+
+O servidor aplica type `0` ao `yjsManager` (mantém um `Y.Doc` por grupo em memória) e faz broadcast de ambos os tipos para os demais membros do grupo via `rooms.broadcastYjsToGroup()`.
+
+**Dupla gravação no `/api/answers`:** quando o aluno salva uma resposta MCQ/text via REST (`POST /api/answers`), o servidor também atualiza `yjsManager.getOrCreateDoc(groupId).getMap('answers').set(questionId, value)`. Isso garante que o monitor do professor veja a resposta mesmo se o caminho Yjs WS falhar.
+
+#### Professor → Monitor de Grupo (IPC — sem WebSocket)
+
+O monitor do professor (`GroupRealtimeMonitor`) é um componente React no renderer Electron que usa **exclusivamente IPC** para sincronizar o Y.Doc e a awareness:
+
+```
+1. getGroupYjsSnapshot(groupId)  → Uint8Array  → Y.applyUpdate(doc, snapshot)
+2. subscribeGroupYjs(groupId)    → (sem retorno)
+3. onGroupYjsUpdate(handler)     → desregistrar no cleanup
+   handler: (gid, update) → Y.applyUpdate(doc, update, 'ipc-push')
+
+4. subscribeGroupAwareness(groupId)
+5. onGroupAwarenessUpdate(handler)
+   handler: (gid, encoded) → awarenessProtocol.applyAwarenessUpdate(aware, encoded, 'ipc-push')
+```
+
+No main process:
+- `sessions.subscribeGroupYjs` → `doc.on('update', onUpdate)` → `wc.send('group.yjs.update', groupId, update)`
+- `sessions.subscribeGroupAwareness` → `rooms.subscribeAwarenessIpc(groupId, wc)` → `rooms.broadcastAwarenessIpc()` é chamado no `onMessage` do WS quando `type === 1` chega de qualquer aluno
+
+> **Racional:** o renderer Electron (Chromium) e o main process (Node.js) compartilham memória via IPC; não há custo de rede. Essa abordagem é mais confiável que enviar frames binários do Node.js para o Chromium via loopback TCP, que sofria de inconsistências no handling de `Uint8Array` no `WSContext.send()` do Hono.
+
+#### `yjsManager` — Singleton em memória
+
+- Um `Y.Doc` por `groupId`, criado lazily em `getOrCreateDoc(db, groupId)`
+- Se existe snapshot em `group_yjs_snapshots`, aplica-o. Senão, semeia do banco (`answers` table) usando `Y.XmlText` para essay/code e `Y.Map('answers')` para MCQ
+- Debounce de 2 s para persistir snapshots em `group_yjs_snapshots` após cada update
+- `syncAnswersFromYdoc()` sincroniza o Y.Map de volta para a tabela `answers` em cada save
 
 ### Tabelas
 
