@@ -4,7 +4,6 @@ import { Link } from '@tanstack/react-router'
 import { Trans, useLingui } from '@lingui/react/macro'
 import type { ExamSummary, GroupMode, SessionCreateInput } from '@offlineclass/shared'
 import { Button } from '@renderer/shared/ui/button'
-import { EmptyState } from '@renderer/shared/ui/empty-state'
 import { Input } from '@renderer/shared/ui/input'
 import { Label } from '@renderer/shared/ui/label'
 import { Segmented } from '@renderer/shared/ui/segmented'
@@ -56,37 +55,45 @@ export function NoSession({
         className="pointer-events-none absolute -z-10 size-[32rem] max-w-full rounded-full bg-primary/10 blur-[120px]"
       />
 
-      <span className="grid size-12 place-items-center rounded-2xl bg-primary-soft text-primary-soft-foreground [&_svg]:size-6">
-        <Radio />
-      </span>
-      <h2 className="mt-4 font-display text-2xl font-bold tracking-tight">
-        <Trans>Nenhuma sessão ativa</Trans>
-      </h2>
-      <p className="mt-1.5 max-w-sm text-balance text-center text-sm text-muted-foreground">
-        <Trans>Escolha uma prova e abra a sala para os alunos entrarem pela rede.</Trans>
-      </p>
-
       {loadingProvas ? (
-        <div className="mt-6 flex h-40 w-full max-w-md items-center justify-center text-muted-foreground">
+        <div className="flex h-40 items-center justify-center text-muted-foreground">
           <Loader2 className="size-6 animate-spin" />
         </div>
       ) : !hasProvas ? (
-        <EmptyState
-          className="mt-2 flex-none"
-          icon={<ClipboardList />}
-          title={t`Nenhuma prova ainda`}
-          description={<Trans>Crie uma prova antes de aplicar uma sessão.</Trans>}
-          action={
-            <Button asChild>
-              <Link to="/provas">
-                <Plus />
-                <Trans>Nova prova</Trans>
-              </Link>
-            </Button>
-          }
-        />
+        /* No active session AND no exams — a single, create-exam-focused state. */
+        <>
+          <span className="grid size-12 place-items-center rounded-2xl bg-tertiary-soft text-tertiary-soft-foreground [&_svg]:size-6">
+            <ClipboardList />
+          </span>
+          <h2 className="mt-4 font-display text-2xl font-bold tracking-tight">
+            <Trans>Nenhuma prova ainda</Trans>
+          </h2>
+          <p className="mt-1.5 max-w-sm text-balance text-center text-sm text-muted-foreground">
+            <Trans>
+              Crie sua primeira prova para depois abrir uma sessão e aplicá-la à turma.
+            </Trans>
+          </p>
+          <Button asChild className="mt-6" size="lg">
+            <Link to="/provas">
+              <Plus />
+              <Trans>Nova prova</Trans>
+            </Link>
+          </Button>
+        </>
       ) : (
-        <div className="mt-6 w-full max-w-md space-y-5 rounded-2xl border border-border bg-card p-5">
+        /* No active session, but exams exist — pick one and open the room. */
+        <div className="flex w-full max-w-md flex-col items-center">
+          <span className="grid size-12 place-items-center rounded-2xl bg-primary-soft text-primary-soft-foreground [&_svg]:size-6">
+            <Radio />
+          </span>
+          <h2 className="mt-4 font-display text-2xl font-bold tracking-tight">
+            <Trans>Nenhuma sessão ativa</Trans>
+          </h2>
+          <p className="mt-1.5 max-w-sm text-balance text-center text-sm text-muted-foreground">
+            <Trans>Escolha uma prova e abra a sala para os alunos entrarem pela rede.</Trans>
+          </p>
+
+          <div className="mt-6 w-full space-y-5 rounded-2xl border border-border bg-card p-5">
           <div className="space-y-1.5">
             <Label htmlFor="sessao-prova">
               <Trans>Prova</Trans>
@@ -197,6 +204,7 @@ export function NoSession({
           </Button>
 
           {error && <p className="text-center text-sm font-semibold text-destructive">{error}</p>}
+          </div>
         </div>
       )}
     </div>
