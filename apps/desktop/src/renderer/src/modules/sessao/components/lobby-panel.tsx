@@ -69,6 +69,7 @@ function GroupCard({
   onDeleteGroup
 }: GroupCardProps): React.JSX.Element {
   const [isOver, setIsOver] = useState(false)
+  const [draggingMember, setDraggingMember] = useState<string | null>(null)
   const { t } = useLingui()
 
   return (
@@ -133,18 +134,18 @@ function GroupCard({
               if (groupMode !== 'disabled') {
                 e.dataTransfer.setData('studentId', m.studentId)
                 e.dataTransfer.setData('fromGroupId', group.id)
+                setDraggingMember(m.studentId)
               }
             }}
+            onDragEnd={() => setDraggingMember(null)}
             onContextMenu={(e) => {
               if (groupMode !== 'disabled') {
                 onStudentContextMenu(e, m.studentId, m.studentName, group.id)
               }
             }}
             className={`group/member flex items-center gap-2 rounded-lg px-1.5 py-1 transition-colors ${
-              groupMode !== 'disabled'
-                ? 'cursor-grab hover:bg-muted/60 active:cursor-grabbing'
-                : ''
-            }`}
+              groupMode !== 'disabled' ? 'cursor-grab hover:bg-muted/60 active:cursor-grabbing' : ''
+            } ${draggingMember === m.studentId ? 'opacity-40' : ''}`}
           >
             <StudentAvatar name={m.studentName} avatar={m.avatar} className="size-7" />
             <span className="min-w-0 flex-1 truncate text-xs font-semibold">{m.studentName}</span>
@@ -181,6 +182,7 @@ export function LobbyPanel({ session }: LobbyPanelProps): React.JSX.Element {
   const [newGroupName, setNewGroupName] = useState('')
   const [showCreate, setShowCreate] = useState(false)
   const [isUnassignedOver, setIsUnassignedOver] = useState(false)
+  const [draggedId, setDraggedId] = useState<string | null>(null)
   const [showBanner, setShowBanner] = useState(true)
   const [studentToKick, setStudentToKick] = useState<{ id: string; name: string } | null>(null)
   const [groupToDelete, setGroupToDelete] = useState<{ id: string; name: string } | null>(null)
@@ -405,9 +407,15 @@ export function LobbyPanel({ session }: LobbyPanelProps): React.JSX.Element {
                         onDragStart={(e) => {
                           e.dataTransfer.setData('studentId', s.id)
                           e.dataTransfer.setData('fromGroupId', '')
+                          setDraggedId(s.id)
                         }}
+                        onDragEnd={() => setDraggedId(null)}
                         onContextMenu={(e) => handleStudentContextMenu(e, s.id, s.name, null)}
-                        className="group/u flex cursor-grab items-center gap-2.5 rounded-xl border border-border bg-card px-2.5 py-2 transition-all hover:border-primary/40 hover:shadow-sm active:cursor-grabbing"
+                        className={`group/u flex cursor-grab items-center gap-2.5 rounded-xl border bg-card px-2.5 py-2 transition-all active:cursor-grabbing ${
+                          draggedId === s.id
+                            ? 'border-dashed border-border opacity-40'
+                            : 'border-border hover:border-primary/40 hover:shadow-sm'
+                        }`}
                       >
                         <StudentAvatar name={s.name} avatar={s.avatar} className="size-8" />
                         <div className="min-w-0 flex-1">
