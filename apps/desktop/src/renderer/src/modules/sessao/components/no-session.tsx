@@ -66,11 +66,12 @@ export function NoSession({
             <ClipboardList />
           </span>
           <h2 className="mt-4 font-display text-2xl font-bold tracking-tight">
-            <Trans>Nenhuma prova ainda</Trans>
+            <Trans>Não é possível criar uma sessão</Trans>
           </h2>
           <p className="mt-1.5 max-w-sm text-balance text-center text-sm text-muted-foreground">
             <Trans>
-              Crie sua primeira prova para depois abrir uma sessão e aplicá-la à turma.
+              Você precisa de pelo menos uma prova para abrir uma sessão. Crie uma prova para
+              começar.
             </Trans>
           </p>
           <Button asChild className="mt-6" size="lg">
