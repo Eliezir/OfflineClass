@@ -27,6 +27,7 @@ export function StudentMenu({ onProfileChange }: StudentMenuProps): React.JSX.El
   const [settingsOpen, setSettingsOpen] = useState(false)
   const [name, setName] = useState('')
   const [matricula, setMatricula] = useState('')
+  const [email, setEmail] = useState('')
 
   const stored = loadProfile()
 
@@ -34,13 +35,18 @@ export function StudentMenu({ onProfileChange }: StudentMenuProps): React.JSX.El
     if (stored) {
       setName(stored.name)
       setMatricula(stored.matricula)
+      setEmail(stored.email ?? '')
     }
     setEditing(true)
   }
 
   const handleSave = (): void => {
     if (name.trim().length < 2 || matricula.trim().length < 2) return
-    const profile: StudentProfile = { name: name.trim(), matricula: matricula.trim() }
+    const profile: StudentProfile = {
+      name: name.trim(),
+      matricula: matricula.trim(),
+      email: email.trim() || undefined
+    }
     saveProfile(profile)
     onProfileChange(profile)
     setEditing(false)
@@ -128,6 +134,13 @@ export function StudentMenu({ onProfileChange }: StudentMenuProps): React.JSX.El
                 placeholder="Matrícula"
                 value={matricula}
                 onChange={(e) => setMatricula(e.target.value)}
+                className="border-input-border bg-input w-full rounded-[10px] border px-2.5 py-1.5 text-sm outline-none focus-visible:border-ring focus-visible:ring-[3px] focus-visible:ring-ring/25"
+              />
+              <input
+                type="email"
+                placeholder="E-mail (opcional)"
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
                 className="border-input-border bg-input w-full rounded-[10px] border px-2.5 py-1.5 text-sm outline-none focus-visible:border-ring focus-visible:ring-[3px] focus-visible:ring-ring/25"
               />
               <div className="flex gap-2">
@@ -226,6 +239,13 @@ export function StudentMenu({ onProfileChange }: StudentMenuProps): React.JSX.El
               placeholder="Matrícula"
               value={matricula}
               onChange={(e) => setMatricula(e.target.value)}
+              className="border-input-border bg-input w-full rounded-[10px] border px-2.5 py-1.5 text-sm outline-none focus-visible:border-ring focus-visible:ring-[3px] focus-visible:ring-ring/25"
+            />
+            <input
+              type="email"
+              placeholder="E-mail (opcional)"
+              value={email}
+              onChange={(e) => setEmail(e.target.value)}
               className="border-input-border bg-input w-full rounded-[10px] border px-2.5 py-1.5 text-sm outline-none focus-visible:border-ring focus-visible:ring-[3px] focus-visible:ring-ring/25"
             />
             <button

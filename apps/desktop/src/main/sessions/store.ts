@@ -50,6 +50,7 @@ function rowToLobbyStudent(
     id: row.id,
     name: row.name,
     matricula: row.matricula,
+    email: row.email ?? null,
     joinedAt: row.joinedAt.getTime(),
     lastSeenAt: row.lastSeenAt.getTime(),
     submittedAt: row.submittedAt ? row.submittedAt.getTime() : null,
@@ -379,6 +380,7 @@ export function joinSession(db: Db, input: JoinInput): JoinResult {
   const sessionId = active.id
   const matricula = input.matricula.trim()
   const name = input.name.trim()
+  const email = input.email?.trim() ? input.email.trim() : null
   const now = new Date()
 
   // If the same student already has a record (e.g. closed the app without
@@ -392,7 +394,9 @@ export function joinSession(db: Db, input: JoinInput): JoinResult {
   if (existing) {
     const token = randomUUID()
     db.update(students)
-      .set({ name, token, lastSeenAt: now, leftAt: null })
+      // Keep an e-mail the teacher may have already filled when the student
+      // rejoins without providing one.
+      .set({ name, token, lastSeenAt: now, leftAt: null, email: email ?? existing.email })
       .where(eq(students.id, existing.id))
       .run()
     return {
@@ -414,6 +418,7 @@ export function joinSession(db: Db, input: JoinInput): JoinResult {
       sessionId,
       name,
       matricula,
+      email,
       token,
       joinedAt: now,
       lastSeenAt: now
@@ -437,10 +442,7 @@ export function joinSession(db: Db, input: JoinInput): JoinResult {
 export function leaveSession(db: Db, token: string): void {
   const student = findStudentByToken(db, token)
   if (!student) return
-  db.update(students)
-    .set({ leftAt: new Date() })
-    .where(eq(students.id, student.id))
-    .run()
+  db.update(students).set({ leftAt: new Date() }).where(eq(students.id, student.id)).run()
 }
 
 export function listLobbyStudents(db: Db, sessionId: string): SessionLobbyStudent[] {
@@ -735,7 +737,7 @@ export function loadStudentAnswers(
     const auto = autoGrade(question, value)
     const correct = auto ? auto.correct : null
     const score = auto ? auto.score : (ans?.score ?? null)
-    return { question, value, correct, score }
+    return { question, value, correct, score, feedback: ans?.feedback ?? null }
   })
 
   // Points-weighted: auto kinds (correct === non-null) already store the earned
@@ -753,6 +755,8 @@ export function loadStudentAnswers(
     studentId,
     studentName: studentRow.name,
     studentMatricula: studentRow.matricula,
+    studentEmail: studentRow.email ?? null,
+    studentFeedback: studentRow.feedback ?? null,
     examTitle: sessionRow.examTitle,
     submittedAt: studentRow.submittedAt ? studentRow.submittedAt.getTime() : null,
     joinedAt: studentRow.joinedAt.getTime(),
@@ -820,4 +824,101 @@ export function gradeAnswer(
       })
       .run()
   }
+}
+
+/** Re-verify the chain teacher → session → student, returning the session's
+    examId. Throws if the teacher doesn't own the session or the student isn't
+    in it. Shared by the comment/e-mail mutations below. */
+function assertOwnsSessionStudent(
+  db: Db,
+  sessionId: string,
+  studentId: string,
+  ownerId: string
+): { examId: string } {
+  const sessionRow = db
+    .select({ examId: examSessions.examId, ownerId: examSessions.ownerId })
+    .from(examSessions)
+    .where(eq(examSessions.id, sessionId))
+    .get()
+  if (!sessionRow || sessionRow.ownerId !== ownerId) {
+    throw new SessionError('Sessão não encontrada', 'NOT_FOUND')
+  }
+  const studentRow = db
+    .select({ id: students.id })
+    .from(students)
+    .where(and(eq(students.id, studentId), eq(students.sessionId, sessionId)))
+    .get()
+  if (!studentRow) throw new SessionError('Aluno não encontrado', 'NOT_FOUND')
+  return { examId: sessionRow.examId }
+}
+
+/** Normalizes a free-text field: trims, and collapses empty to null (clears it). */
+function emptyToNull(value: string): string | null {
+  const trimmed = value.trim()
+  return trimmed === '' ? null : trimmed
+}
+
+/** Set/clear the teacher's free-text feedback on a single answer (any kind). */
+export function commentAnswer(
+  db: Db,
+  sessionId: string,
+  studentId: string,
+  questionId: string,
+  comment: string,
+  ownerId: string
+): void {
+  const { examId } = assertOwnsSessionStudent(db, sessionId, studentId, ownerId)
+  const questionRow = db
+    .select({ id: questions.id })
+    .from(questions)
+    .where(and(eq(questions.id, questionId), eq(questions.examId, examId)))
+    .get()
+  if (!questionRow) throw new SessionError('Questão inválida', 'NOT_FOUND')
+
+  const feedback = emptyToNull(comment)
+  const existing = db
+    .select({ id: answers.id })
+    .from(answers)
+    .where(and(eq(answers.studentId, studentId), eq(answers.questionId, questionId)))
+    .get()
+  const now = new Date()
+  if (existing) {
+    db.update(answers).set({ feedback, updatedAt: now }).where(eq(answers.id, existing.id)).run()
+  } else {
+    // Allow commenting even when the student never answered — insert a blank
+    // answer row so the comment sticks.
+    db.insert(answers)
+      .values({ id: randomUUID(), studentId, questionId, value: '', feedback, updatedAt: now })
+      .run()
+  }
+}
+
+/** Set/clear the teacher's overall remark on a student's exam. */
+export function commentStudent(
+  db: Db,
+  sessionId: string,
+  studentId: string,
+  comment: string,
+  ownerId: string
+): void {
+  assertOwnsSessionStudent(db, sessionId, studentId, ownerId)
+  db.update(students)
+    .set({ feedback: emptyToNull(comment) })
+    .where(eq(students.id, studentId))
+    .run()
+}
+
+/** Set/clear a student's e-mail (teacher fills it in on the results screen). */
+export function setStudentEmail(
+  db: Db,
+  sessionId: string,
+  studentId: string,
+  email: string,
+  ownerId: string
+): void {
+  assertOwnsSessionStudent(db, sessionId, studentId, ownerId)
+  db.update(students)
+    .set({ email: emptyToNull(email) })
+    .where(eq(students.id, studentId))
+    .run()
 }

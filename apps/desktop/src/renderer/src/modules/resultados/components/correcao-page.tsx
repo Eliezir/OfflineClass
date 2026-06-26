@@ -7,6 +7,7 @@ import {
   Download,
   Loader2,
   LogOut,
+  Mail,
   Percent,
   Play,
   Printer,
@@ -23,9 +24,16 @@ import { EmptyState } from '@renderer/shared/ui/empty-state'
 import { formatRelativeTime } from '@renderer/shared/utils/format'
 import { SessionStat } from '@renderer/modules/sessao/components/session-stat'
 import { StudentAvatar } from '@renderer/modules/sessao/components/student-avatar'
-import { useGradeAnswer, useSessionResultsQuery } from '../queries'
+import {
+  useCommentAnswer,
+  useCommentStudent,
+  useGradeAnswer,
+  useSessionResultsQuery
+} from '../queries'
 import { applyGrades, classAverage } from '../scoring'
+import { EmailDialog } from './email-dialog'
 import { GradedAnswerRow } from './graded-answer-row'
+import { StudentRemark } from './student-remark'
 import type { SessionResults, StudentResult } from '../types'
 
 function formatDuration(ms: number): string {
@@ -196,6 +204,8 @@ export function CorrecaoPage({ sessionId }: CorrecaoPageProps): React.JSX.Elemen
   const { t } = useLingui()
   const query = useSessionResultsQuery(sessionId)
   const grade = useGradeAnswer()
+  const comment = useCommentAnswer(sessionId)
+  const remark = useCommentStudent(sessionId)
 
   const source = query.data ?? null
 
@@ -203,11 +213,20 @@ export function CorrecaoPage({ sessionId }: CorrecaoPageProps): React.JSX.Elemen
   const results = useMemo(() => (source ? applyGrades(source, grades) : null), [source, grades])
 
   const [expandedId, setExpandedId] = useState<string | null>(null)
+  const [emailOpen, setEmailOpen] = useState(false)
   const students = results?.students ?? []
 
   function handleGrade(studentId: string, questionId: string, score: number): void {
     setGrades((g) => ({ ...g, [`${studentId}:${questionId}`]: score }))
     grade.mutate({ sessionId, studentId, questionId, score })
+  }
+
+  function handleComment(studentId: string, questionId: string, text: string): void {
+    comment.mutate({ studentId, questionId, comment: text })
+  }
+
+  function handleRemark(studentId: string, text: string): void {
+    remark.mutate({ studentId, comment: text })
   }
 
   const loading = query.isLoading
@@ -249,6 +268,10 @@ export function CorrecaoPage({ sessionId }: CorrecaoPageProps): React.JSX.Elemen
             <Button variant="outline" size="sm" onClick={() => downloadPdf(results)}>
               <Printer className="size-3.5" />
               <Trans>Exportar PDF</Trans>
+            </Button>
+            <Button size="sm" onClick={() => setEmailOpen(true)}>
+              <Mail className="size-3.5" />
+              <Trans>Enviar notas por e-mail</Trans>
             </Button>
           </div>
         )}
@@ -397,9 +420,18 @@ export function CorrecaoPage({ sessionId }: CorrecaoPageProps): React.JSX.Elemen
                             onGrade={(score) =>
                               handleGrade(student.studentId, a.question.id, score)
                             }
+                            onComment={(text) =>
+                              handleComment(student.studentId, a.question.id, text)
+                            }
                           />
                         ))}
                       </div>
+
+                      {/* Overall remark (sent in the grade e-mail) */}
+                      <StudentRemark
+                        feedback={student.feedback}
+                        onSave={(text) => handleRemark(student.studentId, text)}
+                      />
                     </div>
                   )}
                 </div>
@@ -426,6 +458,16 @@ export function CorrecaoPage({ sessionId }: CorrecaoPageProps): React.JSX.Elemen
             </div>
           </div>
         </div>
+      )}
+
+      {results && (
+        <EmailDialog
+          sessionId={sessionId}
+          examTitle={results.examTitle}
+          students={students}
+          open={emailOpen}
+          onOpenChange={setEmailOpen}
+        />
       )}
     </main>
   )

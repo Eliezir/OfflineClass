@@ -9,7 +9,14 @@ import type {
   IpcOutput
 } from '@shared/ipc/contract'
 import type {
+  CommentAnswerInput,
+  CommentStudentInput,
   DiscoveryStatus,
+  EmailResultsInput,
+  EmailSendResult,
+  EmailSettings,
+  EmailSettingsInput,
+  EmailTestResult,
   Exam,
   ExamInput,
   ExamSummary,
@@ -24,6 +31,7 @@ import type {
   SessionDetail,
   SessionResultSummary,
   SessionSummary,
+  SetStudentEmailInput,
   Teacher
 } from '@offlineclass/shared'
 
@@ -89,7 +97,28 @@ const domain = {
     studentAnswers: (sessionId: string, studentId: string): Promise<SessionAnswersReview> =>
       ipcRenderer.invoke('sessions.studentAnswers', sessionId, studentId),
     gradeAnswer: (sessionId: string, input: GradeAnswerInput): Promise<SessionAnswersReview> =>
-      ipcRenderer.invoke('sessions.gradeAnswer', sessionId, input)
+      ipcRenderer.invoke('sessions.gradeAnswer', sessionId, input),
+    commentAnswer: (sessionId: string, input: CommentAnswerInput): Promise<SessionAnswersReview> =>
+      ipcRenderer.invoke('sessions.commentAnswer', sessionId, input),
+    commentStudent: (
+      sessionId: string,
+      input: CommentStudentInput
+    ): Promise<SessionAnswersReview> =>
+      ipcRenderer.invoke('sessions.commentStudent', sessionId, input),
+    setStudentEmail: (
+      sessionId: string,
+      input: SetStudentEmailInput
+    ): Promise<SessionAnswersReview> =>
+      ipcRenderer.invoke('sessions.setStudentEmail', sessionId, input),
+    emailResults: (sessionId: string, input: EmailResultsInput): Promise<EmailSendResult[]> =>
+      ipcRenderer.invoke('sessions.emailResults', sessionId, input)
+  },
+  email: {
+    getSettings: (): Promise<EmailSettings | null> => ipcRenderer.invoke('email.getSettings'),
+    saveSettings: (input: EmailSettingsInput): Promise<EmailSettings> =>
+      ipcRenderer.invoke('email.saveSettings', input),
+    test: (input: EmailSettingsInput): Promise<EmailTestResult> =>
+      ipcRenderer.invoke('email.test', input)
   }
 }
 

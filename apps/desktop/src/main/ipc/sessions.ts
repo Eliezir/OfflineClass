@@ -1,7 +1,12 @@
 import { ipcMain } from 'electron'
 import {
+  CommentAnswerInput,
+  CommentStudentInput,
+  EmailResultsInput,
   GradeAnswerInput,
   SessionCreateInput,
+  SetStudentEmailInput,
+  type EmailSendResult,
   type SessionAnswersReview,
   type SessionDetail,
   type SessionResultSummary,
@@ -13,6 +18,8 @@ import { getMainWindow } from '../windows'
 import { requireTeacherId } from './auth'
 import type { Db } from '../db/client'
 import {
+  commentAnswer,
+  commentStudent,
   createSession,
   endSession,
   findActiveSessionForOwner,
@@ -22,8 +29,10 @@ import {
   listRecentResultsForOwner,
   listSessionsForOwner,
   loadStudentAnswers,
+  setStudentEmail,
   startSession
 } from '../sessions/store'
+import { sendResults } from '../email/send'
 import type { Rooms } from '../sessions/rooms'
 
 export interface SessionsContext {
@@ -126,6 +135,49 @@ export function registerSessionsHandlers(ctx: SessionsContext): void {
       const input = GradeAnswerInput.parse(raw)
       gradeAnswer(db, sessionId, input.studentId, input.questionId, input.score, ownerId)
       return loadStudentAnswers(db, sessionId, input.studentId, ownerId)
+    }
+  )
+
+  ipcMain.handle(
+    'sessions.commentAnswer',
+    async (_event, rawSessionId, raw): Promise<SessionAnswersReview> => {
+      const ownerId = requireTeacherId(db)
+      const sessionId = typeof rawSessionId === 'string' ? rawSessionId : ''
+      const input = CommentAnswerInput.parse(raw)
+      commentAnswer(db, sessionId, input.studentId, input.questionId, input.comment, ownerId)
+      return loadStudentAnswers(db, sessionId, input.studentId, ownerId)
+    }
+  )
+
+  ipcMain.handle(
+    'sessions.commentStudent',
+    async (_event, rawSessionId, raw): Promise<SessionAnswersReview> => {
+      const ownerId = requireTeacherId(db)
+      const sessionId = typeof rawSessionId === 'string' ? rawSessionId : ''
+      const input = CommentStudentInput.parse(raw)
+      commentStudent(db, sessionId, input.studentId, input.comment, ownerId)
+      return loadStudentAnswers(db, sessionId, input.studentId, ownerId)
+    }
+  )
+
+  ipcMain.handle(
+    'sessions.setStudentEmail',
+    async (_event, rawSessionId, raw): Promise<SessionAnswersReview> => {
+      const ownerId = requireTeacherId(db)
+      const sessionId = typeof rawSessionId === 'string' ? rawSessionId : ''
+      const input = SetStudentEmailInput.parse(raw)
+      setStudentEmail(db, sessionId, input.studentId, input.email, ownerId)
+      return loadStudentAnswers(db, sessionId, input.studentId, ownerId)
+    }
+  )
+
+  ipcMain.handle(
+    'sessions.emailResults',
+    async (_event, rawSessionId, raw): Promise<EmailSendResult[]> => {
+      const ownerId = requireTeacherId(db)
+      const sessionId = typeof rawSessionId === 'string' ? rawSessionId : ''
+      const input = EmailResultsInput.parse(raw)
+      return sendResults(db, sessionId, ownerId, input)
     }
   )
 }

@@ -14,7 +14,7 @@ function toGradedAnswer(a: StudentAnswerReview): GradedAnswer {
   } else {
     awarded = a.score // essay: teacher grade or null (pending)
   }
-  return { question: a.question, value: a.value, points, awarded }
+  return { question: a.question, value: a.value, points, awarded, feedback: a.feedback }
 }
 
 export function tally(answers: GradedAnswer[]): { total: number; maxTotal: number } {
@@ -34,6 +34,8 @@ export function toStudentResult(review: SessionAnswersReview): StudentResult {
     studentId: review.studentId,
     name: review.studentName,
     matricula: review.studentMatricula,
+    email: review.studentEmail,
+    feedback: review.studentFeedback,
     submittedAt: review.submittedAt,
     joinedAt: review.joinedAt,
     leftAt: review.leftAt,

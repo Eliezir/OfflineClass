@@ -1,6 +1,8 @@
-import { Check, X } from 'lucide-react'
-import { Trans } from '@lingui/react/macro'
+import { useState } from 'react'
+import { Check, MessageSquarePlus, X } from 'lucide-react'
+import { Trans, useLingui } from '@lingui/react/macro'
 import { cn } from '@renderer/shared/utils'
+import { Textarea } from '@renderer/shared/ui/textarea'
 import type { GradedAnswer } from '../types'
 import { GradeInput } from './grade-input'
 
@@ -8,14 +10,16 @@ type GradedAnswerRowProps = {
   index: number
   answer: GradedAnswer
   onGrade: (score: number) => void
+  onComment: (comment: string) => void
 }
 
 export function GradedAnswerRow({
   index,
   answer,
-  onGrade
+  onGrade,
+  onComment
 }: GradedAnswerRowProps): React.JSX.Element {
-  const { question, value, points, awarded } = answer
+  const { question, value, points, awarded, feedback } = answer
   const answered = value !== null
 
   return (
@@ -57,7 +61,53 @@ export function GradedAnswerRow({
           </div>
         </div>
       )}
+
+      <AnswerComment feedback={feedback} onComment={onComment} />
     </article>
+  )
+}
+
+/** Collapsible per-answer feedback field. Saved on blur when it changed. */
+function AnswerComment({
+  feedback,
+  onComment
+}: {
+  feedback: string | null
+  onComment: (comment: string) => void
+}): React.JSX.Element {
+  const { t } = useLingui()
+  const [open, setOpen] = useState(feedback !== null)
+  const [draft, setDraft] = useState(feedback ?? '')
+
+  if (!open) {
+    return (
+      <button
+        type="button"
+        onClick={() => setOpen(true)}
+        className="mt-3 inline-flex items-center gap-1.5 text-xs font-bold text-muted-foreground transition-colors hover:text-foreground"
+      >
+        <MessageSquarePlus className="size-3.5" />
+        <Trans>Adicionar comentário</Trans>
+      </button>
+    )
+  }
+
+  return (
+    <div className="mt-3 space-y-1.5">
+      <span className="text-xs font-bold text-muted-foreground">
+        <Trans>Comentário para o aluno</Trans>
+      </span>
+      <Textarea
+        value={draft}
+        placeholder={t`Escreva um comentário sobre esta resposta…`}
+        aria-label={t`Comentário para o aluno`}
+        className="min-h-16 text-sm"
+        onChange={(e) => setDraft(e.target.value)}
+        onBlur={() => {
+          if (draft !== (feedback ?? '')) onComment(draft)
+        }}
+      />
+    </div>
   )
 }
 

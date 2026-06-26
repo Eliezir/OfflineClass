@@ -23,6 +23,7 @@ export default function JoinRoute(): React.JSX.Element {
   const stored = loadProfile()
   const [name, setName] = useState(stored?.name ?? '')
   const [matricula, setMatricula] = useState(stored?.matricula ?? '')
+  const [email, setEmail] = useState(stored?.email ?? '')
   const [error, setError] = useState<string | null>(null)
 
   if (!teacherUrl) {
@@ -40,7 +41,7 @@ export default function JoinRoute(): React.JSX.Element {
 
   const joinMutation = useMutation({
     mutationFn: () => {
-      const profile = stored ?? { name, matricula }
+      const profile = stored ?? { name, matricula, email: email.trim() || undefined }
       const parsed = JoinInput.safeParse(profile)
       if (!parsed.success) {
         throw new Error(parsed.error.issues[0]?.message ?? 'Dados inválidos')
@@ -163,6 +164,16 @@ export default function JoinRoute(): React.JSX.Element {
                       value={matricula}
                       onChange={(e) => setMatricula(e.target.value)}
                       placeholder="Número de matrícula"
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="email">E-mail (opcional)</Label>
+                    <Input
+                      id="email"
+                      type="email"
+                      value={email}
+                      onChange={(e) => setEmail(e.target.value)}
+                      placeholder="Para receber sua nota"
                     />
                   </div>
                 </>

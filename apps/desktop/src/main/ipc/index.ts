@@ -2,6 +2,7 @@ import { registerAppHandlers } from './handlers/app'
 import { registerWindowHandlers } from './handlers/window'
 import { registerAuthHandlers, type AuthContext } from './auth'
 import { registerDiscoveryHandlers, type DiscoveryContext } from './discovery'
+import { registerEmailHandlers, type EmailContext } from './email'
 import { registerExamsHandlers, type ExamsContext } from './exams'
 import { registerQuestionsHandlers, type QuestionsContext } from './questions'
 import { registerSessionsHandlers, type SessionsContext } from './sessions'
@@ -9,6 +10,7 @@ import { registerSessionsHandlers, type SessionsContext } from './sessions'
 export interface IpcContext {
   auth: AuthContext
   discovery: DiscoveryContext
+  email: EmailContext
   exams: ExamsContext
   questions: QuestionsContext
   sessions: SessionsContext
@@ -21,6 +23,7 @@ export function registerIpcHandlers(ctx: IpcContext): void {
   // Teacher domain (string-channel bridge: window.api.auth/exams/…).
   registerAuthHandlers(ctx.auth)
   registerDiscoveryHandlers(ctx.discovery)
+  registerEmailHandlers(ctx.email)
   registerExamsHandlers(ctx.exams)
   registerQuestionsHandlers(ctx.questions)
   registerSessionsHandlers(ctx.sessions)

@@ -3,6 +3,8 @@ const STORAGE_KEY = 'offlineclass:student-profile'
 export interface StudentProfile {
   name: string
   matricula: string
+  /** Optional — lets the teacher e-mail the grade after the exam. */
+  email?: string
 }
 
 export function loadProfile(): StudentProfile | null {
@@ -11,7 +13,11 @@ export function loadProfile(): StudentProfile | null {
     if (!raw) return null
     const parsed = JSON.parse(raw)
     if (parsed && typeof parsed.name === 'string' && typeof parsed.matricula === 'string') {
-      return { name: parsed.name, matricula: parsed.matricula }
+      return {
+        name: parsed.name,
+        matricula: parsed.matricula,
+        email: typeof parsed.email === 'string' && parsed.email ? parsed.email : undefined
+      }
     }
     return null
   } catch {
