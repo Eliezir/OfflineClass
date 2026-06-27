@@ -13,6 +13,7 @@ import { saveToken } from '../lib/session'
 import { notify } from '../lib/toast'
 import { useServerUrl } from '../lib/serverContext'
 import { loadProfile, initials } from '../lib/studentProfile'
+import { maskEmail } from '../lib/mask'
 
 export default function JoinRoute(): React.JSX.Element {
   const navigate = useNavigate()
@@ -20,10 +21,13 @@ export default function JoinRoute(): React.JSX.Element {
   const { teacherUrl } = useServerUrl()
   const api = createApi(teacherUrl)
 
-  const stored = loadProfile()
-  const [name, setName] = useState(stored?.name ?? '')
-  const [matricula, setMatricula] = useState(stored?.matricula ?? '')
-  const [email, setEmail] = useState(stored?.email ?? '')
+  const storedRaw = loadProfile()
+  // A complete profile (with e-mail) can join straight from the chip; a legacy
+  // profile without e-mail falls back to the form so the now-required e-mail is filled.
+  const stored = storedRaw?.email ? storedRaw : null
+  const [name, setName] = useState(storedRaw?.name ?? '')
+  const [matricula, setMatricula] = useState(storedRaw?.matricula ?? '')
+  const [email, setEmail] = useState(storedRaw?.email ?? '')
   const [error, setError] = useState<string | null>(null)
 
   if (!teacherUrl) {
@@ -41,7 +45,7 @@ export default function JoinRoute(): React.JSX.Element {
 
   const joinMutation = useMutation({
     mutationFn: () => {
-      const profile = stored ?? { name, matricula, email: email.trim() || undefined }
+      const profile = stored ?? { name, matricula, email: email.trim() }
       const parsed = JoinInput.safeParse(profile)
       if (!parsed.success) {
         throw new Error(parsed.error.issues[0]?.message ?? 'Dados inválidos')
@@ -167,12 +171,12 @@ export default function JoinRoute(): React.JSX.Element {
                     />
                   </div>
                   <div className="space-y-2">
-                    <Label htmlFor="email">E-mail (opcional)</Label>
+                    <Label htmlFor="email">E-mail</Label>
                     <Input
                       id="email"
                       type="email"
                       value={email}
-                      onChange={(e) => setEmail(e.target.value)}
+                      onChange={(e) => setEmail(maskEmail(e.target.value))}
                       placeholder="Para receber sua nota"
                     />
                   </div>

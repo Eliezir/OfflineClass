@@ -234,6 +234,8 @@ export const SessionDetail = z.object({
   id: z.string(),
   examId: z.string(),
   examTitle: z.string(),
+  // Disciplina/matéria da prova (pode não estar preenchida).
+  examSubject: z.string().nullable(),
   status: SessionStatus,
   durationMinutes: z.number().int(),
   allowLateJoin: z.boolean(),
@@ -256,18 +258,20 @@ export const SessionPublic = z.object({
 })
 export type SessionPublic = z.infer<typeof SessionPublic>
 
-/** Optional e-mail: blank (not provided) or a valid address. Used both when the
-    student joins and when the teacher fills/edits it on the results screen. */
-export const OptionalStudentEmail = z
-  .union([z.literal(''), z.string().email('E-mail inválido').max(160)])
-  .optional()
-export type OptionalStudentEmail = z.infer<typeof OptionalStudentEmail>
+/** Required student e-mail: a valid address, used so the teacher can e-mail the
+    grade after the test. The teacher can still edit it on the results screen. */
+export const RequiredStudentEmail = z
+  .string()
+  .min(1, 'E-mail obrigatório')
+  .email('E-mail inválido')
+  .max(160)
+export type RequiredStudentEmail = z.infer<typeof RequiredStudentEmail>
 
 export const JoinInput = z.object({
   name: z.string().min(2, 'Nome obrigatório').max(80),
   matricula: z.string().min(2, 'Matrícula obrigatória').max(40),
-  // Optional — lets the teacher e-mail the grade afterwards. May be left blank.
-  email: OptionalStudentEmail
+  // Required — lets the teacher e-mail the grade afterwards.
+  email: RequiredStudentEmail
 })
 export type JoinInput = z.infer<typeof JoinInput>
 
@@ -421,6 +425,8 @@ export const SessionAnswersReview = z.object({
   // Overall remark the teacher leaves on the student (not tied to one question).
   studentFeedback: z.string().nullable(),
   examTitle: z.string(),
+  // Disciplina/matéria da prova (pode não estar preenchida).
+  examSubject: z.string().nullable(),
   submittedAt: z.number().int().nullable(),
   joinedAt: z.number().int(),
   leftAt: z.number().int().nullable(),

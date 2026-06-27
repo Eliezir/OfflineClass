@@ -16,10 +16,13 @@ import { cn } from '@/lib/utils'
 import { type StudentProfile, loadProfile, saveProfile, clearProfile, initials } from '@/lib/studentProfile'
 import { clearToken } from '@/lib/session'
 import { isElectron } from '@/lib/platform'
+import { maskEmail } from '@/lib/mask'
 
 interface StudentMenuProps {
   onProfileChange: (profile: StudentProfile | null) => void
 }
+
+const isValidEmail = (value: string): boolean => /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(value.trim())
 
 export function StudentMenu({ onProfileChange }: StudentMenuProps): React.JSX.Element {
   const [open, setOpen] = useState(false)
@@ -40,12 +43,14 @@ export function StudentMenu({ onProfileChange }: StudentMenuProps): React.JSX.El
     setEditing(true)
   }
 
+  const canSave = name.trim().length >= 2 && matricula.trim().length >= 2 && isValidEmail(email)
+
   const handleSave = (): void => {
-    if (name.trim().length < 2 || matricula.trim().length < 2) return
+    if (!canSave) return
     const profile: StudentProfile = {
       name: name.trim(),
       matricula: matricula.trim(),
-      email: email.trim() || undefined
+      email: email.trim()
     }
     saveProfile(profile)
     onProfileChange(profile)
@@ -138,9 +143,9 @@ export function StudentMenu({ onProfileChange }: StudentMenuProps): React.JSX.El
               />
               <input
                 type="email"
-                placeholder="E-mail (opcional)"
+                placeholder="E-mail"
                 value={email}
-                onChange={(e) => setEmail(e.target.value)}
+                onChange={(e) => setEmail(maskEmail(e.target.value))}
                 className="border-input-border bg-input w-full rounded-[10px] border px-2.5 py-1.5 text-sm outline-none focus-visible:border-ring focus-visible:ring-[3px] focus-visible:ring-ring/25"
               />
               <div className="flex gap-2">
@@ -154,7 +159,7 @@ export function StudentMenu({ onProfileChange }: StudentMenuProps): React.JSX.El
                 <button
                   type="button"
                   onClick={handleSave}
-                  disabled={name.trim().length < 2 || matricula.trim().length < 2}
+                  disabled={!canSave}
                   className="bg-primary text-primary-foreground flex-1 cursor-pointer rounded-[10px] px-3 py-1.5 text-sm font-bold disabled:opacity-50"
                 >
                   Salvar
@@ -243,15 +248,15 @@ export function StudentMenu({ onProfileChange }: StudentMenuProps): React.JSX.El
             />
             <input
               type="email"
-              placeholder="E-mail (opcional)"
+              placeholder="E-mail"
               value={email}
-              onChange={(e) => setEmail(e.target.value)}
+              onChange={(e) => setEmail(maskEmail(e.target.value))}
               className="border-input-border bg-input w-full rounded-[10px] border px-2.5 py-1.5 text-sm outline-none focus-visible:border-ring focus-visible:ring-[3px] focus-visible:ring-ring/25"
             />
             <button
               type="button"
               onClick={handleSave}
-              disabled={name.trim().length < 2 || matricula.trim().length < 2}
+              disabled={!canSave}
               className="bg-primary text-primary-foreground w-full cursor-pointer rounded-[10px] px-3 py-1.5 text-sm font-bold disabled:opacity-50"
             >
               Salvar
