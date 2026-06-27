@@ -1,5 +1,5 @@
 import { useMemo, useState } from 'react'
-import { AlertTriangle, Check, Loader2, Mail, Send, X } from 'lucide-react'
+import { AlertTriangle, Check, Loader2, Mail, Send, UserCircle, X } from 'lucide-react'
 import { Link } from '@tanstack/react-router'
 import { Trans, useLingui } from '@lingui/react/macro'
 import type { EmailSendResult } from '@offlineclass/shared'
@@ -15,9 +15,10 @@ import {
   DialogTitle
 } from '@renderer/shared/ui/dialog'
 import { Input } from '@renderer/shared/ui/input'
+import { Label } from '@renderer/shared/ui/label'
 import { Textarea } from '@renderer/shared/ui/textarea'
 import { notify } from '@renderer/shared/services/toast'
-import { cn } from '@renderer/shared/utils'
+import { cn, maskEmail } from '@renderer/shared/utils'
 import { useEmailSettingsQuery } from '@renderer/modules/settings/email-settings'
 import { useEmailResults, useSetStudentEmail } from '../queries'
 import type { StudentResult } from '../types'
@@ -27,6 +28,7 @@ const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
 type EmailDialogProps = {
   sessionId: string
   examTitle: string
+  examSubject: string | null
   students: StudentResult[]
   open: boolean
   onOpenChange: (open: boolean) => void
@@ -37,6 +39,7 @@ type EmailDialogProps = {
 export function EmailDialog({
   sessionId,
   examTitle,
+  examSubject,
   students,
   open,
   onOpenChange
@@ -47,6 +50,7 @@ export function EmailDialog({
         <EmailDialogBody
           sessionId={sessionId}
           examTitle={examTitle}
+          examSubject={examSubject}
           students={students}
           onClose={() => onOpenChange(false)}
         />
@@ -58,11 +62,13 @@ export function EmailDialog({
 function EmailDialogBody({
   sessionId,
   examTitle,
+  examSubject,
   students,
   onClose
 }: {
   sessionId: string
   examTitle: string
+  examSubject: string | null
   students: StudentResult[]
   onClose: () => void
 }): React.JSX.Element {
@@ -71,6 +77,13 @@ function EmailDialogBody({
   const setEmail = useSetStudentEmail(sessionId)
   const send = useEmailResults(sessionId)
 
+  // Default subject/message — the teacher edits them, but they must not be empty.
+  const discipline = examSubject?.trim() || null
+  const defaultSubject = `Sua nota — ${discipline ? `${discipline} · ` : ''}${examTitle}`
+  const defaultMessage = discipline
+    ? t`Segue o resultado da sua prova de ${discipline} (${examTitle}). Confira sua nota e os comentários por questão abaixo.`
+    : t`Segue o resultado da sua prova ${examTitle}. Confira sua nota e os comentários por questão abaixo.`
+
   // Initializers run on each (re)mount — i.e. each time the dialog opens.
   const [emails, setEmails] = useState<Record<string, string>>(() =>
     Object.fromEntries(students.map((s) => [s.studentId, s.email ?? '']))
@@ -78,8 +91,8 @@ function EmailDialogBody({
   const [selected, setSelected] = useState<Record<string, boolean>>(() =>
     Object.fromEntries(students.map((s) => [s.studentId, !!s.email]))
   )
-  const [subject, setSubject] = useState('')
-  const [message, setMessage] = useState('')
+  const [subject, setSubject] = useState(defaultSubject)
+  const [message, setMessage] = useState(defaultMessage)
   const [results, setResults] = useState<EmailSendResult[] | null>(null)
 
   const configured = !!settings.data
@@ -93,6 +106,14 @@ function EmailDialogBody({
     const chosen = students.filter((s) => selected[s.studentId])
     if (chosen.length === 0) {
       notify.warning(t`Selecione ao menos um aluno.`)
+      return
+    }
+    if (!subject.trim()) {
+      notify.warning(t`Informe o assunto do e-mail.`)
+      return
+    }
+    if (!message.trim()) {
+      notify.warning(t`Informe a mensagem de abertura.`)
       return
     }
 
@@ -117,8 +138,8 @@ function EmailDialogBody({
     try {
       const res = await send.mutateAsync({
         studentIds: chosen.map((s) => s.studentId),
-        subject: subject.trim() || undefined,
-        message: message.trim() || undefined
+        subject: subject.trim(),
+        message: message.trim()
       })
       setResults(res)
       const ok = res.filter((r) => r.ok).length
@@ -167,19 +188,51 @@ function EmailDialogBody({
         <div className="flex flex-col gap-4">
           {/* Subject + intro message */}
           <div className="grid gap-3">
-            <Input
-              value={subject}
-              placeholder={t`Assunto (opcional) — padrão: "Sua nota — ${examTitle}"`}
-              aria-label={t`Assunto`}
-              onChange={(e) => setSubject(e.target.value)}
-            />
-            <Textarea
-              value={message}
-              placeholder={t`Mensagem de abertura (opcional)…`}
-              aria-label={t`Mensagem de abertura`}
-              className="min-h-16"
-              onChange={(e) => setMessage(e.target.value)}
-            />
+            <div className="space-y-1.5">
+              <Label htmlFor="email-subject">
+                <Trans>Assunto do e-mail</Trans>
+              </Label>
+              <Input
+                id="email-subject"
+                value={subject}
+                placeholder={t`Assunto do e-mail`}
+                aria-invalid={!subject.trim()}
+                onChange={(e) => setSubject(e.target.value)}
+              />
+            </div>
+            <div className="space-y-1.5">
+              <Label htmlFor="email-message">
+                <Trans>Início da mensagem</Trans>
+              </Label>
+              <Textarea
+                id="email-message"
+                value={message}
+                placeholder={t`Mensagem de abertura`}
+                aria-invalid={!message.trim()}
+                className="min-h-16"
+                onChange={(e) => setMessage(e.target.value)}
+              />
+            </div>
+          </div>
+
+          {/* Sender info — the teacher's data goes in the e-mail (From + footer) */}
+          <div className="flex items-start gap-2.5 rounded-xl border border-border bg-muted/40 px-4 py-3 text-sm">
+            <UserCircle className="mt-0.5 size-4 shrink-0 text-primary" />
+            <div className="text-muted-foreground">
+              {settings.data ? (
+                <Trans>
+                  O e-mail é enviado em nome de{' '}
+                  <span className="font-semibold text-foreground">{settings.data.fromName}</span>{' '}
+                  <span className="text-foreground">&lt;{settings.data.fromEmail}&gt;</span> e inclui
+                  os dados do professor no rodapé, além da disciplina, prova, nota e comentários.
+                </Trans>
+              ) : (
+                <Trans>
+                  O e-mail inclui automaticamente os dados do professor (nome e e-mail definidos em
+                  Configurações), além da disciplina, prova, nota e comentários por questão.
+                </Trans>
+              )}
+            </div>
           </div>
 
           {/* Recipients */}
@@ -217,7 +270,7 @@ function EmailDialogBody({
                       aria-invalid={invalid}
                       className="h-9 w-56"
                       onChange={(e) =>
-                        setEmails((prev) => ({ ...prev, [s.studentId]: e.target.value }))
+                        setEmails((prev) => ({ ...prev, [s.studentId]: maskEmail(e.target.value) }))
                       }
                     />
                   </div>
@@ -240,7 +293,16 @@ function EmailDialogBody({
                 <Trans>Cancelar</Trans>
               </Button>
             </DialogClose>
-            <Button onClick={handleSend} disabled={sending || !configured || selectedCount === 0}>
+            <Button
+              onClick={handleSend}
+              disabled={
+                sending ||
+                !configured ||
+                selectedCount === 0 ||
+                !subject.trim() ||
+                !message.trim()
+              }
+            >
               {sending ? <Loader2 className="size-4 animate-spin" /> : <Send className="size-4" />}
               <Trans>Enviar ({selectedCount})</Trans>
             </Button>

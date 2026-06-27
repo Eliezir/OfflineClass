@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { Loader2, Mail, Plug, Save } from 'lucide-react'
+import { HelpCircle, Loader2, Mail, Plug, Save } from 'lucide-react'
 import { Trans, useLingui } from '@lingui/react/macro'
 import { EmailSettingsInput, type EmailSettings } from '@offlineclass/shared'
 import { Button } from '@renderer/shared/ui/button'
@@ -13,6 +13,7 @@ import {
   useTestEmailSettings
 } from '../email-settings'
 import { SettingsSection } from './settings-section'
+import { GmailHelpDialog } from './gmail-help-dialog'
 
 type FormState = {
   host: string
@@ -50,6 +51,7 @@ function toForm(s: EmailSettings | null): FormState {
 export function EmailSection(): React.JSX.Element {
   const { t } = useLingui()
   const query = useEmailSettingsQuery()
+  const [helpOpen, setHelpOpen] = useState(false)
 
   // Render the form only once the stored config has loaded, so it can seed its
   // own state via the useState initializer (no setState-in-effect).
@@ -58,6 +60,12 @@ export function EmailSection(): React.JSX.Element {
       icon={Mail}
       title={t`E-mail`}
       description={t`Servidor SMTP usado para enviar as notas aos alunos após a prova.`}
+      action={
+        <Button variant="outline" size="sm" onClick={() => setHelpOpen(true)}>
+          <HelpCircle className="size-3.5" />
+          <Trans>Usar um Gmail</Trans>
+        </Button>
+      }
     >
       {query.isLoading ? (
         <div className="flex items-center justify-center p-8 text-muted-foreground">
@@ -66,6 +74,7 @@ export function EmailSection(): React.JSX.Element {
       ) : (
         <EmailForm initial={query.data ?? null} />
       )}
+      <GmailHelpDialog open={helpOpen} onOpenChange={setHelpOpen} />
     </SettingsSection>
   )
 }
@@ -111,11 +120,7 @@ function EmailForm({ initial }: { initial: EmailSettings | null }): React.JSX.El
   }
 
   return (
-    <SettingsSection
-      icon={Mail}
-      title={t`E-mail`}
-      description={t`Servidor SMTP usado para enviar as notas aos alunos após a prova.`}
-    >
+    <>
       <div className="grid gap-x-6 gap-y-4 p-5 @2xl:grid-cols-2">
         <Field className="@2xl:col-span-2" label={t`Servidor (host)`}>
           <Input
@@ -212,7 +217,7 @@ function EmailForm({ initial }: { initial: EmailSettings | null }): React.JSX.El
           <Trans>Salvar</Trans>
         </Button>
       </div>
-    </SettingsSection>
+    </>
   )
 }
 

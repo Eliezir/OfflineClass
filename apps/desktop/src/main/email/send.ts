@@ -68,13 +68,14 @@ function escapeHtml(value: string): string {
 /** Build the per-student grade e-mail (subject + plaintext + HTML). */
 export function composeResultEmail(
   review: SessionAnswersReview,
-  fromName: string,
+  sender: { name: string; email: string },
   overrides?: { subject?: string; message?: string }
 ): ComposedEmail {
   const grade10 = review.maxScore > 0 ? (review.totalScore / review.maxScore) * 10 : 0
+  const discipline = review.examSubject?.trim() || null
   const subject = overrides?.subject?.trim()
     ? overrides.subject.trim()
-    : `Sua nota — ${review.examTitle}`
+    : `Sua nota — ${discipline ? `${discipline} · ` : ''}${review.examTitle}`
 
   const intro = overrides?.message?.trim() ?? ''
 
@@ -86,6 +87,7 @@ export function composeResultEmail(
     textLines.push(intro)
     textLines.push('')
   }
+  if (discipline) textLines.push(`Disciplina: ${discipline}`)
   textLines.push(`Prova: ${review.examTitle}`)
   textLines.push(
     `Nota: ${fmtNum(Math.round(grade10 * 10) / 10)} / 10 ` +
@@ -105,62 +107,84 @@ export function composeResultEmail(
     textLines.push(`Observações gerais: ${review.studentFeedback}`)
   }
   textLines.push('')
-  textLines.push(`— ${fromName}`)
+  textLines.push(`— ${sender.name}`)
+  textLines.push(sender.email)
+  textLines.push('')
+  textLines.push('Enviado pela plataforma OfflineClass')
   const text = textLines.join('\n')
 
-  // --- HTML ---
+  // --- HTML (minimalist OfflineClass template) ---
+  const gradeStr = fmtNum(Math.round(grade10 * 10) / 10)
+  const meta = discipline ? `${discipline} · ${review.examTitle}` : review.examTitle
+
   const rows = review.answers
     .map((a, i) => {
       const earned = earnedPoints(a)
       const earnedStr = earned === null ? '—' : fmtNum(earned)
       const comment = a.feedback
-        ? `<div style="margin-top:4px;color:#555;font-size:13px;"><strong>Comentário:</strong> ${escapeHtml(
+        ? `<div style="margin-top:6px;color:#6b6b7a;font-size:13px;line-height:1.5;">${escapeHtml(
             a.feedback
           )}</div>`
         : ''
       return `<tr>
-        <td style="padding:8px 10px;border-bottom:1px solid #eee;vertical-align:top;">
-          <div style="font-weight:600;">${i + 1}. ${escapeHtml(a.question.prompt)}</div>
+        <td style="padding:14px 0;border-top:1px solid #eeeef2;vertical-align:top;">
+          <div style="color:#1f2430;font-size:14px;line-height:1.45;">
+            <span style="color:#9a9aa8;">${i + 1}.</span> ${escapeHtml(a.question.prompt)}
+          </div>
           ${comment}
         </td>
-        <td style="padding:8px 10px;border-bottom:1px solid #eee;text-align:right;white-space:nowrap;vertical-align:top;">
-          ${earnedStr} / ${fmtNum(a.question.points)}
+        <td style="padding:14px 0 14px 16px;border-top:1px solid #eeeef2;text-align:right;white-space:nowrap;vertical-align:top;color:#1f2430;font-size:14px;font-weight:500;">
+          ${earnedStr}<span style="color:#b4b4c0;"> / ${fmtNum(a.question.points)}</span>
         </td>
       </tr>`
     })
     .join('')
 
   const overall = review.studentFeedback
-    ? `<p style="margin:16px 0 0;padding:12px 14px;background:#f4f1ff;border-radius:10px;">
-        <strong>Observações gerais:</strong> ${escapeHtml(review.studentFeedback)}
-      </p>`
+    ? `<div style="margin:22px 0 0;padding:16px 18px;background:#f7f7fa;border-radius:12px;">
+        <div style="font-size:11px;text-transform:uppercase;letter-spacing:0.8px;color:#9a9aa8;margin-bottom:4px;">Observações gerais</div>
+        <div style="color:#3a3a48;font-size:14px;line-height:1.55;">${escapeHtml(
+          review.studentFeedback
+        )}</div>
+      </div>`
     : ''
 
   const introHtml = intro
-    ? `<p style="margin:0 0 16px;">${escapeHtml(intro).replace(/\n/g, '<br>')}</p>`
+    ? `<p style="margin:0 0 20px;color:#5a5a68;font-size:15px;line-height:1.6;">${escapeHtml(
+        intro
+      ).replace(/\n/g, '<br>')}</p>`
     : ''
 
-  const html = `<div style="font-family:-apple-system,Segoe UI,Roboto,Arial,sans-serif;color:#1a1a1a;max-width:560px;margin:0 auto;">
-    <h2 style="margin:0 0 4px;">Olá, ${escapeHtml(review.studentName)}!</h2>
-    ${introHtml}
-    <p style="margin:0 0 16px;color:#555;">Prova: <strong>${escapeHtml(review.examTitle)}</strong></p>
-    <div style="display:inline-block;padding:12px 18px;background:#5b3df5;color:#fff;border-radius:12px;font-size:20px;font-weight:700;">
-      Nota: ${fmtNum(Math.round(grade10 * 10) / 10)} / 10
+  const html = `<div style="margin:0;padding:32px 16px;background:#ffffff;font-family:-apple-system,Segoe UI,Roboto,Helvetica,Arial,sans-serif;">
+    <div style="max-width:560px;margin:0 auto;background:#ffffff;border:1px solid #ececf0;border-radius:18px;">
+      <div style="padding:24px 32px;border-bottom:1px solid #f0f0f4;">
+        <span style="font-size:15px;font-weight:600;color:#1f2430;letter-spacing:-0.2px;">OfflineClass</span>
+      </div>
+      <div style="padding:28px 32px 32px;">
+        <h1 style="margin:0 0 4px;font-size:20px;font-weight:600;color:#1f2430;">Olá, ${escapeHtml(
+          review.studentName
+        )}</h1>
+        <p style="margin:0 0 22px;color:#9a9aa8;font-size:14px;">${escapeHtml(meta)}</p>
+        ${introHtml}
+        <div style="background:#eef0fb;border:1px solid #e2e6f5;border-radius:14px;padding:20px 22px;">
+          <div style="font-size:11px;text-transform:uppercase;letter-spacing:1px;color:#1f2430;">Sua nota</div>
+          <div style="margin-top:2px;font-size:36px;font-weight:600;color:#1f2430;line-height:1.1;">${gradeStr}<span style="font-size:17px;font-weight:500;color:#6b6b7a;"> / 10</span></div>
+          <div style="margin-top:2px;font-size:13px;color:#6b6b7a;">${fmtNum(
+            review.totalScore
+          )} de ${fmtNum(review.maxScore)} pontos</div>
+        </div>
+        <div style="margin:28px 0 4px;font-size:11px;text-transform:uppercase;letter-spacing:0.8px;color:#9a9aa8;">Detalhes por questão</div>
+        <table style="width:100%;border-collapse:collapse;">
+          <tbody>${rows}</tbody>
+        </table>
+        ${overall}
+      </div>
+      <div style="padding:20px 32px;border-top:1px solid #f0f0f4;">
+        <div style="font-size:14px;font-weight:500;color:#1f2430;">${escapeHtml(sender.name)}</div>
+        <div style="font-size:13px;color:#9a9aa8;">${escapeHtml(sender.email)}</div>
+        <div style="margin-top:12px;font-size:12px;color:#b4b4c0;">Enviado pela plataforma OfflineClass</div>
+      </div>
     </div>
-    <p style="margin:8px 0 16px;color:#888;font-size:13px;">${fmtNum(review.totalScore)} de ${fmtNum(
-      review.maxScore
-    )} pontos</p>
-    <table style="width:100%;border-collapse:collapse;font-size:14px;">
-      <thead>
-        <tr>
-          <th style="text-align:left;padding:8px 10px;border-bottom:2px solid #ddd;">Questão</th>
-          <th style="text-align:right;padding:8px 10px;border-bottom:2px solid #ddd;">Pontos</th>
-        </tr>
-      </thead>
-      <tbody>${rows}</tbody>
-    </table>
-    ${overall}
-    <p style="margin:24px 0 0;color:#888;font-size:13px;">— ${escapeHtml(fromName)}</p>
   </div>`
 
   return { subject, text, html }
@@ -211,13 +235,21 @@ export async function sendResults(
       continue
     }
 
-    const { subject, text, html } = composeResultEmail(review, settings.fromName, {
-      subject: input.subject,
-      message: input.message
-    })
+    const { subject, text, html } = composeResultEmail(
+      review,
+      { name: settings.fromName, email: settings.fromEmail },
+      { subject: input.subject, message: input.message }
+    )
 
     try {
-      await transport.sendMail({ from, to: review.studentEmail, subject, text, html })
+      await transport.sendMail({
+        from,
+        to: review.studentEmail,
+        replyTo: settings.fromEmail,
+        subject,
+        text,
+        html
+      })
       results.push({
         studentId,
         name: review.studentName,
