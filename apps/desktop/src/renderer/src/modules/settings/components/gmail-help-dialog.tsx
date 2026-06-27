@@ -17,17 +17,6 @@ import step2GeneratedImg from '@renderer/assets/lottie/gmail-help/step2-generate
 const SECURITY_URL = 'https://myaccount.google.com/security'
 const APP_PASSWORDS_URL = 'https://myaccount.google.com/apppasswords'
 
-/** SMTP values the teacher should fill, shown on the step 3 panel. */
-const GMAIL_FIELDS: ReadonlyArray<[string, string]> = [
-  ['Servidor (host)', 'smtp.gmail.com'],
-  ['Porta', '465'],
-  ['SSL/TLS', 'Ligado'],
-  ['Usuário', 'seuemail@gmail.com'],
-  ['Senha', 'Senha de app'],
-  ['Nome do remetente', 'Nome exibido ao aluno'],
-  ['E-mail do remetente', 'seuemail@gmail.com']
-]
-
 function openExternal(url: string): void {
   window.open(url, '_blank')
 }
@@ -46,7 +35,7 @@ export function GmailHelpDialog({
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-[920px]">
+      <DialogContent className="sm:max-w-3xl">
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2">
             <KeyRound className="size-5 text-primary" />
@@ -87,7 +76,7 @@ export function GmailHelpDialog({
               <p>
                 <Trans>O Google gera uma senha de 16 caracteres, como:</Trans>
               </p>
-              <code className="mt-2 inline-block rounded-lg bg-muted px-3 py-1.5 font-mono text-xs tracking-wider text-foreground">
+              <code className="mt-2 inline-block rounded-md border border-input bg-background px-3 py-1.5 font-mono text-xs tracking-wider text-foreground shadow-sm">
                 abcd efgh ijkl mnop
               </code>
               <p className="mt-2">
@@ -116,7 +105,7 @@ export function GmailHelpDialog({
 
           {/* Contextual visual for the active step */}
           <div className="flex items-center justify-center md:justify-end shrink-0">
-            <aside className="relative w-[350px] h-[350px] overflow-hidden rounded-2xl border border-border bg-muted/40 p-4">
+            <aside className="relative w-[350px] h-[350px] overflow-hidden rounded-md border border-border bg-muted/40 p-4">
               {active === 1 && <SecurityMock />}
               {active === 2 && <AppPasswordVisual />}
               {active === 3 && <FieldsPanel />}
@@ -197,18 +186,28 @@ function LinkButton({ label, url }: { label: string; url: string }): React.JSX.E
 
 /** Step 3 — the SMTP values to type into the form. */
 function FieldsPanel(): React.JSX.Element {
+  const renderField = (label: string, value: string) => (
+    <div key={label} className="flex flex-col gap-0.5">
+      <dt className="text-xs font-medium text-muted-foreground">{label}</dt>
+      <dd className="font-mono text-sm text-foreground">{value}</dd>
+    </div>
+  )
+
   return (
     <div>
       <div className="mb-3 text-xs font-bold tracking-wide text-muted-foreground uppercase">
         <Trans>Gmail (SSL)</Trans>
       </div>
-      <dl className="space-y-2.5">
-        {GMAIL_FIELDS.map(([label, value]) => (
-          <div key={label} className="flex flex-col gap-0.5">
-            <dt className="text-xs font-medium text-muted-foreground">{label}</dt>
-            <dd className="font-mono text-sm text-foreground">{value}</dd>
-          </div>
-        ))}
+      <dl className="flex flex-col gap-2.5">
+        {renderField('Servidor (host)', 'smtp.gmail.com')}
+        <div className="grid grid-cols-2 gap-4">
+          {renderField('Porta', '465')}
+          {renderField('SSL/TLS', 'Ligado')}
+        </div>
+        {renderField('Usuário', 'seuemail@gmail.com')}
+        {renderField('Senha', 'Senha de app')}
+        {renderField('Nome do remetente', 'Nome exibido ao aluno')}
+        {renderField('E-mail do remetente', 'seuemail@gmail.com')}
       </dl>
     </div>
   )
@@ -255,7 +254,7 @@ function Shot({ src, alt }: { src: string; alt: string }): React.JSX.Element {
     <img
       src={src}
       alt={alt}
-      className="h-full w-full rounded-lg border border-border bg-card object-cover object-top"
+      className="h-full w-full rounded-md border border-border bg-card object-cover object-top"
     />
   )
 }
