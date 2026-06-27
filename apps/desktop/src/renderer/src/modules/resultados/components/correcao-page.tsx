@@ -221,12 +221,12 @@ export function CorrecaoPage({ sessionId }: CorrecaoPageProps): React.JSX.Elemen
     grade.mutate({ sessionId, studentId, questionId, score })
   }
 
-  function handleComment(studentId: string, questionId: string, text: string): void {
-    comment.mutate({ studentId, questionId, comment: text })
+  function handleComment(studentId: string, questionId: string, text: string): Promise<unknown> {
+    return comment.mutateAsync({ studentId, questionId, comment: text })
   }
 
-  function handleRemark(studentId: string, text: string): void {
-    remark.mutate({ studentId, comment: text })
+  function handleRemark(studentId: string, text: string): Promise<unknown> {
+    return remark.mutateAsync({ studentId, comment: text })
   }
 
   const loading = query.isLoading
@@ -464,6 +464,7 @@ export function CorrecaoPage({ sessionId }: CorrecaoPageProps): React.JSX.Elemen
         <EmailDialog
           sessionId={sessionId}
           examTitle={results.examTitle}
+          examSubject={results.examSubject}
           students={students}
           open={emailOpen}
           onOpenChange={setEmailOpen}

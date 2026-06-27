@@ -37,6 +37,7 @@ export type StudentResult = {
 export type SessionResults = {
   sessionId: string
   examTitle: string
+  examSubject: string | null
   endedAt: number | null
   students: StudentResult[]
 }

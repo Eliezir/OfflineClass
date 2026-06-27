@@ -69,6 +69,7 @@ function loadDetailById(
       id: examSessions.id,
       examId: examSessions.examId,
       examTitle: exams.title,
+      examSubject: exams.subject,
       status: examSessions.status,
       durationMinutes: examSessions.durationMinutes,
       allowLateJoin: examSessions.allowLateJoin,
@@ -90,6 +91,7 @@ function loadDetailById(
     id: row.id,
     examId: row.examId,
     examTitle: row.examTitle,
+    examSubject: row.examSubject ?? null,
     status: row.status as SessionStatus,
     durationMinutes: row.durationMinutes,
     allowLateJoin: row.allowLateJoin,
@@ -703,6 +705,7 @@ export function loadStudentAnswers(
       id: examSessions.id,
       examId: examSessions.examId,
       examTitle: exams.title,
+      examSubject: exams.subject,
       ownerId: examSessions.ownerId
     })
     .from(examSessions)
@@ -758,6 +761,7 @@ export function loadStudentAnswers(
     studentEmail: studentRow.email ?? null,
     studentFeedback: studentRow.feedback ?? null,
     examTitle: sessionRow.examTitle,
+    examSubject: sessionRow.examSubject ?? null,
     submittedAt: studentRow.submittedAt ? studentRow.submittedAt.getTime() : null,
     joinedAt: studentRow.joinedAt.getTime(),
     leftAt: studentRow.leftAt ? studentRow.leftAt.getTime() : null,

@@ -2,15 +2,26 @@ import { useState } from 'react'
 import { Check, MessageSquarePlus, X } from 'lucide-react'
 import { Trans, useLingui } from '@lingui/react/macro'
 import { cn } from '@renderer/shared/utils'
-import { Textarea } from '@renderer/shared/ui/textarea'
 import type { GradedAnswer } from '../types'
 import { GradeInput } from './grade-input'
+import { CommentField } from './comment-field'
 
 type GradedAnswerRowProps = {
   index: number
   answer: GradedAnswer
   onGrade: (score: number) => void
-  onComment: (comment: string) => void
+  onComment: (comment: string) => void | Promise<unknown>
+}
+
+/** Draft comment suggested for a wrong MCQ answer — the teacher edits/confirms. */
+function mcqSuggestion(answer: GradedAnswer): string | undefined {
+  const { question, value } = answer
+  if (question.kind !== 'mcq' || value === null) return undefined
+  const chosen = question.options.find((o) => o.id === value)
+  if (chosen?.correct) return undefined
+  const correct = question.options.find((o) => o.correct)
+  if (!correct) return undefined
+  return `A resposta correta é "${correct.text}".`
 }
 
 export function GradedAnswerRow({
@@ -62,7 +73,11 @@ export function GradedAnswerRow({
         </div>
       )}
 
-      <AnswerComment feedback={feedback} onComment={onComment} />
+      <AnswerComment
+        feedback={feedback}
+        onComment={onComment}
+        suggestion={mcqSuggestion(answer)}
+      />
     </article>
   )
 }
@@ -70,14 +85,16 @@ export function GradedAnswerRow({
 /** Collapsible per-answer feedback field. Saved on blur when it changed. */
 function AnswerComment({
   feedback,
-  onComment
+  onComment,
+  suggestion
 }: {
   feedback: string | null
-  onComment: (comment: string) => void
+  onComment: (comment: string) => void | Promise<unknown>
+  suggestion?: string
 }): React.JSX.Element {
   const { t } = useLingui()
-  const [open, setOpen] = useState(feedback !== null)
-  const [draft, setDraft] = useState(feedback ?? '')
+  // Auto-open when there's already a comment or a suggestion to confirm.
+  const [open, setOpen] = useState(feedback !== null || !!suggestion)
 
   if (!open) {
     return (
@@ -97,15 +114,12 @@ function AnswerComment({
       <span className="text-xs font-bold text-muted-foreground">
         <Trans>Comentário para o aluno</Trans>
       </span>
-      <Textarea
-        value={draft}
+      <CommentField
+        value={feedback}
+        onSave={onComment}
+        initialDraft={suggestion}
         placeholder={t`Escreva um comentário sobre esta resposta…`}
-        aria-label={t`Comentário para o aluno`}
-        className="min-h-16 text-sm"
-        onChange={(e) => setDraft(e.target.value)}
-        onBlur={() => {
-          if (draft !== (feedback ?? '')) onComment(draft)
-        }}
+        ariaLabel={t`Comentário para o aluno`}
       />
     </div>
   )

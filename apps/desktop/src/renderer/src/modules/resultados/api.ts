@@ -29,6 +29,7 @@ export async function getSessionResults(sessionId: string): Promise<SessionResul
   return {
     sessionId: detail.id,
     examTitle: detail.examTitle,
+    examSubject: detail.examSubject,
     endedAt: detail.endedAt,
     students
   }
