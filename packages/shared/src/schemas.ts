@@ -229,6 +229,8 @@ export const SessionCreateInput = z.object({
   examId: z.string(),
   durationMinutes: z.number().int().positive().max(600),
   allowLateJoin: z.boolean().optional(),
+  scrambleQuestions: z.boolean().optional(),
+  scrambleOptions: z.boolean().optional(),
   groupMode: GroupMode.optional(),
   maxGroupSize: z.number().int().positive().max(20).optional()
 })
@@ -259,6 +261,8 @@ export const SessionDetail = z.object({
   status: SessionStatus,
   durationMinutes: z.number().int(),
   allowLateJoin: z.boolean(),
+  scrambleQuestions: z.boolean(),
+  scrambleOptions: z.boolean(),
   groupMode: GroupMode,
   maxGroupSize: z.number().int().nullable(),
   questionsCount: z.number().int().nonnegative(),
@@ -278,6 +282,8 @@ export const SessionPublic = z.object({
   examTitle: z.string(),
   durationMinutes: z.number().int(),
   allowLateJoin: z.boolean(),
+  scrambleQuestions: z.boolean(),
+  scrambleOptions: z.boolean(),
   groupMode: GroupMode
 })
 export type SessionPublic = z.infer<typeof SessionPublic>
@@ -329,6 +335,21 @@ export const WsServerEvent = z.discriminatedUnion('type', [
   z.object({
     type: z.literal('group.list'),
     groups: z.array(GroupPublic)
+  }),
+  z.object({
+    type: z.literal('group.submit.waiting'),
+    awaitingNames: z.array(z.string())
+  }),
+  z.object({
+    type: z.literal('group.submit.confirmPrompt'),
+    initiatorName: z.string()
+  }),
+  z.object({
+    type: z.literal('group.submit.cancelled'),
+    rejecterName: z.string()
+  }),
+  z.object({
+    type: z.literal('group.submit.success')
   })
 ])
 export type WsServerEvent = z.infer<typeof WsServerEvent>
@@ -393,6 +414,8 @@ export const StudentExam = z.object({
   examDescription: z.string().nullable(),
   durationMinutes: z.number().int(),
   startedAt: z.number().int().nullable(),
+  scrambleQuestions: z.boolean(),
+  scrambleOptions: z.boolean(),
   questions: z.array(StudentQuestion)
 })
 export type StudentExam = z.infer<typeof StudentExam>
@@ -413,7 +436,9 @@ export const StudentSessionState = z.object({
   submittedAt: z.number().int().nullable(),
   answers: z.array(StudentAnswerSnapshot),
   groupMode: GroupMode,
-  maxGroupSize: z.number().int().nullable()
+  maxGroupSize: z.number().int().nullable(),
+  scrambleQuestions: z.boolean(),
+  scrambleOptions: z.boolean()
 })
 export type StudentSessionState = z.infer<typeof StudentSessionState>
 

@@ -9,7 +9,7 @@ import Collaboration from '@tiptap/extension-collaboration'
 import CollaborationCursor from '@tiptap/extension-collaboration-cursor'
 import { Awareness } from 'y-protocols/awareness'
 import * as awarenessProtocol from 'y-protocols/awareness'
-import { Users, Bold, Italic, Code, RefreshCw, ArrowLeft, AlertCircle } from 'lucide-react'
+import { Users, Bold, Italic, Code, RefreshCw, ArrowLeft, AlertCircle, Loader2 } from 'lucide-react'
 
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
@@ -29,6 +29,29 @@ import { clearToken, loadToken } from '../lib/session'
 import { notify } from '../lib/toast'
 import { useServerUrl } from '../lib/serverContext'
 import { connectStudentWs } from '../lib/ws'
+
+function seedRandom(seedStr: string) {
+  let h = 0
+  for (let i = 0; i < seedStr.length; i++) {
+    h = Math.imul(31, h) + seedStr.charCodeAt(i) | 0
+  }
+  return function() {
+    let t = h += 0x6D2B79F5
+    t = Math.imul(t ^ (t >>> 15), t | 1)
+    t ^= t + Math.imul(t ^ (t >>> 7), t | 61)
+    return ((t ^ (t >>> 14)) >>> 0) / 4294967296
+  }
+}
+
+function seededShuffle<T>(array: T[], seed: string): T[] {
+  const shuffled = [...array]
+  const random = seedRandom(seed)
+  for (let i = shuffled.length - 1; i > 0; i--) {
+    const j = Math.floor(random() * (i + 1));
+    [shuffled[i], shuffled[j]] = [shuffled[j], shuffled[i]]
+  }
+  return shuffled
+}
 
 function formatTime(secs: number): string {
   const m = Math.floor(secs / 60)
@@ -70,7 +93,12 @@ export default function TestRoute(): React.JSX.Element {
   })
 
   const [drafts, setDrafts] = useState<Record<string, string>>({})
+  const [lastEditors, setLastEditors] = useState<Record<string, { studentId: string; studentName: string; timestamp: number }>>({})
+  const [groupSubmitState, setGroupSubmitState] = useState<'idle' | 'waiting' | 'prompt'>('idle')
+  const [groupSubmitAwaitingNames, setGroupSubmitAwaitingNames] = useState<string[]>([])
+  const [groupSubmitInitiatorName, setGroupSubmitInitiatorName] = useState<string>('')
   const [showSubmitDialog, setShowSubmitDialog] = useState(false)
+  const connRef = useRef<ReturnType<typeof connectStudentWs> | null>(null)
 
   const [ydoc, setYdoc] = useState<Y.Doc | null>(null)
   const [awareness, setAwareness] = useState<any>(null)
@@ -100,7 +128,14 @@ export default function TestRoute(): React.JSX.Element {
         }
       }
       for (const a of meQuery.data.answers) {
-        next[a.questionId] = a.value
+        let val = a.value
+        if (a.value.startsWith('{')) {
+          try {
+            const parsed = JSON.parse(a.value)
+            val = parsed.value ?? ''
+          } catch {}
+        }
+        next[a.questionId] = val
       }
       return next
     })
@@ -142,6 +177,23 @@ export default function TestRoute(): React.JSX.Element {
         if (event.type === 'student.submitted') {
           qc.invalidateQueries({ queryKey: ['session', 'me', teacherUrl] })
         }
+        if (event.type === 'group.submit.waiting') {
+          setGroupSubmitState('waiting')
+          setGroupSubmitAwaitingNames(event.awaitingNames)
+        }
+        if (event.type === 'group.submit.confirmPrompt') {
+          setGroupSubmitState('prompt')
+          setGroupSubmitInitiatorName(event.initiatorName)
+        }
+        if (event.type === 'group.submit.cancelled') {
+          setGroupSubmitState('idle')
+          notify.info(`Envio cancelado: ${event.rejecterName} recusou o envio.`)
+        }
+        if (event.type === 'group.submit.success') {
+          setGroupSubmitState('idle')
+          notify.success('Prova enviada com sucesso!')
+          navigate('/done', { replace: true })
+        }
       },
       onBinary: (data) => {
         if (meQuery.data?.groupMode === 'disabled') return
@@ -155,6 +207,7 @@ export default function TestRoute(): React.JSX.Element {
         }
       }
     })
+    connRef.current = conn
 
     const onDocUpdate = (update: Uint8Array, origin: any) => {
       if (origin === 'socket') return
@@ -189,6 +242,7 @@ export default function TestRoute(): React.JSX.Element {
     return () => {
       ydoc.off('update', onDocUpdate)
       conn.close()
+      connRef.current = null
     }
   }, [navigate, qc, teacherUrl, ydoc, awareness, meQuery.data?.groupMode, meQuery.data?.studentName])
 
@@ -197,16 +251,37 @@ export default function TestRoute(): React.JSX.Element {
     if (!meQuery.data || meQuery.data.groupMode === 'disabled' || !answersMap) return
 
     const observeAnswers = () => {
+      const newLastEditors: Record<string, { studentId: string; studentName: string; timestamp: number }> = {}
       setDrafts((prev) => {
         const next = { ...prev }
         let changed = false
         for (const key of answersMap.keys()) {
-          const val = answersMap.get(key) ?? ''
+          const raw = answersMap.get(key) ?? ''
+          let val = raw
+          if (raw.startsWith('{')) {
+            try {
+              const parsed = JSON.parse(raw)
+              val = parsed.value ?? ''
+              if (parsed.updatedBy && parsed.updatedByName) {
+                newLastEditors[key] = {
+                  studentId: parsed.updatedBy,
+                  studentName: parsed.updatedByName,
+                  timestamp: parsed.updatedAt ?? Date.now()
+                }
+              }
+            } catch {}
+          }
           if (next[key] !== val) {
             next[key] = val
             changed = true
           }
         }
+
+        setLastEditors((prevEditors) => {
+          const hasChanged = JSON.stringify(prevEditors) !== JSON.stringify(newLastEditors)
+          return hasChanged ? newLastEditors : prevEditors
+        })
+
         return changed ? next : prev
       })
     }
@@ -239,6 +314,18 @@ export default function TestRoute(): React.JSX.Element {
     return Math.max(0, Math.floor((endAt - now) / 1000))
   }, [startedAt, durationMinutes, now])
 
+  const scrambledQuestions = useMemo(() => {
+    const examData = examQuery.data
+    const studentData = meQuery.data
+    if (!examData || !studentData) return []
+    const questions = examData.questions
+    if (examData.scrambleQuestions) {
+      const seed = groupsQuery.data?.find((g) => g.members.some((m) => m.studentId === studentData.studentId))?.id || studentData.studentId || 'default-seed'
+      return seededShuffle(questions, seed)
+    }
+    return questions
+  }, [examQuery.data, meQuery.data, groupsQuery.data])
+
   const answerMutation = useMutation({
     mutationFn: ({ questionId, value }: { questionId: string; value: string }) =>
       api.answer({ questionId, value })
@@ -247,8 +334,14 @@ export default function TestRoute(): React.JSX.Element {
   const debounceRefs = useRef<Record<string, ReturnType<typeof setTimeout>>>({})
   const updateDraft = (questionId: string, value: string): void => {
     if (meQuery.data?.groupMode && meQuery.data.groupMode !== 'disabled' && answersMap) {
-      if (answersMap.get(questionId) !== value) {
-        answersMap.set(questionId, value)
+      const payloadStr = JSON.stringify({
+        value,
+        updatedBy: meQuery.data.studentId,
+        updatedByName: meQuery.data.studentName,
+        updatedAt: Date.now()
+      })
+      if (answersMap.get(questionId) !== payloadStr) {
+        answersMap.set(questionId, payloadStr)
       }
     } else {
       setDrafts((cur) => ({ ...cur, [questionId]: value }))
@@ -268,10 +361,23 @@ export default function TestRoute(): React.JSX.Element {
       notify.success('Prova enviada com sucesso!')
       navigate('/done', { replace: true })
     },
-    onError: (err: Error) => {
-      notify.error(err.message || 'Erro ao enviar a prova. Tente novamente.')
+    onError: (err) => {
+      notify.error(err instanceof Error ? err.message : 'Falha ao enviar prova')
     }
   })
+
+  const handleSubmit = (): void => {
+    setShowSubmitDialog(false)
+    if (meQuery.data?.groupMode && meQuery.data.groupMode !== 'disabled') {
+      if (connRef.current) {
+        connRef.current.sendText(JSON.stringify({ type: 'group.submit.request' }))
+      } else {
+        notify.error('Sem conexão com o servidor')
+      }
+    } else {
+      submitMutation.mutate()
+    }
+  }
 
   useEffect(() => {
     if (
@@ -378,7 +484,13 @@ export default function TestRoute(): React.JSX.Element {
             <p className="text-muted-foreground text-xs">
               {answeredCount} / {exam.questions.length} respondidas
             </p>
-            <p className="font-mono text-sm">
+            <p
+              className={`font-mono text-sm transition-colors duration-300 ${
+                remainingSeconds !== null && remainingSeconds < 300
+                  ? 'text-destructive font-bold animate-pulse'
+                  : ''
+              }`}
+            >
               {remainingSeconds !== null ? formatTime(remainingSeconds) : '--:--'}
             </p>
           </div>
@@ -386,7 +498,7 @@ export default function TestRoute(): React.JSX.Element {
       </div>
 
       <ol className="mx-auto flex max-w-2xl flex-col gap-4 p-4">
-        {exam.questions.map((q, idx) => (
+        {scrambledQuestions.map((q, idx) => (
           <QuestionCard
             key={q.id}
             index={idx + 1}
@@ -397,6 +509,9 @@ export default function TestRoute(): React.JSX.Element {
             awareness={awareness}
             studentName={meQuery.data?.studentName ?? 'Estudante'}
             groupMode={meQuery.data?.groupMode ?? 'disabled'}
+            scrambleOptions={exam.scrambleOptions}
+            studentId={myStudentId}
+            lastEditor={lastEditors[q.id]}
           />
         ))}
       </ol>
@@ -427,17 +542,74 @@ export default function TestRoute(): React.JSX.Element {
                   )}
                 </DialogDescription>
               </DialogHeader>
-              <DialogFooter>
+              <DialogFooter className="gap-2 sm:gap-0">
                 <Button variant="ghost" onClick={() => setShowSubmitDialog(false)}>
                   Cancelar
                 </Button>
+                <Button onClick={handleSubmit}>
+                  Enviar prova
+                </Button>
+              </DialogFooter>
+            </DialogContent>
+          </Dialog>
+
+          {/* Group Submission: Waiting for peers */}
+          <Dialog open={groupSubmitState === 'waiting'}>
+            <DialogContent className="sm:max-w-md" onPointerDownOutside={(e) => e.preventDefault()} onCloseAutoFocus={(e) => e.preventDefault()}>
+              <DialogHeader>
+                <DialogTitle className="flex items-center gap-2 text-base">
+                  <Loader2 className="size-5 animate-spin text-primary" />
+                  <span>Aguardando o grupo...</span>
+                </DialogTitle>
+                <DialogDescription className="space-y-3 pt-2 text-sm">
+                  <p>Você solicitou o envio final da prova.</p>
+                  <p className="font-semibold text-foreground">Aguardando a confirmação de:</p>
+                  <ul className="list-disc pl-5 space-y-1 text-foreground">
+                    {groupSubmitAwaitingNames.map((name, i) => (
+                      <li key={i}>{name}</li>
+                    ))}
+                  </ul>
+                </DialogDescription>
+              </DialogHeader>
+            </DialogContent>
+          </Dialog>
+
+          {/* Group Submission: Peer Prompt */}
+          <Dialog open={groupSubmitState === 'prompt'}>
+            <DialogContent className="sm:max-w-md" onPointerDownOutside={(e) => e.preventDefault()} onCloseAutoFocus={(e) => e.preventDefault()}>
+              <DialogHeader>
+                <DialogTitle className="text-base">Confirmar envio do grupo?</DialogTitle>
+                <DialogDescription className="text-sm">
+                  <span className="font-semibold text-foreground">{groupSubmitInitiatorName}</span> deseja finalizar e enviar a prova para o grupo. Todos os membros online precisam confirmar.
+                </DialogDescription>
+              </DialogHeader>
+              <DialogFooter className="gap-2 sm:gap-0">
                 <Button
+                  variant="outline"
+                  className="cursor-pointer"
                   onClick={() => {
-                    setShowSubmitDialog(false)
-                    submitMutation.mutate()
+                    if (connRef.current) {
+                      connRef.current.sendText(
+                        JSON.stringify({ type: 'group.submit.confirmResponse', confirm: false })
+                      )
+                    }
+                    setGroupSubmitState('idle')
                   }}
                 >
-                  Enviar prova
+                  Recusar
+                </Button>
+                <Button
+                  className="cursor-pointer"
+                  onClick={() => {
+                    if (connRef.current) {
+                      connRef.current.sendText(
+                        JSON.stringify({ type: 'group.submit.confirmResponse', confirm: true })
+                      )
+                    }
+                    setGroupSubmitState('idle')
+                  }}
+                >
+                  Confirmar
                 </Button>
               </DialogFooter>
             </DialogContent>
@@ -457,6 +629,9 @@ interface QuestionCardProps {
   awareness: any
   studentName: string
   groupMode: string
+  scrambleOptions: boolean
+  studentId: string | undefined
+  lastEditor: { studentId: string; studentName: string; timestamp: number } | undefined
 }
 
 function QuestionCard({
@@ -467,8 +642,19 @@ function QuestionCard({
   doc,
   awareness,
   studentName,
-  groupMode
+  groupMode,
+  scrambleOptions,
+  studentId,
+  lastEditor
 }: QuestionCardProps): React.JSX.Element {
+  const scrambledOptions = useMemo(() => {
+    if (scrambleOptions && (question.kind === 'mcq' || question.kind === 'multi') && question.options) {
+      const seed = `${studentId || 'student'}-${question.id}`
+      return seededShuffle(question.options, seed)
+    }
+    return (question.kind === 'mcq' || question.kind === 'multi') ? question.options : []
+  }, [scrambleOptions, question.kind, question.options, question.id, studentId])
+
   return (
     <Card>
       <CardHeader>
@@ -498,7 +684,7 @@ function QuestionCard({
 
         {question.kind === 'mcq' ? (
           <RadioGroup value={value} onValueChange={onChange} className="space-y-2">
-            {question.options.map((opt) => (
+            {scrambledOptions.map((opt) => (
               <div key={opt.id} className="flex items-center gap-2">
                 <RadioGroupItem value={opt.id} id={`q-${question.id}-${opt.id}`} />
                 <Label htmlFor={`q-${question.id}-${opt.id}`} className="cursor-pointer">
@@ -524,7 +710,7 @@ function QuestionCard({
           </RadioGroup>
         ) : question.kind === 'multi' ? (
           <div className="space-y-2">
-            {question.options.map((opt) => {
+            {scrambledOptions.map((opt) => {
               const selectedIds = new Set(value ? value.split(',') : [])
               const handleCheckedChange = (checked: boolean) => {
                 if (checked) {
@@ -570,6 +756,28 @@ function QuestionCard({
             spellCheck={question.kind !== 'code'}
             placeholder={question.kind === 'code' ? 'Escreva seu código aqui…' : 'Escreva sua resposta…'}
           />
+        )}
+
+        {lastEditor && groupMode !== 'disabled' && (
+          <div
+            key={`${lastEditor.studentId}-${lastEditor.timestamp}`}
+            style={{
+              animation: 'fadeOutEditLabel 3s forwards'
+            }}
+            className="flex items-center gap-1.5 text-[10px] text-muted-foreground pt-2 border-t border-border/40 mt-3"
+          >
+            <style dangerouslySetInnerHTML={{ __html: `
+              @keyframes fadeOutEditLabel {
+                0% { opacity: 1; visibility: visible; }
+                70% { opacity: 1; }
+                100% { opacity: 0; visibility: hidden; }
+              }
+            `}} />
+            <span className="inline-block size-1.5 rounded-full bg-primary/60 animate-pulse" />
+            <span>
+              Última alteração por: <span className="font-semibold text-primary">{lastEditor.studentName === studentName ? 'Você' : lastEditor.studentName}</span>
+            </span>
+          </div>
         )}
       </CardContent>
     </Card>
@@ -678,7 +886,8 @@ function CollabEditor({
         spellcheck: kind === 'code' ? 'false' : 'true'
       }
     },
-    onUpdate: ({ editor }) => {
+    onUpdate: ({ editor, transaction }) => {
+      if (transaction.getMeta('y-sync$')) return
       const text = editor.getText()
       onChange(text)
     }

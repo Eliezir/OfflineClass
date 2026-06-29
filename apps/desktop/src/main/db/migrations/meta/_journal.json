@@ -50,6 +50,20 @@
       "when": 1782264721006,
       "tag": "0006_yellow_invisible_woman",
       "breakpoints": true
+    },
+    {
+      "idx": 7,
+      "version": "6",
+      "when": 1782667495459,
+      "tag": "0007_bored_captain_cross",
+      "breakpoints": true
+    },
+    {
+      "idx": 8,
+      "version": "6",
+      "when": 1782670473121,
+      "tag": "0008_magenta_madelyne_pryor",
+      "breakpoints": true
     }
   ]
 }

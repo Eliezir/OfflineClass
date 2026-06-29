@@ -86,6 +86,8 @@ export const examSessions = sqliteTable('exam_sessions', {
     .default('lobby'),
   durationMinutes: integer('duration_minutes').notNull(),
   allowLateJoin: integer('allow_late_join', { mode: 'boolean' }).notNull().default(false),
+  scrambleQuestions: integer('scramble_questions', { mode: 'boolean' }).notNull().default(false),
+  scrambleOptions: integer('scramble_options', { mode: 'boolean' }).notNull().default(false),
   groupMode: text('group_mode', { enum: ['disabled', 'free', 'teacher', 'shuffle'] })
     .notNull()
     .default('disabled'),
@@ -132,6 +134,7 @@ export const answers = sqliteTable(
       .notNull()
       .references(() => questions.id, { onDelete: 'cascade' }),
     value: text('value').notNull(),
+    updatedBy: text('updated_by'),
     // Auto-set to 1.0/0.0 on MCQ saves; remains null for essays until the
     // teacher grades them via sessions.gradeAnswer.
     score: real('score'),

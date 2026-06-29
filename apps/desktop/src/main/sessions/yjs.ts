@@ -22,7 +22,24 @@ export function syncAnswersFromYdoc(db: Db, groupId: string, doc: Y.Doc): void {
 
     // Sync all answers (MCQ, essay, code, etc.) from Y.Map('answers')
     const answersMap = doc.getMap<string>('answers')
-    for (const [questionId, value] of answersMap.entries()) {
+    for (const [questionId, rawValue] of answersMap.entries()) {
+      let value = rawValue
+      let updatedBy: string | null = null
+      let updatedAt = now
+
+      if (rawValue.startsWith('{')) {
+        try {
+          const parsed = JSON.parse(rawValue)
+          value = parsed.value ?? ''
+          updatedBy = parsed.updatedBy ?? null
+          if (parsed.updatedAt) {
+            updatedAt = new Date(parsed.updatedAt)
+          }
+        } catch {
+          // fallback
+        }
+      }
+
       for (const member of members) {
         db.insert(answers)
           .values({
@@ -30,11 +47,12 @@ export function syncAnswersFromYdoc(db: Db, groupId: string, doc: Y.Doc): void {
             studentId: member.studentId,
             questionId,
             value,
-            updatedAt: now
+            updatedBy,
+            updatedAt
           })
           .onConflictDoUpdate({
             target: [answers.studentId, answers.questionId],
-            set: { value, updatedAt: now }
+            set: { value, updatedBy, updatedAt }
           })
           .run()
       }

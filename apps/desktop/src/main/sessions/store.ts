@@ -73,6 +73,8 @@ function loadDetailById(
       status: examSessions.status,
       durationMinutes: examSessions.durationMinutes,
       allowLateJoin: examSessions.allowLateJoin,
+      scrambleQuestions: examSessions.scrambleQuestions,
+      scrambleOptions: examSessions.scrambleOptions,
       groupMode: examSessions.groupMode,
       maxGroupSize: examSessions.maxGroupSize,
       createdAt: examSessions.createdAt,
@@ -96,6 +98,8 @@ function loadDetailById(
     status: row.status as SessionStatus,
     durationMinutes: row.durationMinutes,
     allowLateJoin: row.allowLateJoin,
+    scrambleQuestions: !!row.scrambleQuestions,
+    scrambleOptions: !!row.scrambleOptions,
     groupMode: (row.groupMode ?? 'disabled') as 'disabled' | 'free' | 'teacher' | 'shuffle',
     maxGroupSize: row.maxGroupSize,
     questionsCount: Number(countRow?.n ?? 0),
@@ -157,6 +161,8 @@ export function createSession(db: Db, ownerId: string, input: SessionCreateInput
       status: 'lobby',
       durationMinutes: input.durationMinutes,
       allowLateJoin: !!input.allowLateJoin,
+      scrambleQuestions: !!input.scrambleQuestions,
+      scrambleOptions: !!input.scrambleOptions,
       groupMode: input.groupMode ?? 'disabled',
       maxGroupSize: input.maxGroupSize ?? null
     })
@@ -369,6 +375,8 @@ export function findActiveSessionPublic(db: Db): SessionPublic | null {
       examTitle: exams.title,
       durationMinutes: examSessions.durationMinutes,
       allowLateJoin: examSessions.allowLateJoin,
+      scrambleQuestions: examSessions.scrambleQuestions,
+      scrambleOptions: examSessions.scrambleOptions,
       groupMode: examSessions.groupMode
     })
     .from(examSessions)
@@ -383,6 +391,8 @@ export function findActiveSessionPublic(db: Db): SessionPublic | null {
     examTitle: row.examTitle,
     durationMinutes: row.durationMinutes,
     allowLateJoin: row.allowLateJoin,
+    scrambleQuestions: !!row.scrambleQuestions,
+    scrambleOptions: !!row.scrambleOptions,
     groupMode: (row.groupMode ?? 'disabled') as 'disabled' | 'free' | 'teacher' | 'shuffle'
   }
 }
@@ -556,7 +566,9 @@ export function getStudentExam(db: Db, studentId: string): StudentExam {
       examDescription: exams.description,
       durationMinutes: examSessions.durationMinutes,
       startedAt: examSessions.startedAt,
-      status: examSessions.status
+      status: examSessions.status,
+      scrambleQuestions: examSessions.scrambleQuestions,
+      scrambleOptions: examSessions.scrambleOptions
     })
     .from(examSessions)
     .innerJoin(exams, eq(exams.id, examSessions.examId))
@@ -577,6 +589,8 @@ export function getStudentExam(db: Db, studentId: string): StudentExam {
     examDescription: session.examDescription,
     durationMinutes: session.durationMinutes,
     startedAt: session.startedAt ? session.startedAt.getTime() : null,
+    scrambleQuestions: !!session.scrambleQuestions,
+    scrambleOptions: !!session.scrambleOptions,
     questions: qRows.map(questionRowToStudent)
   }
 }
@@ -588,7 +602,9 @@ export function getStudentSessionState(db: Db, studentId: string): StudentSessio
     .select({
       status: examSessions.status,
       groupMode: examSessions.groupMode,
-      maxGroupSize: examSessions.maxGroupSize
+      maxGroupSize: examSessions.maxGroupSize,
+      scrambleQuestions: examSessions.scrambleQuestions,
+      scrambleOptions: examSessions.scrambleOptions
     })
     .from(examSessions)
     .where(eq(examSessions.id, student.sessionId))
@@ -609,7 +625,9 @@ export function getStudentSessionState(db: Db, studentId: string): StudentSessio
     submittedAt: student.submittedAt ? student.submittedAt.getTime() : null,
     answers: answerSnapshots,
     groupMode: session.groupMode as import('@offlineclass/shared').GroupMode,
-    maxGroupSize: session.maxGroupSize
+    maxGroupSize: session.maxGroupSize,
+    scrambleQuestions: !!session.scrambleQuestions,
+    scrambleOptions: !!session.scrambleOptions
   }
 }
 
@@ -617,7 +635,7 @@ export function recordHeartbeat(db: Db, studentId: string): void {
   db.update(students).set({ lastSeenAt: new Date() }).where(eq(students.id, studentId)).run()
 }
 
-export function saveAnswer(db: Db, studentId: string, questionId: string, value: string): void {
+export function saveAnswer(db: Db, studentId: string, questionId: string, value: string, updatedBy?: string | null): void {
   const student = loadStudentFull(db, studentId)
   if (!student) throw new SessionError('Aluno não encontrado', 'NOT_FOUND')
   if (student.submittedAt) {
@@ -639,17 +657,19 @@ export function saveAnswer(db: Db, studentId: string, questionId: string, value:
   if (!q) throw new SessionError('Questão inválida', 'NOT_FOUND')
 
   const now = new Date()
+  const dbUpdatedBy = updatedBy !== undefined ? updatedBy : studentId
   db.insert(answers)
     .values({
       id: randomUUID(),
       studentId,
       questionId,
       value,
+      updatedBy: dbUpdatedBy,
       updatedAt: now
     })
     .onConflictDoUpdate({
       target: [answers.studentId, answers.questionId],
-      set: { value, updatedAt: now }
+      set: { value, updatedBy: dbUpdatedBy, updatedAt: now }
     })
     .run()
   db.update(students).set({ lastSeenAt: now }).where(eq(students.id, studentId)).run()

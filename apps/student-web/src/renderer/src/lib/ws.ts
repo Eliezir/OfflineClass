@@ -13,6 +13,7 @@ interface ConnectOptions {
 export interface WsConnection {
   close: () => void
   sendBinary: (data: Uint8Array) => void
+  sendText: (text: string) => void
 }
 
 export function connectStudentWs(opts: ConnectOptions): WsConnection {
@@ -71,6 +72,11 @@ export function connectStudentWs(opts: ConnectOptions): WsConnection {
     sendBinary: (data: Uint8Array) => {
       if (socket && socket.readyState === WebSocket.OPEN) {
         socket.send(data as any)
+      }
+    },
+    sendText: (text: string) => {
+      if (socket && socket.readyState === WebSocket.OPEN) {
+        socket.send(text)
       }
     }
   }
