@@ -42,21 +42,22 @@ graph TD
     StudentN["Student PC N<br/>(browser)"]
   end
 
-  subgraph VPS["VPS (optional, internet)"]
-    Cloud["Cloud Backend<br/>(Hono + Postgres)"]
-    Email["Transactional Email<br/>(SendGrid / Mailgun / Resend — TBD)"]
+  subgraph Internet["Internet (optional)"]
+    Cloud["Cloud Backend<br/>(PowerSync/VPS)"]
+    SMTPServer["SMTP Server<br/>(e.g., Gmail, Institutional)"]
   end
 
   StudentA -- "HTTPS + WebSocket" --> Desktop
   StudentB -- "HTTPS + WebSocket" --> Desktop
   StudentN -- "HTTPS + WebSocket" --> Desktop
 
-  Desktop -. "HTTPS (manual sync only)" .-> Cloud
-  Cloud -- "SMTP / API" --> Email
-  Email -. "Email" .-> StudentA
+  Desktop -. "HTTPS (manual sync)" .-> Cloud
+  Desktop -. "SMTP" .-> SMTPServer
+  SMTPServer -. "Email" .-> StudentA
 ```
 
-Solid lines are always-on within the classroom session. Dotted lines are opt-in and triggered manually by the teacher.
+Solid lines are always-on within the classroom session. Dotted lines are opt-in, requiring internet connectivity (triggered manually by the teacher).
+
 
 ---
 
@@ -128,10 +129,9 @@ apps/desktop/
 │   │   ├── sessions/
 │   │   │   ├── store.ts              # session CRUD + state machine
 │   │   │   └── groups.ts             # group lifecycle
-│   │   ├── sync/                     # cloud sync worker
-│   │   │   ├── client.ts             # HTTP client w/ token
-│   │   │   ├── definitions.ts        # push/pull provas
-│   │   │   └── results.ts            # push results + email request
+│   │   ├── email/                    # local SMTP email handling
+│   │   │   ├── send.ts               # nodemailer transport + HTML mail payload
+│   │   │   └── store.ts              # settings persistence & safeStorage encryption
 │   │   ├── discovery/
 │   │   │   ├── mdns.ts
 │   │   │   └── qr.ts
@@ -479,7 +479,7 @@ sequenceDiagram
 
 ### Email results
 
-After results push, the teacher can click "Email results". The desktop POSTs `/api/sync/sessions/results/email` to the cloud with the list of `(email, payload)` tuples. The cloud enqueues sends through its configured email provider (provider choice deferred). Failures retry with backoff; surface failures back to the desktop on the next sync round.
+The teacher can click "Email results" directly on the local results screen. The desktop app connects to the teacher's configured SMTP server and sends the results directly (without passing through the cloud). The teacher must configure their SMTP server settings (Host, Port, SSL/TLS, Username, Password, Sender Name, and Sender Email) in the Settings -> E-mail section. The password is encrypted at rest using Electron's `safeStorage` API.
 
 ---
 
@@ -677,7 +677,7 @@ Each phase maps to a milestone in the GitHub backlog. Issues are labeled by `are
 | Avatars | `react-nice-avatar`-style generative SVG | No image storage, customizable, renderable everywhere |
 | Discovery | `bonjour-service` (mDNS) + `qrcode` | POC-validated |
 | TLS | Self-signed cert generated on first boot | LAN context; manual cert accept on student browsers |
-| Email (cloud) | Provider TBD (Resend / SendGrid / Mailgun / Postmark / SMTP) | Deferred; module designed as an interface to swap |
+| Email | SMTP Server (Gmail / Outlook / Institutional SMTP) | Configured locally by the teacher; password encrypted via safeStorage |
 | Auth (local teacher) | bcrypt + persistent session token | POC-validated |
 | Auth (cloud teacher) | JWT (access) + opaque refresh token | Industry standard for stateful refresh |
 | Packaging | electron-builder | Cross-platform installers; POC validated |
@@ -688,7 +688,7 @@ Each phase maps to a milestone in the GitHub backlog. Issues are labeled by `are
 
 These are decisions deferred either pending team input or because they don't block other work. They live in `docs/features.md` §10 — listed here only for the architecturally-significant ones:
 
-1. **Email provider choice** (deferred to team). Module is designed behind an interface, so the cloud can ship without a concrete provider and add one later without API change.
+1. **SMTP Email Configuration** (Fully implemented). The desktop app sends emails directly using nodemailer and local configurations, bypassing the cloud sync requirement.
 2. **Cloud TLS termination strategy** — Hono direct, or behind nginx/caddy/Cloudflare. Probably nginx for cert renewal via certbot, but deferred until deploy phase.
 3. **CA cert distribution to student PCs** — manual accept on first connect is acceptable for TCC scope; a pre-installable CA bundle would polish the experience for institutional rollout.
 4. **Auxiliary materials file size limits** — primarily a UX-cushion decision (large PDFs hurt LAN response time) rather than a correctness one.
