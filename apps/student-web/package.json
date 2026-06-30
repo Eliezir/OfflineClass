@@ -7,6 +7,7 @@
   "author": "OfflineClass",
   "scripts": {
     "dev": "electron-vite dev",
+    "dev:web": "vite --config vite.web.config.ts",
     "build": "tsc -b && electron-vite build",
     "start": "electron-vite preview",
     "lint": "eslint .",
