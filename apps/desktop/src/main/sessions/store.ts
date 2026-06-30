@@ -770,6 +770,7 @@ export function loadStudentAnswers(
     studentMatricula: studentRow.matricula,
     studentEmail: studentRow.email ?? null,
     studentFeedback: studentRow.feedback ?? null,
+    resultsSentAt: studentRow.resultsSentAt ? studentRow.resultsSentAt.getTime() : null,
     examTitle: sessionRow.examTitle,
     examSubject: sessionRow.examSubject ?? null,
     submittedAt: studentRow.submittedAt ? studentRow.submittedAt.getTime() : null,
@@ -780,6 +781,12 @@ export function loadStudentAnswers(
     totalScore,
     maxScore
   }
+}
+
+/** Stamp when the teacher e-mailed a student their results (latest send wins).
+    Ownership is already verified by the caller via loadStudentAnswers. */
+export function markResultsSent(db: Db, studentId: string, when: Date): void {
+  db.update(students).set({ resultsSentAt: when }).where(eq(students.id, studentId)).run()
 }
 
 export function gradeAnswer(

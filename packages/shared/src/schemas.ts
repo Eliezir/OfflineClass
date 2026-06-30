@@ -424,6 +424,8 @@ export const SessionAnswersReview = z.object({
   studentEmail: z.string().nullable(),
   // Overall remark the teacher leaves on the student (not tied to one question).
   studentFeedback: z.string().nullable(),
+  // When the teacher last e-mailed this student their results; null = never.
+  resultsSentAt: z.number().int().nullable(),
   examTitle: z.string(),
   // Disciplina/matéria da prova (pode não estar preenchida).
   examSubject: z.string().nullable(),

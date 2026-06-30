@@ -43,6 +43,13 @@
       "when": 1782444560136,
       "tag": "0005_stiff_power_man",
       "breakpoints": true
+    },
+    {
+      "idx": 6,
+      "version": "6",
+      "when": 1782851634981,
+      "tag": "0006_cool_martin_li",
+      "breakpoints": true
     }
   ]
 }

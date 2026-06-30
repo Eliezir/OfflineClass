@@ -8,11 +8,17 @@ const DEFAULT_POINTS = 1
 
 function toGradedAnswer(a: StudentAnswerReview): GradedAnswer {
   const points = DEFAULT_POINTS
+  // A blank answer (never filled) defaults to 0 — not "pending".
+  const empty = a.value === null || a.value === ''
   let awarded: number | null
   if (a.question.kind === 'mcq') {
-    awarded = a.value === null ? null : a.correct ? points : 0
+    awarded = empty ? 0 : a.correct ? points : 0
+  } else if (a.question.kind === 'essay' || a.question.kind === 'code') {
+    // Manual kinds: blank → 0; answered-but-ungraded stays null (pending).
+    awarded = empty ? 0 : a.score
   } else {
-    awarded = a.score // essay: teacher grade or null (pending)
+    // multi / truefalse: auto-scored (already 0 when blank).
+    awarded = a.score
   }
   return { question: a.question, value: a.value, points, awarded, feedback: a.feedback }
 }
@@ -36,6 +42,7 @@ export function toStudentResult(review: SessionAnswersReview): StudentResult {
     matricula: review.studentMatricula,
     email: review.studentEmail,
     feedback: review.studentFeedback,
+    resultsSentAt: review.resultsSentAt,
     submittedAt: review.submittedAt,
     joinedAt: review.joinedAt,
     leftAt: review.leftAt,

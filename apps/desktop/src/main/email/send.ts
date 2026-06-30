@@ -9,7 +9,7 @@ import type {
 } from '@offlineclass/shared'
 
 import type { Db } from '../db/client'
-import { loadStudentAnswers, SessionError } from '../sessions/store'
+import { loadStudentAnswers, markResultsSent, SessionError } from '../sessions/store'
 import { getEmailSecret } from './store'
 
 function buildTransport(settings: EmailSettingsInput): Transporter {
@@ -254,6 +254,7 @@ export async function sendResults(
         text,
         html
       })
+      markResultsSent(db, studentId, new Date())
       results.push({
         studentId,
         name: review.studentName,

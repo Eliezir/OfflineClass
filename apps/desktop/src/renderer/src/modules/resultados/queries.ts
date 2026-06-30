@@ -103,7 +103,10 @@ export function useSetStudentEmail(
 export function useEmailResults(
   sessionId: string
 ): UseMutationResult<EmailSendResult[], Error, EmailResultsInput> {
+  const qc = useQueryClient()
   return useMutation({
-    mutationFn: (input: EmailResultsInput) => emailResults(sessionId, input)
+    mutationFn: (input: EmailResultsInput) => emailResults(sessionId, input),
+    // Refetch so the "e-mail enviado" badges reflect the just-sent results.
+    onSuccess: () => qc.invalidateQueries({ queryKey: resultadosKeys.sessionResults(sessionId) })
   })
 }

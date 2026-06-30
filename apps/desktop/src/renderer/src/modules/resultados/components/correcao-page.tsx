@@ -8,6 +8,7 @@ import {
   Loader2,
   LogOut,
   Mail,
+  MailCheck,
   Percent,
   Play,
   Printer,
@@ -328,7 +329,18 @@ export function CorrecaoPage({ sessionId }: CorrecaoPageProps): React.JSX.Elemen
                   >
                     <StudentAvatar name={student.name} />
                     <div className="min-w-0 flex-1">
-                      <div className="truncate text-sm font-bold">{student.name}</div>
+                      <div className="flex items-center gap-2">
+                        <span className="truncate text-sm font-bold">{student.name}</span>
+                        {student.resultsSentAt && (
+                          <span
+                            title={t`Enviado em ${new Date(student.resultsSentAt).toLocaleString('pt-BR')}`}
+                            className="inline-flex shrink-0 items-center gap-1 rounded-full bg-success/10 px-2 py-0.5 text-[10px] font-bold text-success"
+                          >
+                            <MailCheck className="size-3" />
+                            <Trans>E-mail enviado</Trans>
+                          </span>
+                        )}
+                      </div>
                       <div className="text-xs font-semibold text-muted-foreground">
                         {student.matricula}
                       </div>

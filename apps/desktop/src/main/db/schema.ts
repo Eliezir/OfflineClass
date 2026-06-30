@@ -107,6 +107,8 @@ export const students = sqliteTable(
     email: text('email'),
     // Overall remark the teacher leaves on this student's exam.
     feedback: text('feedback'),
+    // When the teacher last e-mailed this student their results; null = never.
+    resultsSentAt: timestamp('results_sent_at'),
     token: text('token').notNull().unique(),
     joinedAt: timestamp('joined_at')
       .notNull()
