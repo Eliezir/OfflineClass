@@ -1148,6 +1148,9 @@ msgstr "Sessão ao vivo"
 msgid "Sessão encerrada"
 msgstr "Sessão encerrada"
 
+msgid "Sessão no lobby"
+msgstr "Sessão no lobby"
+
 msgid "Sessões aplicadas"
 msgstr "Sessões aplicadas"
 
