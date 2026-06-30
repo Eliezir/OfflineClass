@@ -19,6 +19,12 @@ export interface Site {
   features: { accent: string; icon: string; title: string; body: string; span?: string }[]
   interactive: { icon: string; title: string; body: string; points?: string[] }[]
   steps: { n: string; title: string; body: string }[]
+  underHood: {
+    eyebrow: string
+    title: string
+    description: string
+    cards: { icon: string; title: string; body: string; to: string }[]
+  }
   platforms: { id: string; label: string; icon: string; match: string[] }[]
   stack: string[]
   team: { name: string; github: string }[]
@@ -27,12 +33,21 @@ export interface Site {
   footerNote: string
 }
 
+export interface DocArticle {
+  id: string
+  title: string
+  icon: string
+  diagram?: string
+  body: string[]
+  concept: string
+}
+
 export interface Docs {
   intro: string
   sections: {
     id: string
     title: string
-    articles: { id: string; title: string; body: string[] }[]
+    articles: DocArticle[]
   }[]
 }
 

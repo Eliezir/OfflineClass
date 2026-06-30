@@ -1,30 +1,21 @@
 {
-  "intro": "Guia rápido para começar com o OfflineClass. Todo o conteúdo desta seção vive em `content/docs.json` — edite o arquivo para adaptar, sem mexer no código.",
+  "intro": "Como o OfflineClass funciona por dentro — a engenharia de rede, sincronização e persistência que sustenta uma avaliação colaborativa rodando inteiramente na LAN da sala, sem internet. Escrito para a disciplina de **Sistemas Operacionais e Redes**: cada slide liga uma decisão de implementação ao conceito de SO/Redes por trás dela.",
   "sections": [
     {
-      "id": "primeiros-passos",
-      "title": "Primeiros passos",
+      "id": "arquitetura",
+      "title": "Arquitetura",
       "articles": [
         {
-          "id": "instalacao",
-          "title": "Instalação",
+          "id": "arquitetura",
+          "title": "Offline-first e isolamento de processo",
+          "icon": "process",
+          "diagram": "process",
           "body": [
-            "Baixe a versão mais recente na seção **Download** desta página — ela aponta direto para os releases do GitHub.",
-            "Escolha o instalador do seu sistema:",
-            "- **macOS** — arquivo `.dmg`",
-            "- **Windows** — instalador `.exe`",
-            "- **Linux** — `.AppImage`, `.deb` ou `.rpm`",
-            "O app roda inteiramente offline — nada precisa de internet para funcionar."
-          ]
-        },
-        {
-          "id": "conta-professor",
-          "title": "Conta de professor",
-          "body": [
-            "Na primeira execução, crie sua conta local de professor (nome, e-mail e senha).",
-            "As contas e provas ficam **somente no seu computador**. Um mesmo computador suporta várias contas de professor, com dados isolados.",
-            "Não há login na nuvem por padrão — o sync é opcional e opt-in (veja **Sync opcional**)."
-          ]
+            "Não existe servidor externo. O backend roda **dentro do processo principal (main) do Electron**, no computador do professor — um servidor HTTP/WebSocket, o banco SQLite e a sincronização ao vivo, tudo no mesmo binário.",
+            "A interface do professor (o **renderer**) não fala HTTP com esse backend. Ela conversa com o main por **IPC** (`ipcMain.handle('domain.action', …)`), exposto à UI por uma ponte tipada `window.api.*`. Já os alunos, esses sim, chegam pela rede via HTTP/WebSocket.",
+            "Quando o app abre, um `bootstrap()` sobe os serviços em ordem antes de mostrar a janela: banco + migrações → certificado TLS → servidor da LAN → anúncio mDNS → handlers de IPC. Uma splash screen segura até tudo estar `ready`."
+          ],
+          "concept": "Isolamento de processos. O main (com privilégio de rede e disco) e o renderer (UI em sandbox) são processos separados que se comunicam por troca de mensagens (IPC) — o mesmo modelo de separação de responsabilidades e canais de comunicação entre processos visto em SO."
         }
       ]
     },
@@ -33,61 +24,117 @@
       "title": "Rede da sala",
       "articles": [
         {
-          "id": "como-funciona-a-rede",
-          "title": "Como a rede funciona",
+          "id": "descoberta",
+          "title": "Descoberta na rede: mDNS, QR e TLS",
+          "icon": "discovery",
+          "diagram": "discovery",
           "body": [
-            "Ao iniciar uma sessão, o computador do professor sobe um **servidor local** que atende os alunos pela Wi-Fi da sala.",
-            "Os alunos entram pelo navegador do PC — escaneando o **QR code** na tela do professor ou pelo endereço anunciado via **mDNS** (`offlineclass.local`).",
-            "> Nenhum dado trafega pela internet. É a garantia LAN-only que sustenta o anti-cheat básico.",
-            "Alunos usam **PCs** na mesma Wi-Fi (desktops de laboratório ou notebooks). Celulares não são suportados de propósito."
-          ]
+            "Para o aluno achar o professor na Wi-Fi sem digitar IP, o servidor anuncia a si mesmo com **mDNS** (Multicast DNS, via `bonjour-service`), publicando um serviço `_https._tcp` resolvível como `offlineclass.local`. É o mesmo mecanismo de *zero-configuration networking* do AirPlay e de impressoras de rede.",
+            "Como nem toda máquina resolve mDNS, há dois caminhos redundantes de entrada:",
+            "- **QR code** na tela do professor, com a URL já contendo o IP da LAN (ex.: `https://192.168.1.100:8000`)",
+            "- **Endereço manual** — o aluno digita `IP:porta` direto no navegador",
+            "O servidor usa **HTTPS com certificado self-signed** (RSA 2048, gerado e persistido no primeiro boot). Como é colaboração em tempo real sobre WebSocket, o transporte precisa ser seguro; o Electron confia no certificado apenas para os hostnames conhecidos."
+          ],
+          "concept": "Resolução de nomes e descoberta de serviços. O mDNS resolve nomes por multicast dentro do domínio `.local`, sem um servidor DNS central — útil exatamente quando não há infraestrutura (nem internet) na sala."
+        },
+        {
+          "id": "conexao",
+          "title": "Como aluno e professor se conectam",
+          "icon": "connection",
+          "diagram": "topology",
+          "body": [
+            "O servidor da sala é um app **Hono** rodando sobre Node (`@hono/node-server`), escutando em `0.0.0.0:8000` — todas as interfaces de rede, na porta 8000 (ou a próxima livre, se ocupada). Ele acumula três papéis na mesma origem:",
+            "1. **Serve a SPA do aluno** (React) como arquivos estáticos — o aluno só abre o navegador, nada para instalar",
+            "2. **API REST** em `/api/*` para o ciclo de vida: `POST /api/join` devolve um **token Bearer** efêmero da sessão; as demais rotas exigem esse token",
+            "3. **WebSocket** em `/api/ws` (via `@hono/node-ws`) para o tempo real — o token é validado já no handshake; conexão sem token válido é recusada",
+            "Salvar uma resposta é híbrido por garantia: o `POST /api/answers` grava no SQLite **e** atualiza o documento colaborativo do grupo, então o painel do professor recebe a resposta mesmo se o canal WebSocket de um aluno oscilar."
+          ],
+          "concept": "O modelo cliente-servidor e a pilha de transporte. O professor é o servidor; cada aluno é um cliente sobre TCP — HTTP para requisições pontuais, WebSocket para um canal full-duplex persistente. Dois padrões de comunicação para necessidades diferentes."
         }
       ]
     },
     {
-      "id": "fluxo",
-      "title": "Aplicando uma avaliação",
+      "id": "tempo-real",
+      "title": "Tempo real",
       "articles": [
         {
-          "id": "criar-prova",
-          "title": "Criar a prova",
+          "id": "yjs",
+          "title": "Colaboração com Yjs (CRDT)",
+          "icon": "crdt",
+          "diagram": "crdt",
           "body": [
-            "Em **Provas → Nova**, monte a avaliação num form builder único.",
-            "Adicione questões de sete tipos — múltipla escolha, V/F, resposta curta, dissertativa, código, ordenação e associação — e blocos de material de apoio (PDF, imagem, vídeo, link) inline.",
-            "Cada questão tem um valor em pontos; a nota é a soma dos pontos das questões corretas."
-          ]
+            "O coração colaborativo é o **Yjs**, uma implementação de **CRDT** (Conflict-free Replicated Data Type). Cada grupo tem um documento `Y.Doc` próprio, mantido em memória pelo servidor num registro (`Map<groupId, Y.Doc>`).",
+            "Dentro do documento, o estado é tipado pelo tipo de questão:",
+            "- Questões objetivas ficam num `Y.Map('answers')` — chave é o id da questão, valor é a resposta + quem editou por último",
+            "- Dissertativa e código usam um `Y.XmlFragment` por questão (texto rico colaborativo, à la Tiptap), deixando dois alunos digitarem no mesmo texto ao mesmo tempo",
+            "A sincronização não passa por JSON: cada alteração vira um **update binário do Yjs** trafegado pelo WebSocket. O primeiro byte do frame é um discriminador — `0` para update do documento, `1` para *awareness*. O servidor repassa o update aos outros membros do grupo (nunca de volta para quem enviou)."
+          ],
+          "concept": "Sistemas distribuídos e consistência. Sem um relógio global confiável, um CRDT garante que todas as réplicas convergem para o mesmo estado independentemente da ordem em que os updates chegam — resolvendo escritas concorrentes sem um lock central. É o problema clássico de concorrência distribuída resolvido na prática."
         },
         {
-          "id": "abrir-sessao",
-          "title": "Abrir a sessão",
+          "id": "awareness",
+          "title": "Presença e awareness",
+          "icon": "presence",
           "body": [
-            "Inicie uma sessão para a prova: escolha o **modo de formação de grupos** (livre, designado ou sorteio), a **duração** e as regras.",
-            "A sessão passa por **lobby → em andamento → encerrada**. No lobby os alunos entram e formam grupos; ao iniciar, a composição trava e o cronômetro começa.",
-            "Acompanhe tudo no **painel ao vivo** — e abra a **vista de projetor** para a turma."
-          ]
-        },
-        {
-          "id": "corrigir-exportar",
-          "title": "Corrigir & exportar",
-          "body": [
-            "Questões objetivas são corrigidas automaticamente. Dissertativas e código você corrige manualmente, com campo de comentário por questão.",
-            "Exporte os resultados localmente em **CSV/JSON** — e, opcionalmente, envie as notas por e-mail via cloud (quando vinculado)."
-          ]
+            "Além das respostas, o grupo vê quem está ali: cursores, em qual questão cada um está, nome e avatar. Isso é o **awareness** do Yjs (`y-protocols/awareness`) — um estado **transiente**, que não é persistido.",
+            "Awareness viaja em frames próprios (byte de tipo `1`), separado dos updates do documento. Quando o socket cai, a presença daquele aluno some; ao reconectar, ela é recriada do zero. O estado da prova (as respostas) sobrevive; a presença, não — e é exatamente isso que se quer.",
+            "A presença também é encaminhada por IPC ao renderer do professor, então o painel ao vivo mostra a turma se movimentando em tempo real."
+          ],
+          "concept": "Estado efêmero vs. estado durável. Presença é como uma sessão volátil — vale enquanto a conexão existe e pode ser descartada sem prejuízo; já as respostas precisam de durabilidade. Tratar cada um com o canal e a política certos evita desperdício e inconsistência."
         }
       ]
     },
     {
-      "id": "sync",
-      "title": "Sync opcional",
+      "id": "dados",
+      "title": "Dados",
       "articles": [
         {
-          "id": "stay-local",
-          "title": "Offline-first por padrão",
+          "id": "persistencia",
+          "title": "Persistência offline e recuperação",
+          "icon": "durable",
+          "diagram": "snapshot",
           "body": [
-            "Na primeira instalação o app fica em modo **somente local**: zero chamadas à nuvem, zero notificações.",
-            "O sync é **opt-in**. Quando quiser, vincule uma conta na nuvem pelo indicador de sync para fazer backup das provas e upload dos resultados.",
-            "Mesmo vinculado, o sync é sempre **manual** — nunca uma dependência de runtime."
-          ]
+            "O armazenamento durável é **SQLite** via `better-sqlite3`, com o **Drizzle** como camada de schema e queries. As queries são **síncronas** — sem `await` —, o que simplifica o raciocínio e cabe bem num backend single-machine. As migrações são aplicadas no boot, antes de abrir qualquer janela.",
+            "O documento Yjs de cada grupo vive em memória, mas é serializado para o banco de forma **debounced (2 s após a última alteração)**: o estado completo (`Y.encodeStateAsUpdate`) é gravado como BLOB na tabela `group_yjs_snapshots`, e as respostas são também espelhadas na tabela `answers`.",
+            "Isso dá **recuperação a falhas**: se o app do professor fechar no meio da prova, ao reabrir o `Y.Doc` é reconstruído a partir do último snapshot. Se nem snapshot houver, ele é semeado a partir das respostas já gravadas. Nada se perde."
+          ],
+          "concept": "Durabilidade e checkpointing. Manter o estado quente em memória e gravar snapshots periódicos no disco é o mesmo padrão de checkpoint/restore usado por bancos e sistemas de arquivos para equilibrar desempenho e resistência a falhas."
+        }
+      ]
+    },
+    {
+      "id": "sessoes",
+      "title": "Sessões",
+      "articles": [
+        {
+          "id": "sessoes",
+          "title": "Sessões, grupos e submissão coordenada",
+          "icon": "session",
+          "diagram": "states",
+          "body": [
+            "Uma sessão de prova é uma **máquina de estados**: `lobby → em andamento → encerrada`. No lobby os alunos entram e formam grupos; ao iniciar, a composição dos grupos **trava** e o cronômetro começa; ao encerrar, ninguém mais responde.",
+            "Os grupos podem se formar de modos diferentes, escolhidos pelo professor: **livre** (alunos criam/entram), **designado** (o professor monta) ou **sorteio** (o sistema divide pelo tamanho desejado). Aluno sozinho é um grupo de um.",
+            "O envio é **coordenado entre os membros**: qualquer um inicia a submissão e os demais que estão online confirmam. Só com a confirmação o grupo é marcado como enviado e o documento daquele grupo é congelado."
+          ],
+          "concept": "Sincronização e seção crítica. Travar a composição na transição de estado e exigir confirmação coletiva para submeter são formas de coordenar processos concorrentes sobre um recurso compartilhado — evitando race conditions entre membros do mesmo grupo."
+        }
+      ]
+    },
+    {
+      "id": "seguranca",
+      "title": "Segurança",
+      "articles": [
+        {
+          "id": "seguranca",
+          "title": "Segurança por topologia",
+          "icon": "security",
+          "diagram": "security",
+          "body": [
+            "As ações sensíveis do professor (criar prova, abrir/encerrar sessão, corrigir) **não existem como rotas HTTP** — vivem apenas como handlers de IPC dentro do app. Um aluno na LAN simplesmente não tem como alcançá-las: a confiança vem da **topologia**, não só de um middleware.",
+            "Para os alunos, o controle é por **token Bearer** emitido no `join`, válido só naquela sessão e escopado ao próprio aluno e seu grupo. Toda entrada HTTP é validada com **Zod** (schemas compartilhados em `packages/shared`), e cada leitura/escrita do professor é escopada por `ownerId`.",
+            "Como a prova roda só na LAN da sala, nada trafega pela internet — é essa garantia *LAN-only* que sustenta o anti-cheat básico e mantém os dados dos alunos locais por padrão."
+          ],
+          "concept": "Superfície de ataque e menor privilégio. Não expor uma operação na rede é mais forte do que protegê-la com autenticação — você reduz a superfície de ataque na origem. Tokens com escopo e validação de entrada complementam isso para o que precisa, sim, atravessar a rede."
         }
       ]
     }
