@@ -1,5 +1,5 @@
 import { randomUUID } from 'node:crypto'
-import { and, asc, desc, eq, inArray, isNotNull, isNull, sql } from 'drizzle-orm'
+import { and, asc, desc, eq, inArray, isNotNull, isNull, ne, sql } from 'drizzle-orm'
 import type {
   CodeLanguage,
   JoinInput,
@@ -117,6 +117,10 @@ function listAllSessionStudents(db: Db, sessionId: string): SessionLobbyStudent[
   const answered = db
     .select({ studentId: answers.studentId, n: sql<number>`count(*)` })
     .from(answers)
+    // Comment-only rows (a teacher comment on a question the student never
+    // answered) carry an empty value — exclude them so they don't inflate the
+    // answered count.
+    .where(ne(answers.value, ''))
     .groupBy(answers.studentId)
     .all()
   const answeredByStudent = new Map(answered.map((a) => [a.studentId, Number(a.n)]))
@@ -460,6 +464,10 @@ export function listLobbyStudents(db: Db, sessionId: string): SessionLobbyStuden
   const answered = db
     .select({ studentId: answers.studentId, n: sql<number>`count(*)` })
     .from(answers)
+    // Comment-only rows (a teacher comment on a question the student never
+    // answered) carry an empty value — exclude them so they don't inflate the
+    // answered count.
+    .where(ne(answers.value, ''))
     .groupBy(answers.studentId)
     .all()
   const answeredByStudent = new Map(answered.map((a) => [a.studentId, Number(a.n)]))
@@ -751,7 +759,9 @@ export function loadStudentAnswers(
   )
   const maxScore = reviews.reduce((acc, r) => acc + r.question.points, 0)
 
-  const answeredCount = answerRows.length
+  // Exclude comment-only rows (empty value) so a teacher comment on an
+  // unanswered question doesn't count as answered.
+  const answeredCount = answerRows.filter((a) => a.value !== '').length
 
   return {
     sessionId,
