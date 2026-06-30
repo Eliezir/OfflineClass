@@ -1,9 +1,8 @@
 import { app, dialog, type BrowserWindow } from 'electron'
-import electronUpdater from 'electron-updater'
-
-// electron-updater ships as CommonJS; the default-import + destructure form is
-// the supported way to reach `autoUpdater` from an ESM/TS main process.
-const { autoUpdater } = electronUpdater
+// electron-updater ships as CommonJS with `__esModule: true` and no `default`
+// key, so a default import resolves to `undefined` under electron-vite's
+// rollup interop. Reach `autoUpdater` via its named export instead.
+import { autoUpdater } from 'electron-updater'
 
 /**
  * Wire up GitHub-based auto-update for the teacher app.
