@@ -323,7 +323,7 @@ Form builder é **extensível por design** — tipos adicionais (matemática/LaT
 ## 9. Qualidade / não-funcional
 
 ### 9.1 Confiabilidade
-- **[CORE]** Lógica de reconnect do Socket.IO (backoff automático do cliente; servidor reintegra o socket ao room correto na reconexão via `socket.data`)
+- **[CORE]** Lógica de reconnect do WebSocket (reconexão automática com tempo de espera de 1.5s pelo cliente; servidor remove o socket antigo e registra o novo socket com o respectivo room/grupo associado ao token)
 - **[FEATURE]** SQLite em modo WAL (leituras concorrentes durante escritas)
 - **[FEATURE]** Snapshots periódicos do Y.Doc (recuperação de crash do desktop no meio da sessão)
 - **[EXTRA]** Backup do SQLite local (export do arquivo do DB pra USB / cloud)

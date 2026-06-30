@@ -148,9 +148,9 @@ Discover (mDNS) → Join (POST /api/join) → Waiting (WS) → Test (GET/POST /a
 
 ### Convenções
 
-- **IDs**: ULID gerados no cliente (desktop), offline-generáveis
+- **IDs**: UUID v4 gerados no servidor local (Electron main process) usando `randomUUID()`
 - **Timestamps**: `integer` com `mode: 'timestamp_ms'`, default `unixepoch() * 1000`
-- **Soft delete**: `deletedAt` para `exams` e `questions`
+- **Remoção**: Deleções físicas diretas no banco de dados local com comportamento em cascata (`onDelete: 'cascade'`) para tabelas filhas (sem soft delete / `deletedAt` no estado offline atual)
 - **Migrations**: Drizzle Kit, pasta `src/main/db/migrations/`
 
 ---
