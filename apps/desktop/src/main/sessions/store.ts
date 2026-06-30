@@ -25,7 +25,7 @@ import { AvatarConfig } from '@offlineclass/shared'
 
 import type { Db } from '../db/client'
 import { rowToQuestion } from '../db/questions-map'
-import { answers, exams, examSessions, questions, students, groups, groupMembers } from '../db/schema'
+import { answers, exams, examSessions, questions, students, teachers, groups, groupMembers } from '../db/schema'
 import { shuffleStudentsIntoGroups, listGroups } from './groups'
 import { yjsManager } from './yjs'
 
@@ -383,10 +383,13 @@ export function findActiveSessionPublic(db: Db): SessionPublic | null {
       examTitle: exams.title,
       durationMinutes: examSessions.durationMinutes,
       allowLateJoin: examSessions.allowLateJoin,
-      groupMode: examSessions.groupMode
+      groupMode: examSessions.groupMode,
+      teacherName: teachers.name,
+      teacherAvatar: teachers.avatar
     })
     .from(examSessions)
     .innerJoin(exams, eq(exams.id, examSessions.examId))
+    .innerJoin(teachers, eq(teachers.id, exams.ownerId))
     .where(inArray(examSessions.status, [...ACTIVE_STATUSES]))
     .orderBy(desc(examSessions.createdAt))
     .get()
@@ -397,7 +400,9 @@ export function findActiveSessionPublic(db: Db): SessionPublic | null {
     examTitle: row.examTitle,
     durationMinutes: row.durationMinutes,
     allowLateJoin: row.allowLateJoin,
-    groupMode: (row.groupMode ?? 'disabled') as 'disabled' | 'free' | 'teacher' | 'shuffle'
+    groupMode: (row.groupMode ?? 'disabled') as 'disabled' | 'free' | 'teacher' | 'shuffle',
+    teacherName: row.teacherName,
+    teacherAvatar: parseAvatar(row.teacherAvatar)
   }
 }
 

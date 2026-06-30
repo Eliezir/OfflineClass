@@ -8,6 +8,8 @@ export const teachers = sqliteTable('teachers', {
   email: text('email').notNull().unique(),
   name: text('name').notNull(),
   passwordHash: text('password_hash').notNull(),
+  // Optional profile avatar (JSON-serialized AvatarConfig). Null = use initials.
+  avatar: text('avatar'),
   createdAt: timestamp('created_at')
     .notNull()
     .default(sql`(unixepoch() * 1000)`)

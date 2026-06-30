@@ -57,6 +57,13 @@
       "when": 1782417121881,
       "tag": "0007_lumpy_manta",
       "breakpoints": true
+    },
+    {
+      "idx": 8,
+      "version": "6",
+      "when": 1782851942291,
+      "tag": "0008_loud_skin",
+      "breakpoints": true
     }
   ]
 }
