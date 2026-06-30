@@ -358,6 +358,9 @@ importers:
       '@fontsource-variable/nunito':
         specifier: ^5.2.7
         version: 5.2.7
+      '@fontsource/atkinson-hyperlegible':
+        specifier: ^5.2.8
+        version: 5.2.8
       '@offlineclass/avatar':
         specifier: workspace:*
         version: link:../../packages/avatar
@@ -1734,6 +1737,9 @@ packages:
 
   '@fontsource-variable/plus-jakarta-sans@5.2.8':
     resolution: {integrity: sha512-iQecBizIdZxezODNHzOn4SvvRMrZL/S8k4MEXGDynCmUrImVW0VmX+tIAMqnADwH4haXlHSXqMgU6+kcfBQJdw==}
+
+  '@fontsource/atkinson-hyperlegible@5.2.8':
+    resolution: {integrity: sha512-HciLcJ5DIK/OVOdo71EbEN4NnvDFlp6/SpAxtcbWf2aAdcsOuPqITxj5KNEXb48qSPSdnnZdGGnSJChPKi3/bA==}
 
   '@hono/node-server@1.19.14':
     resolution: {integrity: sha512-GwtvgtXxnWsucXvbQXkRgqksiH2Qed37H9xHZocE5sA3N8O8O8/8FA3uclQXxXVzc9XBZuEOMK7+r02FmSpHtw==}
@@ -8123,6 +8129,8 @@ snapshots:
   '@fontsource-variable/outfit@5.2.8': {}
 
   '@fontsource-variable/plus-jakarta-sans@5.2.8': {}
+
+  '@fontsource/atkinson-hyperlegible@5.2.8': {}
 
   '@hono/node-server@1.19.14(hono@4.12.25)':
     dependencies:

@@ -8,6 +8,7 @@
   "scripts": {
     "dev": "electron-vite dev",
     "dev:web": "vite --config vite.web.config.ts",
+    "dev:web:mock": "VITE_MOCK=1 vite --config vite.web.config.ts",
     "build": "tsc -b && electron-vite build",
     "start": "electron-vite preview",
     "lint": "eslint .",
@@ -20,6 +21,7 @@
   "dependencies": {
     "@electron-toolkit/preload": "^3.0.2",
     "@electron-toolkit/utils": "^4.0.0",
+    "@fontsource/atkinson-hyperlegible": "^5.2.8",
     "@fontsource-variable/nunito": "^5.2.7",
     "@offlineclass/shared": "workspace:*",
     "@tailwindcss/vite": "^4.3.0",
