@@ -8,12 +8,35 @@ export const DiscoveryStatus = z.object({
 })
 export type DiscoveryStatus = z.infer<typeof DiscoveryStatus>
 
+// -- Avatar ----------------------------------------------------------------
+
+/** DiceBear "adventurer" avatar — only the part IDs travel the LAN; the art is
+    bundled in both apps (`packages/avatar`). Empty string = "none" for the
+    optional parts (hair/glasses/earrings/features). Shared by students and the
+    teacher's own optional profile avatar. */
+const AvatarId = z.string().max(40)
+export const AvatarConfig = z.object({
+  skinColor: AvatarId,
+  hair: AvatarId,
+  hairColor: AvatarId,
+  eyes: AvatarId,
+  eyebrows: AvatarId,
+  mouth: AvatarId,
+  glasses: AvatarId,
+  earrings: AvatarId,
+  features: AvatarId,
+  backgroundColor: AvatarId
+})
+export type AvatarConfig = z.infer<typeof AvatarConfig>
+
 // -- Auth ------------------------------------------------------------------
 
 export const Teacher = z.object({
   id: z.string(),
   email: z.string().email(),
-  name: z.string()
+  name: z.string(),
+  /** Optional profile avatar. Null = fall back to initials everywhere. */
+  avatar: AvatarConfig.nullable()
 })
 export type Teacher = z.infer<typeof Teacher>
 
@@ -210,26 +233,6 @@ export type Exam = z.infer<typeof Exam>
 export const SessionStatus = z.enum(['lobby', 'running', 'ended'])
 export type SessionStatus = z.infer<typeof SessionStatus>
 
-// -- Student avatar --------------------------------------------------------
-
-/** DiceBear "adventurer" avatar — only the part IDs travel the LAN; the art is
-    bundled in both apps (`packages/avatar`). Empty string = "none" for the
-    optional parts (hair/glasses/earrings/features). */
-const AvatarId = z.string().max(40)
-export const AvatarConfig = z.object({
-  skinColor: AvatarId,
-  hair: AvatarId,
-  hairColor: AvatarId,
-  eyes: AvatarId,
-  eyebrows: AvatarId,
-  mouth: AvatarId,
-  glasses: AvatarId,
-  earrings: AvatarId,
-  features: AvatarId,
-  backgroundColor: AvatarId
-})
-export type AvatarConfig = z.infer<typeof AvatarConfig>
-
 export const SessionLobbyStudent = z.object({
   id: z.string(),
   name: z.string(),
@@ -300,7 +303,10 @@ export const SessionPublic = z.object({
   examTitle: z.string(),
   durationMinutes: z.number().int(),
   allowLateJoin: z.boolean(),
-  groupMode: GroupMode
+  groupMode: GroupMode,
+  // Who is running the room, so students can confirm they joined the right one.
+  teacherName: z.string(),
+  teacherAvatar: AvatarConfig.nullable()
 })
 export type SessionPublic = z.infer<typeof SessionPublic>
 
