@@ -13,10 +13,11 @@
     { "label": "Recursos", "to": "/#recursos" },
     { "label": "Ao vivo", "to": "/#ao-vivo" },
     { "label": "Como funciona", "to": "/#como-funciona" },
+    { "label": "Arquitetura", "to": "/#arquitetura" },
     { "label": "Equipe", "to": "/#equipe" },
     { "label": "Download", "to": "/download" },
     { "label": "Releases", "to": "/releases" },
-    { "label": "Docs", "to": "/docs" }
+    { "label": "Documentação", "to": "/docs" }
   ],
   "stats": [
     { "value": 0, "suffix": "", "label": "internet necessária" },
@@ -135,9 +136,57 @@
     { "id": "windows", "label": "Windows", "icon": "windows", "match": ["\\.exe$", "-win", "windows", "setup", "\\.msi$"] },
     { "id": "linux", "label": "Linux", "icon": "linux", "match": ["\\.appimage$", "\\.deb$", "\\.rpm$", "linux", "\\.tar\\.gz$", "\\.snap$"] }
   ],
-  "stack": [
-    "TypeScript", "Electron", "React", "Hono", "Socket.IO", "Yjs", "Drizzle", "SQLite", "Zod", "Tailwind"
+  "apps": [
+    {
+      "id": "teacher",
+      "label": "Professor",
+      "icon": "teacher",
+      "blurb": "Cria a sala e o servidor da avaliação. Instale no computador do professor.",
+      "match": "^offlineclass-(?!student)"
+    },
+    {
+      "id": "student",
+      "label": "Aluno",
+      "icon": "student",
+      "blurb": "App dedicado para os alunos entrarem na prova.",
+      "hint": "Os alunos também podem entrar pelo navegador, sem instalar nada.",
+      "match": "offlineclass-student"
+    }
   ],
+  "stack": [
+    "TypeScript", "Electron", "React", "Hono", "WebSocket", "Yjs", "Drizzle", "SQLite", "Zod", "Tailwind"
+  ],
+  "underHood": {
+    "eyebrow": "Arquitetura",
+    "title": "A engenharia por trás de uma sala offline",
+    "description": "Projeto de Sistemas Operacionais e Redes: descoberta na LAN, sincronização por CRDT e persistência local — cada peça liga uma decisão de código a um conceito da disciplina.",
+    "cards": [
+      {
+        "icon": "discovery",
+        "title": "Rede sem configuração",
+        "body": "O PC do professor sobe um servidor Hono na Wi-Fi local e se anuncia por mDNS (`offlineclass.local`), com QR code e TLS self-signed. Zero internet, zero IP digitado.",
+        "to": "/docs#doc-descoberta"
+      },
+      {
+        "icon": "crdt",
+        "title": "Tempo real com CRDT (Yjs)",
+        "body": "Cada grupo tem um Y.Doc sincronizado por updates binários no WebSocket. Escritas concorrentes convergem sem lock central — o problema clássico de concorrência distribuída.",
+        "to": "/docs#doc-yjs"
+      },
+      {
+        "icon": "durable",
+        "title": "Offline-first de verdade",
+        "body": "SQLite síncrono via Drizzle, snapshots debounced do Yjs e recuperação a falhas: se o app fechar no meio da prova, o estado do grupo é reconstruído ao reabrir.",
+        "to": "/docs#doc-persistencia"
+      },
+      {
+        "icon": "topology",
+        "title": "Segurança por topologia",
+        "body": "Ações do professor só existem como IPC — inalcançáveis pela LAN. Alunos usam token Bearer escopado por sessão, com toda entrada validada por Zod.",
+        "to": "/docs#doc-seguranca"
+      }
+    ]
+  },
   "team": [
     { "name": "Eliezir Moreira", "github": "Eliezir" },
     { "name": "Pedro Roberto", "github": "PedroChicuta" },

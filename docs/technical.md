@@ -61,6 +61,7 @@ OfflineClass/
 | Descoberta | bonjour-service (mDNS — `offlineclass._https._tcp.local`) |
 | QR Code | qrcode |
 | Auth professor | bcrypt + session tokens (SQLite) |
+| E-mail | nodemailer (SMTP) + safeStorage (criptografia de senha local) |
 
 ### `apps/student-web` — aluno
 
@@ -564,5 +565,5 @@ pnpm --filter @offlineclass/student-web build:win
 | ✅ | Grupos — teacher-designa, shuffle |
 | ✅ | Colaboração Yjs (tempo real) |
 | ⏳ | Cloud sync (PowerSync) |
-| ⏳ | Envio de resultados por email |
+| ✅ | Envio de resultados por e-mail (SMTP local + safeStorage) |
 | ⏳ | Materiais auxiliares (PDF, vídeo) |

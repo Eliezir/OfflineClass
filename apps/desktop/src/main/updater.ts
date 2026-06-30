@@ -1,7 +1,4 @@
 import { app, dialog, type BrowserWindow } from 'electron'
-// electron-updater ships as CommonJS with `__esModule: true` and no `default`
-// key, so a default import resolves to `undefined` under electron-vite's
-// rollup interop. Reach `autoUpdater` via its named export instead.
 import { autoUpdater } from 'electron-updater'
 
 /**
