@@ -1,13 +1,17 @@
 name: Release
 
-# Builds the OfflineClass desktop installers for Windows and Linux and publishes
-# them to a single GitHub Release. Run manually from the Actions tab.
+# Builds the OfflineClass Windows installers and publishes them to a single
+# GitHub Release. Run manually from the Actions tab.
+#
+# Windows-only: the Linux (AppImage/deb) targets were dropped — the deb build
+# needs extra per-app metadata and Linux isn't a target platform for the
+# classroom machines. The build matrix below documents how to re-enable Linux.
 #
 # What it produces (one combined Release tagged v<version>):
-#   - Teacher app  (@offlineclass/desktop)     → desktop-<version>-setup.exe, *.AppImage, *.deb
-#                                                 + latest.yml / latest-linux.yml  (auto-update)
-#   - Student app  (@offlineclass/student-web) → student-web-<version>-setup.exe, *.AppImage, *.deb
-#                                                 + student.yml / student-linux.yml (auto-update)
+#   - Teacher app  (@offlineclass/desktop)     → offlineclass-<version>-setup.exe
+#                                                 + latest.yml  (auto-update)
+#   - Student app  (@offlineclass/student-web) → offlineclass-student-<version>-setup.exe
+#                                                 + student.yml (auto-update)
 #
 # The Release is created as a DRAFT — review the assets, then publish it from the
 # GitHub UI to make the tag and downloads public.
@@ -66,24 +70,19 @@ jobs:
       fail-fast: false
       matrix:
         include:
+          # Windows-only: the Linux (AppImage/deb) targets were dropped — see the
+          # `on:` note below. Re-add ubuntu-latest rows with `builder: --linux
+          # AppImage deb` to bring Linux back.
           # Teacher app
           - app: '@offlineclass/desktop'
             dir: apps/desktop
             os: windows-latest
             builder: --win
-          - app: '@offlineclass/desktop'
-            dir: apps/desktop
-            os: ubuntu-latest
-            builder: --linux AppImage deb
           # Student app
           - app: '@offlineclass/student-web'
             dir: apps/student-web
             os: windows-latest
             builder: --win
-          - app: '@offlineclass/student-web'
-            dir: apps/student-web
-            os: ubuntu-latest
-            builder: --linux AppImage deb
 
     steps:
       - name: Checkout
