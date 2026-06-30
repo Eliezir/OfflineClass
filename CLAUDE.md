@@ -88,6 +88,36 @@ pnpm build                  # typecheck + desktop build
 The LAN backend has no separate process or command — it boots inside the Electron main when
 you run `pnpm dev`. DB tooling lives in `apps/desktop` (`pnpm --filter ./apps/desktop db:studio`).
 
+### Cloud sync (optional — requires Docker)
+
+**First-time setup:**
+```bash
+cp apps/sync/powersync/docker/.env.example apps/sync/powersync/docker/.env
+# edit .env: change passwords and set PS_JWT_SECRET (min 32 chars)
+```
+
+```bash
+pnpm dev:sync       # start Docker stack (PowerSync + Postgres + connector) then open the desktop
+pnpm sync:start     # start the Docker stack only (background, no desktop)
+pnpm sync:stop      # stop containers (preserves volumes / Postgres data)
+pnpm sync:restart   # restart all containers in the stack (no rebuild)
+pnpm sync:rebuild   # rebuild connector image and restart (use after changing apps/sync/src/)
+pnpm sync:reset     # stop + DELETE volumes (full clean reset — Postgres data is lost)
+pnpm sync:logs      # tail logs from all containers in real time
+pnpm sync:status    # show container health/status
+```
+
+Ports exposed by the Docker stack:
+
+| Service | Port | Description |
+|---|---|---|
+| Postgres source (`pg-db`) | 5432 | Syncable OfflineClass data |
+| Postgres storage (`pg-storage`) | 5433 | PowerSync internal bucket storage |
+| Connector (Hono) | 3001 | `/api/auth/*`, `/api/upload`, `/health` |
+| PowerSync Service | 8080 | Desktop SDK connects here |
+
+Postgres migrations run automatically when the connector starts (idempotent).
+
 ---
 
 ## 5. Code hygiene (applies to all apps)

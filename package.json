@@ -7,6 +7,7 @@
     "dev": "pnpm --filter ./apps/desktop dev",
     "dev:web": "pnpm --filter ./apps/desktop dev:web",
     "dev:landing": "pnpm --filter ./apps/landing dev",
+    "dev:sync": "pnpm sync:start && pnpm --filter ./apps/desktop dev",
     "build": "pnpm --filter ./apps/desktop build",
     "build:landing": "pnpm --filter ./apps/landing build",
     "db:studio": "pnpm --filter ./apps/desktop db:studio",
@@ -14,7 +15,14 @@
     "format": "pnpm --filter ./apps/desktop format",
     "typecheck": "pnpm --filter ./apps/desktop typecheck",
     "i18n:extract": "pnpm --filter ./apps/desktop i18n:extract",
-    "i18n:compile": "pnpm --filter ./apps/desktop i18n:compile"
+    "i18n:compile": "pnpm --filter ./apps/desktop i18n:compile",
+    "sync:start": "docker compose -f apps/sync/powersync/docker/docker-compose.yaml --project-directory apps/sync/powersync/docker up -d",
+    "sync:stop": "docker compose -f apps/sync/powersync/docker/docker-compose.yaml --project-directory apps/sync/powersync/docker down",
+    "sync:restart": "docker compose -f apps/sync/powersync/docker/docker-compose.yaml --project-directory apps/sync/powersync/docker restart",
+    "sync:rebuild": "docker compose -f apps/sync/powersync/docker/docker-compose.yaml --project-directory apps/sync/powersync/docker up -d --build",
+    "sync:reset": "docker compose -f apps/sync/powersync/docker/docker-compose.yaml --project-directory apps/sync/powersync/docker down -v",
+    "sync:logs": "docker compose -f apps/sync/powersync/docker/docker-compose.yaml --project-directory apps/sync/powersync/docker logs -f",
+    "sync:status": "docker compose -f apps/sync/powersync/docker/docker-compose.yaml --project-directory apps/sync/powersync/docker ps"
   },
   "dependencies": {
     "pnpm": "^11.5.3"
