@@ -26,6 +26,7 @@ export interface Site {
     cards: { icon: string; title: string; body: string; to: string }[]
   }
   platforms: { id: string; label: string; icon: string; match: string[] }[]
+  apps: { id: string; label: string; icon: string; blurb: string; hint?: string; match: string }[]
   stack: string[]
   team: { name: string; github: string }[]
   advisor?: string

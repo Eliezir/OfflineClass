@@ -14,6 +14,8 @@ import {
   Network,
   Database,
   ShieldCheck,
+  Presentation,
+  GraduationCap,
   type LucideIcon,
 } from 'lucide-react'
 import { BlurFade } from '@/components/magicui/blur-fade'
@@ -33,6 +35,11 @@ export const PLATFORM_ICONS: Record<string, LucideIcon> = {
   apple: Apple,
   windows: Monitor,
   linux: Terminal,
+}
+
+export const APP_ICONS: Record<string, LucideIcon> = {
+  teacher: Presentation,
+  student: GraduationCap,
 }
 
 export const INTERACTIVE_ICONS: Record<string, LucideIcon> = {
