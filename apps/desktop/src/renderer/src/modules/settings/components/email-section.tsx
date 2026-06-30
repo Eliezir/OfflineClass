@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { HelpCircle, Loader2, Mail, Plug, Save } from 'lucide-react'
+import { Eye, EyeOff, HelpCircle, Loader2, Mail, Plug, Save } from 'lucide-react'
 import { Trans, useLingui } from '@lingui/react/macro'
 import { EmailSettingsInput, type EmailSettings } from '@offlineclass/shared'
 import { Button } from '@renderer/shared/ui/button'
@@ -88,6 +88,7 @@ function EmailForm({ initial }: { initial: EmailSettings | null }): React.JSX.El
   const test = useTestEmailSettings()
 
   const [form, setForm] = useState<FormState>(() => toForm(initial))
+  const [showPassword, setShowPassword] = useState(false)
 
   useSlowActionToast(
     test.isPending,
@@ -174,15 +175,28 @@ function EmailForm({ initial }: { initial: EmailSettings | null }): React.JSX.El
         </Field>
 
         <Field label={t`Senha`}>
-          <Input
-            type="password"
-            value={form.password}
-            autoComplete="new-password"
-            placeholder={
-              initial?.hasPassword ? t`•••••••• (salva — deixe em branco para manter)` : '••••••••'
-            }
-            onChange={(e) => set('password', e.target.value)}
-          />
+          <div className="relative">
+            <Input
+              type={showPassword ? 'text' : 'password'}
+              value={form.password}
+              autoComplete="new-password"
+              placeholder={
+                initial?.hasPassword
+                  ? t`Salva — deixe em branco para manter`
+                  : t`Senha de app do Gmail`
+              }
+              className="pr-10"
+              onChange={(e) => set('password', e.target.value)}
+            />
+            <button
+              type="button"
+              onClick={() => setShowPassword((v) => !v)}
+              aria-label={showPassword ? t`Ocultar senha` : t`Mostrar senha`}
+              className="absolute top-1/2 right-2 grid size-7 -translate-y-1/2 place-items-center rounded-lg text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
+            >
+              {showPassword ? <EyeOff className="size-4" /> : <Eye className="size-4" />}
+            </button>
+          </div>
         </Field>
 
         <Field label={t`Nome do remetente`}>
