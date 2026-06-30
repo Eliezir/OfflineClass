@@ -1,0 +1,25 @@
+{
+  "name": "@offlineclass/avatar",
+  "private": true,
+  "version": "0.0.0",
+  "type": "module",
+  "main": "./src/index.ts",
+  "types": "./src/index.ts",
+  "exports": {
+    ".": "./src/index.ts"
+  },
+  "dependencies": {
+    "@dicebear/collection": "^9.2.2",
+    "@dicebear/core": "^9.2.2",
+    "@offlineclass/shared": "workspace:*"
+  },
+  "peerDependencies": {
+    "lucide-react": "*",
+    "react": "^19"
+  },
+  "devDependencies": {
+    "@types/react": "^19",
+    "lucide-react": "^1.16.0",
+    "typescript": "^5.9.3"
+  }
+}

@@ -1,17 +1,15 @@
 import { randomUUID } from 'node:crypto'
 import { eq } from 'drizzle-orm'
+import type { Teacher } from '@offlineclass/shared'
 
 import type { Db } from '../db/client'
 import { teacherSessions, teachers } from '../db/schema'
+import { parseAvatar } from '../sessions/store'
 
 export interface ResolvedSession {
   token: string
   teacherId: string
-  teacher: {
-    id: string
-    email: string
-    name: string
-  }
+  teacher: Teacher
 }
 
 export function createSession(db: Db, teacherId: string): string {
@@ -27,7 +25,8 @@ export function resolveSession(db: Db, token: string): ResolvedSession | null {
       token: teacherSessions.token,
       teacherId: teachers.id,
       teacherEmail: teachers.email,
-      teacherName: teachers.name
+      teacherName: teachers.name,
+      teacherAvatar: teachers.avatar
     })
     .from(teacherSessions)
     .innerJoin(teachers, eq(teacherSessions.teacherId, teachers.id))
@@ -37,7 +36,12 @@ export function resolveSession(db: Db, token: string): ResolvedSession | null {
   return {
     token: row.token,
     teacherId: row.teacherId,
-    teacher: { id: row.teacherId, email: row.teacherEmail, name: row.teacherName }
+    teacher: {
+      id: row.teacherId,
+      email: row.teacherEmail,
+      name: row.teacherName,
+      avatar: parseAvatar(row.teacherAvatar)
+    }
   }
 }
 

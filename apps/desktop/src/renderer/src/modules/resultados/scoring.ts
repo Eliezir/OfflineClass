@@ -40,6 +40,7 @@ export function toStudentResult(review: SessionAnswersReview): StudentResult {
     studentId: review.studentId,
     name: review.studentName,
     matricula: review.studentMatricula,
+    avatar: review.studentAvatar,
     email: review.studentEmail,
     feedback: review.studentFeedback,
     resultsSentAt: review.resultsSentAt,

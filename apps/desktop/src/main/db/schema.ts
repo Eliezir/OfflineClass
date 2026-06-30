@@ -8,6 +8,8 @@ export const teachers = sqliteTable('teachers', {
   email: text('email').notNull().unique(),
   name: text('name').notNull(),
   passwordHash: text('password_hash').notNull(),
+  // Optional profile avatar (JSON-serialized AvatarConfig). Null = use initials.
+  avatar: text('avatar'),
   createdAt: timestamp('created_at')
     .notNull()
     .default(sql`(unixepoch() * 1000)`)
@@ -108,9 +110,10 @@ export const students = sqliteTable(
       .references(() => examSessions.id, { onDelete: 'cascade' }),
     name: text('name').notNull(),
     matricula: text('matricula').notNull(),
-    // Optional — student may provide it on join; teacher can fill/edit it on the
-    // results screen. Used to e-mail the grade after the exam.
+    // Optional — student may provide email on join; teacher can fill/edit it on
+    // the results screen to e-mail the grade. `avatar` holds a JSON AvatarConfig.
     email: text('email'),
+    avatar: text('avatar'),
     // Overall remark the teacher leaves on this student's exam.
     feedback: text('feedback'),
     // When the teacher last e-mailed this student their results; null = never.

@@ -1,6 +1,5 @@
 import { useMemo, useState } from 'react'
 import {
-  ArrowLeft,
   ChevronDown,
   ClipboardCheck,
   Clock,
@@ -17,9 +16,9 @@ import {
   UserPlus,
   Users
 } from 'lucide-react'
-import { Link } from '@tanstack/react-router'
 import { Trans, useLingui } from '@lingui/react/macro'
 import { Button } from '@renderer/shared/ui/button'
+import { Breadcrumb } from '@renderer/shared/components/breadcrumb'
 import { cn } from '@renderer/shared/utils'
 import { EmptyState } from '@renderer/shared/ui/empty-state'
 import { formatRelativeTime } from '@renderer/shared/utils/format'
@@ -239,14 +238,14 @@ export function CorrecaoPage({ sessionId }: CorrecaoPageProps): React.JSX.Elemen
 
   return (
     <main className="scrollbar-subtle flex flex-1 flex-col overflow-y-auto px-6 pb-6">
-      <div className="flex flex-wrap items-center justify-between gap-3 pt-6">
-        <div className="flex items-center gap-2">
-          <Button asChild variant="ghost" size="sm">
-            <Link to="/resultados">
-              <ArrowLeft />
-              <Trans>Resultados</Trans>
-            </Link>
-          </Button>
+      <div className="pt-6">
+        <Breadcrumb
+          items={[
+            { label: t`Resultados`, to: '/resultados' },
+            { label: results?.examTitle ?? t`Sessão` }
+          ]}
+        />
+        <div className="mt-3 flex flex-wrap items-center justify-between gap-3">
           {results && (
             <div className="min-w-0">
               <h1 className="truncate font-display text-lg font-bold tracking-tight">
@@ -259,23 +258,23 @@ export function CorrecaoPage({ sessionId }: CorrecaoPageProps): React.JSX.Elemen
               )}
             </div>
           )}
+          {results && students.length > 0 && (
+            <div className="flex items-center gap-2">
+              <Button variant="outline" size="sm" onClick={() => downloadCsv(results)}>
+                <Download className="size-3.5" />
+                <Trans>Exportar CSV</Trans>
+              </Button>
+              <Button variant="outline" size="sm" onClick={() => downloadPdf(results)}>
+                <Printer className="size-3.5" />
+                <Trans>Exportar PDF</Trans>
+              </Button>
+              <Button size="sm" onClick={() => setEmailOpen(true)}>
+                <Mail className="size-3.5" />
+                <Trans>Enviar notas por e-mail</Trans>
+              </Button>
+            </div>
+          )}
         </div>
-        {results && students.length > 0 && (
-          <div className="flex items-center gap-2">
-            <Button variant="outline" size="sm" onClick={() => downloadCsv(results)}>
-              <Download className="size-3.5" />
-              <Trans>Exportar CSV</Trans>
-            </Button>
-            <Button variant="outline" size="sm" onClick={() => downloadPdf(results)}>
-              <Printer className="size-3.5" />
-              <Trans>Exportar PDF</Trans>
-            </Button>
-            <Button size="sm" onClick={() => setEmailOpen(true)}>
-              <Mail className="size-3.5" />
-              <Trans>Enviar notas por e-mail</Trans>
-            </Button>
-          </div>
-        )}
       </div>
 
       {loading ? (
@@ -327,7 +326,7 @@ export function CorrecaoPage({ sessionId }: CorrecaoPageProps): React.JSX.Elemen
                     onClick={() => setExpandedId(open ? null : student.studentId)}
                     className="flex w-full items-center gap-3 px-5 py-4 text-left"
                   >
-                    <StudentAvatar name={student.name} />
+                    <StudentAvatar name={student.name} avatar={student.avatar} />
                     <div className="min-w-0 flex-1">
                       <div className="flex items-center gap-2">
                         <span className="truncate text-sm font-bold">{student.name}</span>

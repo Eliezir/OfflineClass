@@ -14,12 +14,14 @@ import type {
   SessionResultSummary,
   SessionStatus,
   SessionSummary,
+  RosterStudent,
   StudentAnswerReview,
   StudentAnswerSnapshot,
   StudentExam,
   StudentQuestion,
   StudentSessionState
 } from '@offlineclass/shared'
+import { AvatarConfig } from '@offlineclass/shared'
 
 import type { Db } from '../db/client'
 import { rowToQuestion } from '../db/questions-map'
@@ -29,6 +31,7 @@ import {
   examSessions,
   questions,
   students,
+  teachers,
   groups,
   groupMembers
 } from '../db/schema'
@@ -52,6 +55,17 @@ export class SessionError extends Error {
 
 const ACTIVE_STATUSES = ['lobby', 'running'] as const
 
+/** Parse the stored avatar JSON; tolerate legacy/garbage rows by returning null. */
+export function parseAvatar(raw: string | null): AvatarConfig | null {
+  if (!raw) return null
+  try {
+    const parsed = AvatarConfig.safeParse(JSON.parse(raw))
+    return parsed.success ? parsed.data : null
+  } catch {
+    return null
+  }
+}
+
 function rowToLobbyStudent(
   row: typeof students.$inferSelect,
   answeredCount = 0
@@ -60,6 +74,7 @@ function rowToLobbyStudent(
     id: row.id,
     name: row.name,
     matricula: row.matricula,
+    avatar: parseAvatar(row.avatar),
     email: row.email ?? null,
     joinedAt: row.joinedAt.getTime(),
     lastSeenAt: row.lastSeenAt.getTime(),
@@ -392,10 +407,13 @@ export function findActiveSessionPublic(db: Db): SessionPublic | null {
       allowLateJoin: examSessions.allowLateJoin,
       scrambleQuestions: examSessions.scrambleQuestions,
       scrambleOptions: examSessions.scrambleOptions,
-      groupMode: examSessions.groupMode
+      groupMode: examSessions.groupMode,
+      teacherName: teachers.name,
+      teacherAvatar: teachers.avatar
     })
     .from(examSessions)
     .innerJoin(exams, eq(exams.id, examSessions.examId))
+    .innerJoin(teachers, eq(teachers.id, exams.ownerId))
     .where(inArray(examSessions.status, [...ACTIVE_STATUSES]))
     .orderBy(desc(examSessions.createdAt))
     .get()
@@ -408,7 +426,9 @@ export function findActiveSessionPublic(db: Db): SessionPublic | null {
     allowLateJoin: row.allowLateJoin,
     scrambleQuestions: !!row.scrambleQuestions,
     scrambleOptions: !!row.scrambleOptions,
-    groupMode: (row.groupMode ?? 'disabled') as 'disabled' | 'free' | 'teacher' | 'shuffle'
+    groupMode: (row.groupMode ?? 'disabled') as 'disabled' | 'free' | 'teacher' | 'shuffle',
+    teacherName: row.teacherName,
+    teacherAvatar: parseAvatar(row.teacherAvatar)
   }
 }
 
@@ -431,6 +451,7 @@ export function joinSession(db: Db, input: JoinInput): JoinResult {
   const matricula = input.matricula.trim()
   const name = input.name.trim()
   const email = input.email?.trim() ? input.email.trim() : null
+  const avatar = input.avatar ? JSON.stringify(input.avatar) : null
   const now = new Date()
 
   // If the same student already has a record (e.g. closed the app without
@@ -446,7 +467,7 @@ export function joinSession(db: Db, input: JoinInput): JoinResult {
     db.update(students)
       // Keep an e-mail the teacher may have already filled when the student
       // rejoins without providing one.
-      .set({ name, token, lastSeenAt: now, leftAt: null, email: email ?? existing.email })
+      .set({ name, token, lastSeenAt: now, leftAt: null, email: email ?? existing.email, avatar })
       .where(eq(students.id, existing.id))
       .run()
     return {
@@ -469,6 +490,7 @@ export function joinSession(db: Db, input: JoinInput): JoinResult {
       name,
       matricula,
       email,
+      avatar,
       token,
       joinedAt: now,
       lastSeenAt: now
@@ -517,6 +539,29 @@ export function listLobbyStudents(db: Db, sessionId: string): SessionLobbyStuden
   const answeredByStudent = new Map(answered.map((a) => [a.studentId, Number(a.n)]))
 
   return rows.map((r) => rowToLobbyStudent(r, answeredByStudent.get(r.id) ?? 0))
+}
+
+/** Slim roster for students (name + avatar only — no matrícula leaked to peers). */
+export function listRosterStudents(db: Db, sessionId: string): RosterStudent[] {
+  const rows = db
+    .select({ id: students.id, name: students.name, avatar: students.avatar })
+    .from(students)
+    .where(and(eq(students.sessionId, sessionId), isNull(students.leftAt)))
+    .orderBy(asc(students.joinedAt))
+    .all()
+  return rows.map((r) => ({ id: r.id, name: r.name, avatar: parseAvatar(r.avatar) }))
+}
+
+/** Update a student's avatar (from the waiting room). Returns the sessionId so
+    the caller can re-broadcast the roster, or null if the token is unknown. */
+export function updateStudentAvatar(db: Db, token: string, avatar: AvatarConfig): string | null {
+  const student = findStudentByToken(db, token)
+  if (!student) return null
+  db.update(students)
+    .set({ avatar: JSON.stringify(avatar), lastSeenAt: new Date() })
+    .where(eq(students.id, student.id))
+    .run()
+  return student.sessionId
 }
 
 export function findStudentByToken(
@@ -873,6 +918,7 @@ export function loadStudentAnswers(
     studentName: studentRow.name,
     studentMatricula: studentRow.matricula,
     studentEmail: studentRow.email ?? null,
+    studentAvatar: parseAvatar(studentRow.avatar),
     studentFeedback: studentRow.feedback ?? null,
     resultsSentAt: studentRow.resultsSentAt ? studentRow.resultsSentAt.getTime() : null,
     examTitle: sessionRow.examTitle,
