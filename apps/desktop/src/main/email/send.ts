@@ -18,7 +18,10 @@ function buildTransport(settings: EmailSettings | EmailSettingsInput): Transport
     host: settings.host,
     port: settings.port,
     secure: settings.secure,
-    auth: settings.username ? { user: settings.username, pass: settings.password } : undefined
+    auth: settings.username ? { user: settings.username, pass: settings.password } : undefined,
+    connectionTimeout: 15_000,
+    greetingTimeout: 10_000,
+    socketTimeout: 20_000
   })
 }
 
@@ -30,12 +33,14 @@ function toErrorMessage(err: unknown): string {
 /** Verify the SMTP connection + auth without sending anything. Powers the
     "Testar conexão" button so the teacher can validate before saving. */
 export async function verifyEmailSettings(settings: EmailSettingsInput): Promise<EmailTestResult> {
+  const transport = buildTransport(settings)
   try {
-    const transport = buildTransport(settings)
     await transport.verify()
     return { ok: true, error: null }
   } catch (err) {
     return { ok: false, error: toErrorMessage(err) }
+  } finally {
+    transport.close()
   }
 }
 
@@ -268,5 +273,6 @@ export async function sendResults(
     }
   }
 
+  transport.close()
   return results
 }
