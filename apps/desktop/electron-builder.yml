@@ -14,10 +14,11 @@ asarUnpack:
   # The Claude Agent SDK ships a native CLI binary that cannot execute from
   # inside the asar archive; unpack the SDK + its platform-specific package.
   - '**/node_modules/@anthropic-ai/claude-agent-sdk*/**'
-win:
-  executableName: frontend
+# Clean executable + artifact names. The scoped package name (@offlineclass/desktop)
+# is not a valid file-path token, so it cannot drive executableName / ${name}.
+executableName: offlineclass
 nsis:
-  artifactName: ${name}-${version}-setup.${ext}
+  artifactName: offlineclass-${version}-setup.${ext}
   shortcutName: ${productName}
   uninstallDisplayName: ${productName}
   createDesktopShortcut: always
@@ -30,16 +31,17 @@ mac:
     - NSDownloadsFolderUsageDescription: Application requests access to the user's Downloads folder.
   notarize: false
 dmg:
-  artifactName: ${name}-${version}.${ext}
+  artifactName: offlineclass-${version}.${ext}
 linux:
   target:
     - AppImage
-    - snap
     - deb
   maintainer: electronjs.org
   category: Utility
 appImage:
-  artifactName: ${name}-${version}.${ext}
+  artifactName: offlineclass-${version}.${ext}
+deb:
+  artifactName: offlineclass-${version}.${ext}
 npmRebuild: false
 publish:
   provider: github

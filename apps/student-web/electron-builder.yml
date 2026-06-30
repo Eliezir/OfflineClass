@@ -9,10 +9,11 @@ files:
   - '!{.eslintcache,eslint.config.js,.prettierignore,.prettierrc.yaml,dev-app-update.yml,CHANGELOG.md,README.md}'
   - '!{.env,.env.*,.npmrc,pnpm-lock.yaml}'
   - '!{tsconfig.json,tsconfig.node.json,tsconfig.app.json}'
-win:
-  executableName: offlineclass-student
+# Clean executable + artifact names. The scoped package name (@offlineclass/student-web)
+# is not a valid file-path token, so it cannot drive executableName / ${name}.
+executableName: offlineclass-student
 nsis:
-  artifactName: ${name}-${version}-setup.${ext}
+  artifactName: offlineclass-student-${version}-setup.${ext}
   shortcutName: ${productName}
   uninstallDisplayName: ${productName}
   createDesktopShortcut: always
@@ -20,7 +21,7 @@ mac:
   entitlementsInherit: build/entitlements.mac.plist
   notarize: false
 dmg:
-  artifactName: ${name}-${version}.${ext}
+  artifactName: offlineclass-student-${version}.${ext}
 linux:
   target:
     - AppImage
@@ -28,7 +29,9 @@ linux:
   maintainer: offlineclass.dev
   category: Education
 appImage:
-  artifactName: ${name}-${version}.${ext}
+  artifactName: offlineclass-student-${version}.${ext}
+deb:
+  artifactName: offlineclass-student-${version}.${ext}
 npmRebuild: false
 publish:
   provider: github
