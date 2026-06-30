@@ -28,6 +28,7 @@ import {
 import { Trans, useLingui } from '@lingui/react/macro'
 import type { ExamSummary, QuestionInput, QuestionKind } from '@offlineclass/shared'
 import { Button } from '@renderer/shared/ui/button'
+import { Breadcrumb } from '@renderer/shared/components/breadcrumb'
 import { EmptyState } from '@renderer/shared/ui/empty-state'
 import { Skeleton } from '@renderer/shared/ui/skeleton'
 import { notify } from '@renderer/shared/services/toast'
@@ -177,13 +178,9 @@ export function ExamBuilder({ examId }: { examId: string }): React.JSX.Element {
           style={dragRegion}
         >
           <div style={noDragRegion} className="w-fit">
-            <Link
-              to="/provas"
-              className="inline-flex items-center gap-1.5 text-sm font-semibold text-muted-foreground transition-colors hover:text-foreground"
-            >
-              <ArrowLeft className="size-4" />
-              <Trans>Provas</Trans>
-            </Link>
+            <Breadcrumb
+              items={[{ label: t`Provas`, to: '/provas' }, { label: exam.title }]}
+            />
           </div>
           <div className="mt-3 flex flex-wrap items-start justify-between gap-4">
             <div className="flex items-start gap-3">

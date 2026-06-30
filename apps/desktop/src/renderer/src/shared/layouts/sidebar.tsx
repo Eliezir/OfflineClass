@@ -9,6 +9,7 @@ import { Popover, PopoverContent, PopoverItem, PopoverTrigger } from '@renderer/
 import { cn } from '@renderer/shared/utils'
 import { WindowControls } from '@renderer/shared/layouts/window-controls'
 import { SidebarUser } from '@renderer/modules/auth/components/sidebar-user'
+import { useActiveSessionQuery } from '@renderer/modules/sessao/queries'
 import { NotificationsMenu } from './notifications-menu'
 
 type NavTo = '/home' | '/provas' | '/sessao' | '/resultados' | '/profile' | '/settings'
@@ -96,7 +97,15 @@ function SearchPopover(): React.JSX.Element {
   )
 }
 
-function NavRow({ item, active }: { item: NavItem; active: boolean }): React.JSX.Element {
+function NavRow({
+  item,
+  active,
+  trailing
+}: {
+  item: NavItem
+  active: boolean
+  trailing?: React.ReactNode
+}): React.JSX.Element {
   const { i18n } = useLingui()
   const rowClass = cn(
     'flex w-full items-center gap-3 rounded-[10px] px-2.5 py-2 text-sm font-bold',
@@ -112,12 +121,39 @@ function NavRow({ item, active }: { item: NavItem; active: boolean }): React.JSX
         <item.icon className="size-[18px]" />
       </span>
       <span className="truncate">{i18n._(item.label)}</span>
+      {trailing}
     </Link>
+  )
+}
+
+/**
+ * Pulsing live-session pip on the "Sessão" row. Amber while the session waits
+ * in the lobby, green once it's running. Hidden when there's no live session.
+ */
+function SessionDot(): React.JSX.Element | null {
+  const { t } = useLingui()
+  const { data: session } = useActiveSessionQuery()
+  const status = session?.status
+
+  if (status !== 'lobby' && status !== 'running') return null
+
+  const live = status === 'running'
+  const color = live ? 'bg-success' : 'bg-tertiary'
+
+  return (
+    <span className="relative ml-auto grid size-2.5 shrink-0 place-items-center">
+      <span className={cn('absolute size-2.5 animate-ping rounded-full opacity-60', color)} />
+      <span className={cn('relative size-2 rounded-full', color)} />
+      <span className="sr-only">{live ? t`Sessão ao vivo` : t`Sessão no lobby`}</span>
+    </span>
   )
 }
 
 export function Sidebar(): React.JSX.Element {
   const pathname = useRouterState({ select: (s) => s.location.pathname })
+
+  // A section stays highlighted on its sub-pages (e.g. /provas/123 keeps "Provas" lit).
+  const isActive = (to: NavTo): boolean => pathname === to || pathname.startsWith(`${to}/`)
 
   return (
     <aside
@@ -157,9 +193,14 @@ export function Sidebar(): React.JSX.Element {
         style={noDragRegion}
       >
         {primaryNav.map((item) => (
-          <NavRow key={item.to} item={item} active={item.to === pathname} />
+          <NavRow
+            key={item.to}
+            item={item}
+            active={isActive(item.to)}
+            trailing={item.to === '/sessao' ? <SessionDot /> : undefined}
+          />
         ))}
-        <NavRow item={settingsNav} active={pathname === '/settings'} />
+        <NavRow item={settingsNav} active={isActive('/settings')} />
       </nav>
 
       <div className="mt-2 border-t border-border px-3 py-2" style={noDragRegion}>
