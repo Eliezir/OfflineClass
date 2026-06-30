@@ -6,13 +6,14 @@ import {
   type UseQueryResult
 } from '@tanstack/react-query'
 import type {
+  AvatarConfig,
   ChangePasswordInput,
   LoginInput,
   RegisterInput,
   Teacher,
   UpdateProfileInput
 } from '@offlineclass/shared'
-import { changePassword, getMe, login, logout, register, updateProfile } from './api'
+import { changePassword, getMe, login, logout, register, updateAvatar, updateProfile } from './api'
 
 export const authKeys = {
   me: ['auth', 'me'] as const
@@ -51,6 +52,14 @@ export function useUpdateProfile(): UseMutationResult<Teacher, Error, UpdateProf
   const qc = useQueryClient()
   return useMutation({
     mutationFn: updateProfile,
+    onSuccess: (teacher) => qc.setQueryData(authKeys.me, teacher)
+  })
+}
+
+export function useUpdateAvatar(): UseMutationResult<Teacher, Error, AvatarConfig | null> {
+  const qc = useQueryClient()
+  return useMutation({
+    mutationFn: updateAvatar,
     onSuccess: (teacher) => qc.setQueryData(authKeys.me, teacher)
   })
 }

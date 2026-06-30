@@ -1,4 +1,5 @@
 import type {
+  AvatarConfig,
   ChangePasswordInput,
   LoginInput,
   RegisterInput,
@@ -35,6 +36,12 @@ export async function updateProfile(input: UpdateProfileInput): Promise<Teacher>
   const current = await getMe()
   if (!current) throw new Error('Sessão expirada. Entre novamente.')
   return { ...current, ...input }
+}
+
+/* The avatar, unlike name/email, is persisted in the backend: the LAN server
+   reads it from the DB to show students whose room they joined. */
+export function updateAvatar(avatar: AvatarConfig | null): Promise<Teacher> {
+  return window.api.auth.updateAvatar(avatar)
 }
 
 export async function changePassword(_input: ChangePasswordInput): Promise<null> {
