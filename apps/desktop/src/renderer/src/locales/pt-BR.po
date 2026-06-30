@@ -34,6 +34,9 @@ msgstr "{unread, plural, one {# nova} other {# novas}}"
 msgid "{untitled} questões ainda estão com o título padrão."
 msgstr "{untitled} questões ainda estão com o título padrão."
 
+msgid "•••••••• (salva — deixe em branco para manter)"
+msgstr "•••••••• (salva — deixe em branco para manter)"
+
 msgid "1 questão ainda está com o título padrão."
 msgstr "1 questão ainda está com o título padrão."
 
