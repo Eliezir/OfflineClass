@@ -1,6 +1,9 @@
 @import 'tailwindcss';
 @import 'tw-animate-css';
 @import '@fontsource-variable/nunito';
+/* High-legibility face for the "Fonte legível" accessibility option. */
+@import '@fontsource/atkinson-hyperlegible/400.css';
+@import '@fontsource/atkinson-hyperlegible/700.css';
 
 /* The shared avatar builder lives in packages/avatar; register it so Tailwind
    generates the utility classes its components use (auto-detection skips it
@@ -123,6 +126,9 @@
   /* ─── Misc ─────────────────────────────────────────────────────────── */
   --tracking-normal: -0.01em;
   --spacing: 0.25rem;
+
+  /* Accessibility: text-size multiplier applied to the exam content. */
+  --font-scale: 1;
 }
 
 .dark {
@@ -199,6 +205,49 @@
   --shadow-lg:
     0 2px 4px hsl(0 0% 0% / 0.4), 0 24px 48px -12px hsl(0 0% 0% / 0.65),
     0 8px 16px -4px hsl(0 0% 0% / 0.45);
+}
+
+/* ─── Accessibility variants (toggled on <html> by the ThemeProvider) ─────
+   .contrast      → stronger borders + text, for low-vision readability
+   .legible       → swap Nunito for Atkinson Hyperlegible
+   .reduce-motion → kill animations/transitions (also honors the OS setting) */
+.contrast {
+  --border: oklch(0.5 0.02 262);
+  --input-border: oklch(0.45 0.02 262);
+  --muted-foreground: oklch(0.36 0.02 262);
+  --foreground: oklch(0.18 0.02 262);
+  --ring: oklch(0.45 0.2 270);
+}
+.dark.contrast {
+  --border: oklch(0.72 0.03 262);
+  --input-border: oklch(0.72 0.03 262);
+  --muted-foreground: oklch(0.92 0.02 258);
+  --foreground: oklch(1 0 0);
+  --ring: oklch(0.82 0.16 270);
+}
+
+.legible {
+  --font-sans: 'Atkinson Hyperlegible', 'Nunito Variable', 'Nunito', system-ui, sans-serif;
+  --font-display: 'Atkinson Hyperlegible', 'Nunito Variable', 'Nunito', system-ui, sans-serif;
+}
+
+.reduce-motion *,
+.reduce-motion *::before,
+.reduce-motion *::after {
+  animation-duration: 0.001ms !important;
+  animation-iteration-count: 1 !important;
+  transition-duration: 0.001ms !important;
+  scroll-behavior: auto !important;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.001ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.001ms !important;
+  }
 }
 
 @theme inline {

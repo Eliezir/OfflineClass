@@ -9,7 +9,7 @@ import Collaboration from '@tiptap/extension-collaboration'
 import CollaborationCursor from '@tiptap/extension-collaboration-cursor'
 import { Awareness } from 'y-protocols/awareness'
 import * as awarenessProtocol from 'y-protocols/awareness'
-import { Users, Bold, Italic, Code, RefreshCw, ArrowLeft, AlertCircle, Loader2 } from 'lucide-react'
+import { Users, Bold, Italic, Code, RefreshCw, ArrowLeft, AlertCircle, Loader2, Settings } from 'lucide-react'
 
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
@@ -21,14 +21,14 @@ import {
   DialogHeader,
   DialogTitle
 } from '@/components/ui/dialog'
-import { Label } from '@/components/ui/label'
-import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group'
 import { Textarea } from '@/components/ui/textarea'
 import { createApi } from '../lib/api'
 import { clearToken, loadToken } from '../lib/session'
 import { notify } from '../lib/toast'
 import { useServerUrl } from '../lib/serverContext'
 import { connectStudentWs } from '../lib/ws'
+import { SettingsDialog } from '@/components/SettingsDialog'
+import { OptionRow } from '@/components/OptionRow'
 
 function seedRandom(seedStr: string) {
   let h = 0
@@ -98,6 +98,7 @@ export default function TestRoute(): React.JSX.Element {
   const [groupSubmitAwaitingNames, setGroupSubmitAwaitingNames] = useState<string[]>([])
   const [groupSubmitInitiatorName, setGroupSubmitInitiatorName] = useState<string>('')
   const [showSubmitDialog, setShowSubmitDialog] = useState(false)
+  const [settingsOpen, setSettingsOpen] = useState(false)
   const connRef = useRef<ReturnType<typeof connectStudentWs> | null>(null)
 
   const [ydoc, setYdoc] = useState<Y.Doc | null>(null)
@@ -480,24 +481,58 @@ export default function TestRoute(): React.JSX.Element {
             )}
             <h1 className="text-base font-semibold">{exam.examTitle}</h1>
           </div>
-          <div className="text-right">
-            <p className="text-muted-foreground text-xs">
-              {answeredCount} / {exam.questions.length} respondidas
-            </p>
-            <p
-              className={`font-mono text-sm transition-colors duration-300 ${
-                remainingSeconds !== null && remainingSeconds < 300
-                  ? 'text-destructive font-bold animate-pulse'
-                  : ''
-              }`}
+          <div className="flex shrink-0 items-center gap-2.5">
+            <div className="text-right">
+              <p className="text-muted-foreground text-xs">
+                {answeredCount} / {exam.questions.length} respondidas
+              </p>
+              <p
+                className={`font-mono text-sm transition-colors duration-300 ${
+                  remainingSeconds !== null && remainingSeconds < 300
+                    ? 'text-destructive font-bold animate-pulse'
+                    : ''
+                }`}
+              >
+                {remainingSeconds !== null ? formatTime(remainingSeconds) : '--:--'}
+              </p>
+            </div>
+            <button
+              type="button"
+              onClick={() => setSettingsOpen(true)}
+              aria-label="Exibição e acessibilidade"
+              title="Exibição e acessibilidade"
+              className="grid size-10 shrink-0 cursor-pointer place-items-center rounded-[12px] border border-border bg-card text-muted-foreground outline-none transition-colors duration-150 hover:border-primary hover:text-primary focus-visible:ring-[3px] focus-visible:ring-ring/25"
             >
-              {remainingSeconds !== null ? formatTime(remainingSeconds) : '--:--'}
-            </p>
+              <Settings className="size-5" />
+            </button>
+          </div>
+        </div>
+
+        {/* Progress bar */}
+        <div className="mx-auto max-w-2xl px-4 pb-2">
+          <div
+            className="bg-muted h-1 w-full overflow-hidden rounded-full"
+            role="progressbar"
+            aria-valuemin={0}
+            aria-valuemax={exam.questions.length}
+            aria-valuenow={answeredCount}
+            aria-label="Progresso da prova"
+          >
+            <div
+              className="bg-primary h-full rounded-full transition-[width] duration-300"
+              style={{
+                width: `${exam.questions.length ? (answeredCount / exam.questions.length) * 100 : 0}%`
+              }}
+            />
           </div>
         </div>
       </div>
+      <SettingsDialog open={settingsOpen} onOpenChange={setSettingsOpen} />
 
-      <ol className="mx-auto flex max-w-2xl flex-col gap-4 p-4">
+      <ol
+        className="mx-auto flex max-w-2xl flex-col gap-4 px-3 py-4 sm:px-4"
+        style={{ fontSize: 'calc(1rem * var(--font-scale))' }}
+      >
         {scrambledQuestions.map((q, idx) => (
           <QuestionCard
             key={q.id}
@@ -660,10 +695,10 @@ function QuestionCard({
   return (
     <Card>
       <CardHeader>
-        <CardTitle className="text-base">
+        <CardTitle className="text-[1.05em] leading-snug">
           {index}. {question.prompt}
         </CardTitle>
-        <CardDescription>
+        <CardDescription className="text-[0.8em]">
           {question.kind === 'mcq'
             ? 'Múltipla escolha'
             : question.kind === 'code'
@@ -685,56 +720,40 @@ function QuestionCard({
         )}
 
         {question.kind === 'mcq' ? (
-          <RadioGroup value={value} onValueChange={onChange} className="space-y-2">
+          <div role="radiogroup" className="flex flex-col gap-2">
             {scrambledOptions.map((opt) => (
-              <div key={opt.id} className="flex items-center gap-2">
-                <RadioGroupItem value={opt.id} id={`q-${question.id}-${opt.id}`} />
-                <Label htmlFor={`q-${question.id}-${opt.id}`} className="cursor-pointer">
-                  {opt.text}
-                </Label>
-              </div>
+              <OptionRow
+                key={opt.id}
+                variant="single"
+                checked={value === opt.id}
+                onToggle={() => onChange(opt.id)}
+              >
+                {opt.text}
+              </OptionRow>
             ))}
-          </RadioGroup>
+          </div>
         ) : question.kind === 'truefalse' ? (
-          <RadioGroup value={value} onValueChange={onChange} className="space-y-2">
-            <div className="flex items-center gap-2">
-              <RadioGroupItem value="true" id={`q-${question.id}-true`} />
-              <Label htmlFor={`q-${question.id}-true`} className="cursor-pointer">
-                Verdadeiro
-              </Label>
-            </div>
-            <div className="flex items-center gap-2">
-              <RadioGroupItem value="false" id={`q-${question.id}-false`} />
-              <Label htmlFor={`q-${question.id}-false`} className="cursor-pointer">
-                Falso
-              </Label>
-            </div>
-          </RadioGroup>
+          <div role="radiogroup" className="flex flex-col gap-2">
+            <OptionRow variant="single" checked={value === 'true'} onToggle={() => onChange('true')}>
+              Verdadeiro
+            </OptionRow>
+            <OptionRow variant="single" checked={value === 'false'} onToggle={() => onChange('false')}>
+              Falso
+            </OptionRow>
+          </div>
         ) : question.kind === 'multi' ? (
-          <div className="space-y-2">
+          <div className="flex flex-col gap-2">
             {scrambledOptions.map((opt) => {
               const selectedIds = new Set(value ? value.split(',') : [])
-              const handleCheckedChange = (checked: boolean) => {
-                if (checked) {
-                  selectedIds.add(opt.id)
-                } else {
-                  selectedIds.delete(opt.id)
-                }
+              const toggle = (): void => {
+                if (selectedIds.has(opt.id)) selectedIds.delete(opt.id)
+                else selectedIds.add(opt.id)
                 onChange(Array.from(selectedIds).join(','))
               }
               return (
-                <div key={opt.id} className="flex items-center gap-2">
-                  <input
-                    type="checkbox"
-                    id={`q-${question.id}-${opt.id}`}
-                    checked={selectedIds.has(opt.id)}
-                    onChange={(e) => handleCheckedChange(e.target.checked)}
-                    className="h-4 w-4 rounded border-gray-300 text-primary focus:ring-primary bg-background border"
-                  />
-                  <Label htmlFor={`q-${question.id}-${opt.id}`} className="cursor-pointer">
-                    {opt.text}
-                  </Label>
-                </div>
+                <OptionRow key={opt.id} variant="multi" checked={selectedIds.has(opt.id)} onToggle={toggle}>
+                  {opt.text}
+                </OptionRow>
               )
             })}
           </div>
@@ -754,7 +773,7 @@ function QuestionCard({
             value={value}
             onChange={(e) => onChange(e.target.value)}
             rows={question.kind === 'code' ? 10 : 5}
-            className={question.kind === 'code' ? 'font-mono text-xs whitespace-pre bg-background border rounded-md p-3' : ''}
+            className={question.kind === 'code' ? 'font-mono text-xs whitespace-pre bg-background border rounded-md p-3' : 'text-[0.95em]'}
             spellCheck={question.kind !== 'code'}
             placeholder={question.kind === 'code' ? 'Escreva seu código aqui…' : 'Escreva sua resposta…'}
           />
