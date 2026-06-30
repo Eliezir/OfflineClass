@@ -226,7 +226,7 @@ export async function startServer(port: number, deps: ServerDeps): Promise<Serve
       )
     }
     try {
-      saveAnswer(db, student.id, parsed.data.questionId, parsed.data.value)
+      saveAnswer(db, student.id, parsed.data.questionId, parsed.data.value, student.id)
       broadcastLobbyUpdate(db, rooms, student.sessionId)
 
       // Also reflect the answer in the group's Y.Doc so the teacher monitor
@@ -239,8 +239,14 @@ export async function startServer(port: number, deps: ServerDeps): Promise<Serve
       if (memberRow?.groupId) {
         try {
           const doc = yjsManager.getOrCreateDoc(db, memberRow.groupId)
+          const payloadStr = JSON.stringify({
+            value: parsed.data.value,
+            updatedBy: student.id,
+            updatedByName: student.name,
+            updatedAt: Date.now()
+          })
           doc.transact(() => {
-            doc.getMap<string>('answers').set(parsed.data.questionId, parsed.data.value)
+            doc.getMap<string>('answers').set(parsed.data.questionId, payloadStr)
           }, 'rest-api')
           console.log(`[/api/answers] Updated yjsManager for group=${memberRow.groupId} q=${parsed.data.questionId}`)
         } catch (err) {
@@ -508,7 +514,7 @@ export async function startServer(port: number, deps: ServerDeps): Promise<Serve
 
       type Auth =
         | { kind: 'teacher'; sessionId: string; groupId?: string | null }
-        | { kind: 'student'; studentId: string; sessionId: string; groupId: string | null }
+        | { kind: 'student'; studentId: string; studentName: string; sessionId: string; groupId: string | null }
       let auth: Auth | null = null
 
       if (role === 'teacher' && sessionIdParam) {
@@ -553,6 +559,7 @@ export async function startServer(port: number, deps: ServerDeps): Promise<Serve
           auth = {
             kind: 'student',
             studentId: student.id,
+            studentName: student.name,
             sessionId: student.sessionId,
             groupId
           }
@@ -599,9 +606,10 @@ export async function startServer(port: number, deps: ServerDeps): Promise<Serve
         },
         onMessage: (event, ws) => {
           if (!auth) return
+          const sub = rooms.getSubscription(ws)
+          const groupId = sub?.groupId ?? (auth.kind === 'student' ? auth.groupId : null)
+
           if (typeof event.data !== 'string') {
-            const sub = rooms.getSubscription(ws)
-            const groupId = sub?.groupId ?? auth.groupId
             if (groupId) {
               const data = event.data instanceof Uint8Array
                 ? event.data
@@ -648,6 +656,10 @@ export async function startServer(port: number, deps: ServerDeps): Promise<Serve
                 payload.set(state, 1)
                 ws.send(payload)
                 console.log(`[WS Main Server] Initial document state sent to teacher for group=${msg.groupId}. State size=${state.length} bytes`)
+              } else if (msg.type === 'group.submit.request' && auth.kind === 'student' && groupId) {
+                rooms.handleGroupSubmitRequest(db, groupId, auth.studentId, auth.studentName)
+              } else if (msg.type === 'group.submit.confirmResponse' && auth.kind === 'student' && groupId) {
+                rooms.handleGroupSubmitResponse(db, groupId, auth.studentId, auth.studentName, msg.confirm)
               }
             } catch (err) {
               console.error('[WS Main Server] Failed to parse text message:', err)

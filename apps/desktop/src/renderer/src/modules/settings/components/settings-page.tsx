@@ -1,6 +1,7 @@
 import { Trans } from '@lingui/react/macro'
 import { PageHeader } from '@renderer/shared/components/page-header'
 import { AppearanceSection } from './appearance-section'
+import { EmailSection } from './email-section'
 import { GeneralSection } from './general-section'
 import { LanguageSection } from './language-section'
 import { NotificationsSection } from './notifications-section'
@@ -18,6 +19,9 @@ export function SettingsPage(): React.JSX.Element {
         <LanguageSection />
         <div className="@2xl:col-span-2">
           <NotificationsSection />
+        </div>
+        <div className="@2xl:col-span-2">
+          <EmailSection />
         </div>
         <div className="@2xl:col-span-2">
           <GeneralSection />

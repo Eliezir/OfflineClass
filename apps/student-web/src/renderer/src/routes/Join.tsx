@@ -100,7 +100,7 @@ export default function JoinRoute(): React.JSX.Element {
     const input: JoinInput = {
       name: name.trim(),
       matricula: matricula.trim(),
-      email: email.trim() || undefined,
+      email: email.trim(),
       avatar
     }
     const parsed = JoinInput.safeParse(input)
@@ -147,7 +147,8 @@ export default function JoinRoute(): React.JSX.Element {
                 <Loader2 className="text-muted-foreground size-5 animate-spin" />
                 <p className="text-sm font-medium">Aguardando o professor abrir a sala…</p>
                 <p className="text-muted-foreground text-xs leading-relaxed">
-                  Esta tela atualiza automaticamente a cada 3 segundos.
+                  O professor ainda não iniciou uma sessão. Esta tela atualiza automaticamente a
+                  cada 3 segundos.
                 </p>
               </div>
               <Button variant="secondary" className="w-full" onClick={handleRefresh}>
@@ -281,12 +282,10 @@ export default function JoinRoute(): React.JSX.Element {
                     <Input id="name" value={name} onChange={(e) => setName(e.target.value)} placeholder="Seu nome" autoFocus />
                   </div>
                   <div className="space-y-2">
-                    <Label htmlFor="email">
-                      E-mail <span className="text-muted-foreground">(opcional)</span>
-                    </Label>
+                    <Label htmlFor="email">E-mail</Label>
                     <Input id="email" type="email" value={email} onChange={(e) => setEmail(e.target.value)} placeholder="seu@email.com" />
                     <p className="text-muted-foreground text-xs">
-                      O professor pode usar para enviar seu resultado. Fica salvo neste computador.
+                      O professor usa para enviar seu resultado. Fica salvo neste computador.
                     </p>
                   </div>
                   {error && <p className="text-destructive text-sm font-medium">{error}</p>}

@@ -13,6 +13,8 @@ export type GradedAnswer = {
   points: number
   /** Points awarded. MCQ: points or 0. Essay: teacher grade, or null = pending. */
   awarded: number | null
+  /** Free-text feedback the teacher left on this answer; null when none. */
+  feedback: string | null
 }
 
 export type StudentResult = {
@@ -20,6 +22,12 @@ export type StudentResult = {
   name: string
   matricula: string
   avatar: AvatarConfig | null
+  /** Student e-mail for sending grades; null when not provided/filled yet. */
+  email: string | null
+  /** Teacher's overall remark on this student's exam; null when none. */
+  feedback: string | null
+  /** When the teacher last e-mailed this student their results; null = never. */
+  resultsSentAt: number | null
   groupName: string | null
   submittedAt: number | null
   joinedAt: number
@@ -33,6 +41,7 @@ export type StudentResult = {
 export type SessionResults = {
   sessionId: string
   examTitle: string
+  examSubject: string | null
   endedAt: number | null
   students: StudentResult[]
 }

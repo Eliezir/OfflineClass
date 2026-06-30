@@ -88,6 +88,8 @@ export const examSessions = sqliteTable('exam_sessions', {
     .default('lobby'),
   durationMinutes: integer('duration_minutes').notNull(),
   allowLateJoin: integer('allow_late_join', { mode: 'boolean' }).notNull().default(false),
+  scrambleQuestions: integer('scramble_questions', { mode: 'boolean' }).notNull().default(false),
+  scrambleOptions: integer('scramble_options', { mode: 'boolean' }).notNull().default(false),
   groupMode: text('group_mode', { enum: ['disabled', 'free', 'teacher', 'shuffle'] })
     .notNull()
     .default('disabled'),
@@ -108,9 +110,14 @@ export const students = sqliteTable(
       .references(() => examSessions.id, { onDelete: 'cascade' }),
     name: text('name').notNull(),
     matricula: text('matricula').notNull(),
-    // Optional contact + avatar. `avatar` holds a JSON-serialized AvatarConfig.
+    // Optional — student may provide email on join; teacher can fill/edit it on
+    // the results screen to e-mail the grade. `avatar` holds a JSON AvatarConfig.
     email: text('email'),
     avatar: text('avatar'),
+    // Overall remark the teacher leaves on this student's exam.
+    feedback: text('feedback'),
+    // When the teacher last e-mailed this student their results; null = never.
+    resultsSentAt: timestamp('results_sent_at'),
     token: text('token').notNull().unique(),
     joinedAt: timestamp('joined_at')
       .notNull()
@@ -137,9 +144,12 @@ export const answers = sqliteTable(
       .notNull()
       .references(() => questions.id, { onDelete: 'cascade' }),
     value: text('value').notNull(),
+    updatedBy: text('updated_by'),
     // Auto-set to 1.0/0.0 on MCQ saves; remains null for essays until the
     // teacher grades them via sessions.gradeAnswer.
     score: real('score'),
+    // Free-text feedback the teacher leaves on this answer during correction.
+    feedback: text('feedback'),
     updatedAt: timestamp('updated_at')
       .notNull()
       .default(sql`(unixepoch() * 1000)`)
@@ -148,6 +158,25 @@ export const answers = sqliteTable(
     studentQuestionUnique: unique('answers_student_question_unique').on(t.studentId, t.questionId)
   })
 )
+
+// SMTP config for e-mailing grades after the exam. One row per teacher; the
+// teacher's id is the primary key so saving upserts. Optional feature — empty
+// until the teacher fills it under Settings → E-mail.
+export const emailSettings = sqliteTable('email_settings', {
+  ownerId: text('owner_id')
+    .primaryKey()
+    .references(() => teachers.id, { onDelete: 'cascade' }),
+  host: text('host').notNull(),
+  port: integer('port').notNull(),
+  secure: integer('secure', { mode: 'boolean' }).notNull().default(true),
+  username: text('username').notNull().default(''),
+  password: text('password').notNull().default(''),
+  fromName: text('from_name').notNull(),
+  fromEmail: text('from_email').notNull(),
+  updatedAt: timestamp('updated_at')
+    .notNull()
+    .default(sql`(unixepoch() * 1000)`)
+})
 
 export const groups = sqliteTable('groups', {
   id: text('id').primaryKey(),
@@ -191,4 +220,3 @@ export const groupYjsSnapshots = sqliteTable('group_yjs_snapshots', {
     .notNull()
     .default(sql`(unixepoch() * 1000)`)
 })
-

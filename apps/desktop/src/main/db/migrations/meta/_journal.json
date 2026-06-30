@@ -54,15 +54,29 @@
     {
       "idx": 7,
       "version": "6",
-      "when": 1782417121881,
-      "tag": "0007_lumpy_manta",
+      "when": 1782667495459,
+      "tag": "0007_bored_captain_cross",
       "breakpoints": true
     },
     {
       "idx": 8,
       "version": "6",
-      "when": 1782851942291,
-      "tag": "0008_loud_skin",
+      "when": 1782670473121,
+      "tag": "0008_magenta_madelyne_pryor",
+      "breakpoints": true
+    },
+    {
+      "idx": 9,
+      "version": "6",
+      "when": 1782852788127,
+      "tag": "0009_aromatic_zuras",
+      "breakpoints": true
+    },
+    {
+      "idx": 10,
+      "version": "6",
+      "when": 1782853627695,
+      "tag": "0010_windy_echo",
       "breakpoints": true
     }
   ]

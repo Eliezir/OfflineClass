@@ -1,1 +1,0 @@
-ALTER TABLE `teachers` ADD `avatar` text;

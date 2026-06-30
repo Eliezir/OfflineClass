@@ -1,8 +1,9 @@
 import { eq } from 'drizzle-orm'
-import { groupMembers, groups, examSessions } from '../db/schema'
+import { groupMembers, groups, examSessions, students } from '../db/schema'
 import type { WSContext } from 'hono/ws'
 import type { WsServerEvent } from '@offlineclass/shared'
 import type { WebContents } from 'electron'
+import { submitStudent } from './store'
 
 export interface Subscription {
   ws: WSContext
@@ -20,6 +21,7 @@ export class Rooms {
   private subs = new Map<WSContext, Subscription>()
   // groupId -> WebContents subscribed to awareness updates via IPC
   private awarenessIpcSubs = new Map<string, Set<WebContents>>()
+  private pendingSubmits = new Map<string, { initiatorId: string; confirmedStudentIds: Set<string> }>()
 
   getSubscription(ws: WSContext): Subscription | undefined {
     return this.subs.get(ws)
@@ -175,5 +177,146 @@ export class Rooms {
   toAll(sessionId: string, event: WsServerEvent): void {
     const json = JSON.stringify(event)
     this.emit((s) => s.sessionId === sessionId, json)
+  }
+
+  getOnlineGroupMembers(groupId: string): Subscription[] {
+    const list: Subscription[] = []
+    for (const sub of this.subs.values()) {
+      if (sub.role === 'student' && sub.groupId === groupId && sub.studentId) {
+        list.push(sub)
+      }
+    }
+    return list
+  }
+
+  getOnlineGroupStudentIds(db: any, groupId: string): { id: string; name: string }[] {
+    // 1. Get all group members from DB
+    const membersDb = db
+      .select({
+        id: students.id,
+        name: students.name,
+        lastSeenAt: students.lastSeenAt
+      })
+      .from(groupMembers)
+      .innerJoin(students, eq(students.id, groupMembers.studentId))
+      .where(eq(groupMembers.groupId, groupId))
+      .all()
+
+    // 2. Check active WS subscriptions
+    const activeWsStudentIds = new Set<string>()
+    for (const sub of this.subs.values()) {
+      if (sub.role === 'student' && sub.studentId) {
+        activeWsStudentIds.add(sub.studentId)
+      }
+    }
+
+    const now = Date.now()
+    const list: { id: string; name: string }[] = []
+
+    for (const m of membersDb) {
+      const hasWs = activeWsStudentIds.has(m.id)
+      const isRecent = m.lastSeenAt && (now - m.lastSeenAt.getTime()) < 20000
+      if (hasWs || isRecent) {
+        list.push({ id: m.id, name: m.name })
+      }
+    }
+    return list
+  }
+
+  sendToStudent(studentId: string, event: any): void {
+    const json = JSON.stringify(event)
+    for (const sub of this.subs.values()) {
+      if (sub.role === 'student' && sub.studentId === studentId) {
+        try {
+          sub.ws.send(json)
+        } catch {
+          // ignore
+        }
+      }
+    }
+  }
+
+  broadcastToGroup(groupId: string, event: any): void {
+    const json = JSON.stringify(event)
+    for (const sub of this.subs.values()) {
+      if (sub.groupId === groupId) {
+        try {
+          sub.ws.send(json)
+        } catch {
+          // ignore
+        }
+      }
+    }
+  }
+
+  handleGroupSubmitRequest(db: any, groupId: string, studentId: string, studentName: string): void {
+    const onlineStudents = this.getOnlineGroupStudentIds(db, groupId)
+    const studentIds = onlineStudents.map((s) => s.id)
+
+    if (studentIds.length <= 1) {
+      submitStudent(db, studentId)
+      this.broadcastToGroup(groupId, { type: 'group.submit.success' })
+      return
+    }
+
+    this.pendingSubmits.set(groupId, {
+      initiatorId: studentId,
+      confirmedStudentIds: new Set([studentId])
+    })
+
+    const studentNameMap = new Map(onlineStudents.map((s) => [s.id, s.name]))
+    const awaitingIds = studentIds.filter(id => id !== studentId)
+    const awaitingNames = awaitingIds.map(id => studentNameMap.get(id) || 'Estudante')
+
+    this.sendToStudent(studentId, {
+      type: 'group.submit.waiting',
+      awaitingNames
+    })
+
+    const initiatorName = studentNameMap.get(studentId) || studentName
+    for (const id of awaitingIds) {
+      this.sendToStudent(id, {
+        type: 'group.submit.confirmPrompt',
+        initiatorName
+      })
+    }
+  }
+
+  handleGroupSubmitResponse(db: any, groupId: string, studentId: string, studentName: string, confirm: boolean): void {
+    const pending = this.pendingSubmits.get(groupId)
+    if (!pending) return
+
+    if (!confirm) {
+      this.pendingSubmits.delete(groupId)
+      this.broadcastToGroup(groupId, {
+        type: 'group.submit.cancelled',
+        rejecterName: studentName
+      })
+      return
+    }
+
+    pending.confirmedStudentIds.add(studentId)
+
+    const onlineStudents = this.getOnlineGroupStudentIds(db, groupId)
+    const onlineStudentIds = onlineStudents.map((s) => s.id)
+
+    const allConfirmed = onlineStudentIds.every(id => pending.confirmedStudentIds.has(id))
+
+    if (allConfirmed) {
+      this.pendingSubmits.delete(groupId)
+      submitStudent(db, studentId)
+      this.broadcastToGroup(groupId, {
+        type: 'group.submit.success'
+      })
+    } else {
+      const awaitingIds = onlineStudentIds.filter(id => !pending.confirmedStudentIds.has(id))
+      const studentNameMap = new Map(onlineStudents.map((s) => [s.id, s.name]))
+      const awaitingNames = awaitingIds.map(id => studentNameMap.get(id) || 'Estudante')
+
+      this.broadcastToGroup(groupId, {
+        type: 'group.submit.waiting',
+        awaitingNames
+      })
+    }
   }
 }

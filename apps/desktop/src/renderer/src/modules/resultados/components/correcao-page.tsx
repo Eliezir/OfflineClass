@@ -7,6 +7,8 @@ import {
   Download,
   Loader2,
   LogOut,
+  Mail,
+  MailCheck,
   Percent,
   Play,
   Printer,
@@ -23,9 +25,16 @@ import { EmptyState } from '@renderer/shared/ui/empty-state'
 import { formatRelativeTime } from '@renderer/shared/utils/format'
 import { SessionStat } from '@renderer/modules/sessao/components/session-stat'
 import { StudentAvatar } from '@renderer/modules/sessao/components/student-avatar'
-import { useGradeAnswer, useSessionResultsQuery } from '../queries'
+import {
+  useCommentAnswer,
+  useCommentStudent,
+  useGradeAnswer,
+  useSessionResultsQuery
+} from '../queries'
 import { applyGrades, classAverage } from '../scoring'
+import { EmailDialog } from './email-dialog'
 import { GradedAnswerRow } from './graded-answer-row'
+import { StudentRemark } from './student-remark'
 import type { SessionResults, StudentResult } from '../types'
 
 function formatDuration(ms: number): string {
@@ -196,6 +205,8 @@ export function CorrecaoPage({ sessionId }: CorrecaoPageProps): React.JSX.Elemen
   const { t } = useLingui()
   const query = useSessionResultsQuery(sessionId)
   const grade = useGradeAnswer()
+  const comment = useCommentAnswer(sessionId)
+  const remark = useCommentStudent(sessionId)
 
   const source = query.data ?? null
 
@@ -203,11 +214,20 @@ export function CorrecaoPage({ sessionId }: CorrecaoPageProps): React.JSX.Elemen
   const results = useMemo(() => (source ? applyGrades(source, grades) : null), [source, grades])
 
   const [expandedId, setExpandedId] = useState<string | null>(null)
+  const [emailOpen, setEmailOpen] = useState(false)
   const students = results?.students ?? []
 
   function handleGrade(studentId: string, questionId: string, score: number): void {
     setGrades((g) => ({ ...g, [`${studentId}:${questionId}`]: score }))
     grade.mutate({ sessionId, studentId, questionId, score })
+  }
+
+  function handleComment(studentId: string, questionId: string, text: string): Promise<unknown> {
+    return comment.mutateAsync({ studentId, questionId, comment: text })
+  }
+
+  function handleRemark(studentId: string, text: string): Promise<unknown> {
+    return remark.mutateAsync({ studentId, comment: text })
   }
 
   const loading = query.isLoading
@@ -249,6 +269,10 @@ export function CorrecaoPage({ sessionId }: CorrecaoPageProps): React.JSX.Elemen
             <Button variant="outline" size="sm" onClick={() => downloadPdf(results)}>
               <Printer className="size-3.5" />
               <Trans>Exportar PDF</Trans>
+            </Button>
+            <Button size="sm" onClick={() => setEmailOpen(true)}>
+              <Mail className="size-3.5" />
+              <Trans>Enviar notas por e-mail</Trans>
             </Button>
           </div>
         )}
@@ -305,13 +329,28 @@ export function CorrecaoPage({ sessionId }: CorrecaoPageProps): React.JSX.Elemen
                   >
                     <StudentAvatar name={student.name} avatar={student.avatar} />
                     <div className="min-w-0 flex-1">
-                      <div className="truncate text-sm font-bold">{student.name}</div>
-                      <div className="text-xs font-semibold text-muted-foreground flex items-center gap-1.5 flex-wrap">
+                      <div className="flex items-center gap-2">
+                        <span className="truncate text-sm font-bold">{student.name}</span>
+                        {student.resultsSentAt && (
+                          <span
+                            title={t`Enviado em ${new Date(student.resultsSentAt).toLocaleString('pt-BR')}`}
+                            className="inline-flex shrink-0 items-center gap-1 rounded-full bg-success/10 px-2 py-0.5 text-[10px] font-bold text-success"
+                          >
+                            <MailCheck className="size-3" />
+                            <Trans>E-mail enviado</Trans>
+                          </span>
+                        )}
+                      </div>
+                      <div className="flex flex-wrap items-center gap-1.5 text-xs font-semibold text-muted-foreground">
                         <span>{student.matricula}</span>
                         {student.groupName && (
                           <>
-                            <span className="text-border/80" aria-hidden>•</span>
-                            <span className="text-primary font-bold text-[10px] bg-primary-soft/30 px-1.5 py-0.5 rounded-full">{student.groupName}</span>
+                            <span className="text-border/80" aria-hidden>
+                              •
+                            </span>
+                            <span className="rounded-full bg-primary-soft/30 px-1.5 py-0.5 text-[10px] font-bold text-primary">
+                              {student.groupName}
+                            </span>
                           </>
                         )}
                       </div>
@@ -403,9 +442,18 @@ export function CorrecaoPage({ sessionId }: CorrecaoPageProps): React.JSX.Elemen
                             onGrade={(score) =>
                               handleGrade(student.studentId, a.question.id, score)
                             }
+                            onComment={(text) =>
+                              handleComment(student.studentId, a.question.id, text)
+                            }
                           />
                         ))}
                       </div>
+
+                      {/* Overall remark (sent in the grade e-mail) */}
+                      <StudentRemark
+                        feedback={student.feedback}
+                        onSave={(text) => handleRemark(student.studentId, text)}
+                      />
                     </div>
                   )}
                 </div>
@@ -432,6 +480,17 @@ export function CorrecaoPage({ sessionId }: CorrecaoPageProps): React.JSX.Elemen
             </div>
           </div>
         </div>
+      )}
+
+      {results && (
+        <EmailDialog
+          sessionId={sessionId}
+          examTitle={results.examTitle}
+          examSubject={results.examSubject}
+          students={students}
+          open={emailOpen}
+          onOpenChange={setEmailOpen}
+        />
       )}
     </main>
   )

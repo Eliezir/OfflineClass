@@ -1,5 +1,5 @@
 import { randomUUID } from 'node:crypto'
-import { and, asc, desc, eq, inArray, isNotNull, isNull, sql } from 'drizzle-orm'
+import { and, asc, desc, eq, inArray, isNotNull, isNull, ne, sql } from 'drizzle-orm'
 import type {
   CodeLanguage,
   JoinInput,
@@ -25,7 +25,16 @@ import { AvatarConfig } from '@offlineclass/shared'
 
 import type { Db } from '../db/client'
 import { rowToQuestion } from '../db/questions-map'
-import { answers, exams, examSessions, questions, students, teachers, groups, groupMembers } from '../db/schema'
+import {
+  answers,
+  exams,
+  examSessions,
+  questions,
+  students,
+  teachers,
+  groups,
+  groupMembers
+} from '../db/schema'
 import { shuffleStudentsIntoGroups, listGroups } from './groups'
 import { yjsManager } from './yjs'
 
@@ -66,6 +75,7 @@ function rowToLobbyStudent(
     name: row.name,
     matricula: row.matricula,
     avatar: parseAvatar(row.avatar),
+    email: row.email ?? null,
     joinedAt: row.joinedAt.getTime(),
     lastSeenAt: row.lastSeenAt.getTime(),
     submittedAt: row.submittedAt ? row.submittedAt.getTime() : null,
@@ -84,9 +94,12 @@ function loadDetailById(
       id: examSessions.id,
       examId: examSessions.examId,
       examTitle: exams.title,
+      examSubject: exams.subject,
       status: examSessions.status,
       durationMinutes: examSessions.durationMinutes,
       allowLateJoin: examSessions.allowLateJoin,
+      scrambleQuestions: examSessions.scrambleQuestions,
+      scrambleOptions: examSessions.scrambleOptions,
       groupMode: examSessions.groupMode,
       maxGroupSize: examSessions.maxGroupSize,
       createdAt: examSessions.createdAt,
@@ -107,9 +120,12 @@ function loadDetailById(
     id: row.id,
     examId: row.examId,
     examTitle: row.examTitle,
+    examSubject: row.examSubject ?? null,
     status: row.status as SessionStatus,
     durationMinutes: row.durationMinutes,
     allowLateJoin: row.allowLateJoin,
+    scrambleQuestions: !!row.scrambleQuestions,
+    scrambleOptions: !!row.scrambleOptions,
     groupMode: (row.groupMode ?? 'disabled') as 'disabled' | 'free' | 'teacher' | 'shuffle',
     maxGroupSize: row.maxGroupSize,
     questionsCount: Number(countRow?.n ?? 0),
@@ -135,6 +151,10 @@ function listAllSessionStudents(db: Db, sessionId: string): SessionLobbyStudent[
   const answered = db
     .select({ studentId: answers.studentId, n: sql<number>`count(*)` })
     .from(answers)
+    // Comment-only rows (a teacher comment on a question the student never
+    // answered) carry an empty value — exclude them so they don't inflate the
+    // answered count.
+    .where(ne(answers.value, ''))
     .groupBy(answers.studentId)
     .all()
   const answeredByStudent = new Map(answered.map((a) => [a.studentId, Number(a.n)]))
@@ -171,6 +191,8 @@ export function createSession(db: Db, ownerId: string, input: SessionCreateInput
       status: 'lobby',
       durationMinutes: input.durationMinutes,
       allowLateJoin: !!input.allowLateJoin,
+      scrambleQuestions: !!input.scrambleQuestions,
+      scrambleOptions: !!input.scrambleOptions,
       groupMode: input.groupMode ?? 'disabled',
       maxGroupSize: input.maxGroupSize ?? null
     })
@@ -383,6 +405,8 @@ export function findActiveSessionPublic(db: Db): SessionPublic | null {
       examTitle: exams.title,
       durationMinutes: examSessions.durationMinutes,
       allowLateJoin: examSessions.allowLateJoin,
+      scrambleQuestions: examSessions.scrambleQuestions,
+      scrambleOptions: examSessions.scrambleOptions,
       groupMode: examSessions.groupMode,
       teacherName: teachers.name,
       teacherAvatar: teachers.avatar
@@ -400,6 +424,8 @@ export function findActiveSessionPublic(db: Db): SessionPublic | null {
     examTitle: row.examTitle,
     durationMinutes: row.durationMinutes,
     allowLateJoin: row.allowLateJoin,
+    scrambleQuestions: !!row.scrambleQuestions,
+    scrambleOptions: !!row.scrambleOptions,
     groupMode: (row.groupMode ?? 'disabled') as 'disabled' | 'free' | 'teacher' | 'shuffle',
     teacherName: row.teacherName,
     teacherAvatar: parseAvatar(row.teacherAvatar)
@@ -424,7 +450,7 @@ export function joinSession(db: Db, input: JoinInput): JoinResult {
   const sessionId = active.id
   const matricula = input.matricula.trim()
   const name = input.name.trim()
-  const email = input.email?.trim() || null
+  const email = input.email?.trim() ? input.email.trim() : null
   const avatar = input.avatar ? JSON.stringify(input.avatar) : null
   const now = new Date()
 
@@ -439,7 +465,9 @@ export function joinSession(db: Db, input: JoinInput): JoinResult {
   if (existing) {
     const token = randomUUID()
     db.update(students)
-      .set({ name, email, avatar, token, lastSeenAt: now, leftAt: null })
+      // Keep an e-mail the teacher may have already filled when the student
+      // rejoins without providing one.
+      .set({ name, token, lastSeenAt: now, leftAt: null, email: email ?? existing.email, avatar })
       .where(eq(students.id, existing.id))
       .run()
     return {
@@ -486,10 +514,7 @@ export function joinSession(db: Db, input: JoinInput): JoinResult {
 export function leaveSession(db: Db, token: string): void {
   const student = findStudentByToken(db, token)
   if (!student) return
-  db.update(students)
-    .set({ leftAt: new Date() })
-    .where(eq(students.id, student.id))
-    .run()
+  db.update(students).set({ leftAt: new Date() }).where(eq(students.id, student.id)).run()
 }
 
 export function listLobbyStudents(db: Db, sessionId: string): SessionLobbyStudent[] {
@@ -505,6 +530,10 @@ export function listLobbyStudents(db: Db, sessionId: string): SessionLobbyStuden
   const answered = db
     .select({ studentId: answers.studentId, n: sql<number>`count(*)` })
     .from(answers)
+    // Comment-only rows (a teacher comment on a question the student never
+    // answered) carry an empty value — exclude them so they don't inflate the
+    // answered count.
+    .where(ne(answers.value, ''))
     .groupBy(answers.studentId)
     .all()
   const answeredByStudent = new Map(answered.map((a) => [a.studentId, Number(a.n)]))
@@ -602,7 +631,9 @@ export function getStudentExam(db: Db, studentId: string): StudentExam {
       examDescription: exams.description,
       durationMinutes: examSessions.durationMinutes,
       startedAt: examSessions.startedAt,
-      status: examSessions.status
+      status: examSessions.status,
+      scrambleQuestions: examSessions.scrambleQuestions,
+      scrambleOptions: examSessions.scrambleOptions
     })
     .from(examSessions)
     .innerJoin(exams, eq(exams.id, examSessions.examId))
@@ -623,6 +654,8 @@ export function getStudentExam(db: Db, studentId: string): StudentExam {
     examDescription: session.examDescription,
     durationMinutes: session.durationMinutes,
     startedAt: session.startedAt ? session.startedAt.getTime() : null,
+    scrambleQuestions: !!session.scrambleQuestions,
+    scrambleOptions: !!session.scrambleOptions,
     questions: qRows.map(questionRowToStudent)
   }
 }
@@ -634,7 +667,9 @@ export function getStudentSessionState(db: Db, studentId: string): StudentSessio
     .select({
       status: examSessions.status,
       groupMode: examSessions.groupMode,
-      maxGroupSize: examSessions.maxGroupSize
+      maxGroupSize: examSessions.maxGroupSize,
+      scrambleQuestions: examSessions.scrambleQuestions,
+      scrambleOptions: examSessions.scrambleOptions
     })
     .from(examSessions)
     .where(eq(examSessions.id, student.sessionId))
@@ -655,7 +690,9 @@ export function getStudentSessionState(db: Db, studentId: string): StudentSessio
     submittedAt: student.submittedAt ? student.submittedAt.getTime() : null,
     answers: answerSnapshots,
     groupMode: session.groupMode as import('@offlineclass/shared').GroupMode,
-    maxGroupSize: session.maxGroupSize
+    maxGroupSize: session.maxGroupSize,
+    scrambleQuestions: !!session.scrambleQuestions,
+    scrambleOptions: !!session.scrambleOptions
   }
 }
 
@@ -663,7 +700,13 @@ export function recordHeartbeat(db: Db, studentId: string): void {
   db.update(students).set({ lastSeenAt: new Date() }).where(eq(students.id, studentId)).run()
 }
 
-export function saveAnswer(db: Db, studentId: string, questionId: string, value: string): void {
+export function saveAnswer(
+  db: Db,
+  studentId: string,
+  questionId: string,
+  value: string,
+  updatedBy?: string | null
+): void {
   const student = loadStudentFull(db, studentId)
   if (!student) throw new SessionError('Aluno não encontrado', 'NOT_FOUND')
   if (student.submittedAt) {
@@ -685,17 +728,19 @@ export function saveAnswer(db: Db, studentId: string, questionId: string, value:
   if (!q) throw new SessionError('Questão inválida', 'NOT_FOUND')
 
   const now = new Date()
+  const dbUpdatedBy = updatedBy !== undefined ? updatedBy : studentId
   db.insert(answers)
     .values({
       id: randomUUID(),
       studentId,
       questionId,
       value,
+      updatedBy: dbUpdatedBy,
       updatedAt: now
     })
     .onConflictDoUpdate({
       target: [answers.studentId, answers.questionId],
-      set: { value, updatedAt: now }
+      set: { value, updatedBy: dbUpdatedBy, updatedAt: now }
     })
     .run()
   db.update(students).set({ lastSeenAt: now }).where(eq(students.id, studentId)).run()
@@ -809,6 +854,7 @@ export function loadStudentAnswers(
       id: examSessions.id,
       examId: examSessions.examId,
       examTitle: exams.title,
+      examSubject: exams.subject,
       ownerId: examSessions.ownerId
     })
     .from(examSessions)
@@ -851,7 +897,7 @@ export function loadStudentAnswers(
     const auto = autoGrade(question, value)
     const correct = auto ? auto.correct : null
     const score = auto ? auto.score : (ans?.score ?? null)
-    return { question, value, correct, score }
+    return { question, value, correct, score, feedback: ans?.feedback ?? null }
   })
 
   // Points-weighted: auto kinds (correct === non-null) already store the earned
@@ -862,7 +908,9 @@ export function loadStudentAnswers(
   )
   const maxScore = reviews.reduce((acc, r) => acc + r.question.points, 0)
 
-  const answeredCount = answerRows.length
+  // Exclude comment-only rows (empty value) so a teacher comment on an
+  // unanswered question doesn't count as answered.
+  const answeredCount = answerRows.filter((a) => a.value !== '').length
 
   return {
     sessionId,
@@ -871,7 +919,10 @@ export function loadStudentAnswers(
     studentMatricula: studentRow.matricula,
     studentEmail: studentRow.email ?? null,
     studentAvatar: parseAvatar(studentRow.avatar),
+    studentFeedback: studentRow.feedback ?? null,
+    resultsSentAt: studentRow.resultsSentAt ? studentRow.resultsSentAt.getTime() : null,
     examTitle: sessionRow.examTitle,
+    examSubject: sessionRow.examSubject ?? null,
     groupName,
     submittedAt: studentRow.submittedAt ? studentRow.submittedAt.getTime() : null,
     joinedAt: studentRow.joinedAt.getTime(),
@@ -881,6 +932,12 @@ export function loadStudentAnswers(
     totalScore,
     maxScore
   }
+}
+
+/** Stamp when the teacher e-mailed a student their results (latest send wins).
+    Ownership is already verified by the caller via loadStudentAnswers. */
+export function markResultsSent(db: Db, studentId: string, when: Date): void {
+  db.update(students).set({ resultsSentAt: when }).where(eq(students.id, studentId)).run()
 }
 
 export function gradeAnswer(
@@ -939,4 +996,101 @@ export function gradeAnswer(
       })
       .run()
   }
+}
+
+/** Re-verify the chain teacher → session → student, returning the session's
+    examId. Throws if the teacher doesn't own the session or the student isn't
+    in it. Shared by the comment/e-mail mutations below. */
+function assertOwnsSessionStudent(
+  db: Db,
+  sessionId: string,
+  studentId: string,
+  ownerId: string
+): { examId: string } {
+  const sessionRow = db
+    .select({ examId: examSessions.examId, ownerId: examSessions.ownerId })
+    .from(examSessions)
+    .where(eq(examSessions.id, sessionId))
+    .get()
+  if (!sessionRow || sessionRow.ownerId !== ownerId) {
+    throw new SessionError('Sessão não encontrada', 'NOT_FOUND')
+  }
+  const studentRow = db
+    .select({ id: students.id })
+    .from(students)
+    .where(and(eq(students.id, studentId), eq(students.sessionId, sessionId)))
+    .get()
+  if (!studentRow) throw new SessionError('Aluno não encontrado', 'NOT_FOUND')
+  return { examId: sessionRow.examId }
+}
+
+/** Normalizes a free-text field: trims, and collapses empty to null (clears it). */
+function emptyToNull(value: string): string | null {
+  const trimmed = value.trim()
+  return trimmed === '' ? null : trimmed
+}
+
+/** Set/clear the teacher's free-text feedback on a single answer (any kind). */
+export function commentAnswer(
+  db: Db,
+  sessionId: string,
+  studentId: string,
+  questionId: string,
+  comment: string,
+  ownerId: string
+): void {
+  const { examId } = assertOwnsSessionStudent(db, sessionId, studentId, ownerId)
+  const questionRow = db
+    .select({ id: questions.id })
+    .from(questions)
+    .where(and(eq(questions.id, questionId), eq(questions.examId, examId)))
+    .get()
+  if (!questionRow) throw new SessionError('Questão inválida', 'NOT_FOUND')
+
+  const feedback = emptyToNull(comment)
+  const existing = db
+    .select({ id: answers.id })
+    .from(answers)
+    .where(and(eq(answers.studentId, studentId), eq(answers.questionId, questionId)))
+    .get()
+  const now = new Date()
+  if (existing) {
+    db.update(answers).set({ feedback, updatedAt: now }).where(eq(answers.id, existing.id)).run()
+  } else {
+    // Allow commenting even when the student never answered — insert a blank
+    // answer row so the comment sticks.
+    db.insert(answers)
+      .values({ id: randomUUID(), studentId, questionId, value: '', feedback, updatedAt: now })
+      .run()
+  }
+}
+
+/** Set/clear the teacher's overall remark on a student's exam. */
+export function commentStudent(
+  db: Db,
+  sessionId: string,
+  studentId: string,
+  comment: string,
+  ownerId: string
+): void {
+  assertOwnsSessionStudent(db, sessionId, studentId, ownerId)
+  db.update(students)
+    .set({ feedback: emptyToNull(comment) })
+    .where(eq(students.id, studentId))
+    .run()
+}
+
+/** Set/clear a student's e-mail (teacher fills it in on the results screen). */
+export function setStudentEmail(
+  db: Db,
+  sessionId: string,
+  studentId: string,
+  email: string,
+  ownerId: string
+): void {
+  assertOwnsSessionStudent(db, sessionId, studentId, ownerId)
+  db.update(students)
+    .set({ email: emptyToNull(email) })
+    .where(eq(students.id, studentId))
+    .run()
 }
