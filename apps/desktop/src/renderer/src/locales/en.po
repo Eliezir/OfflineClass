@@ -380,6 +380,9 @@ msgstr ""
 msgid "E-mail do remetente"
 msgstr ""
 
+msgid "E-mail enviado"
+msgstr ""
+
 #. placeholder {0}: s.name
 msgid "E-mail inválido para {0}."
 msgstr ""
@@ -450,6 +453,10 @@ msgstr "Submitted"
 #. placeholder {0}: formatRelativeTime(student.joinedAt)
 msgid "entrou {0}"
 msgstr "joined {0}"
+
+#. placeholder {0}: new Date(student.resultsSentAt).toLocaleString('pt-BR')
+msgid "Enviado em {0}"
+msgstr ""
 
 msgid "Enviando pelo servidor de e-mail… Se demorar, confira host, porta/conexão segura e use uma Senha de app do Gmail."
 msgstr ""
