@@ -17,7 +17,8 @@ export default defineConfig({
     resolve: {
       alias: {
         '@': resolve('src/renderer/src')
-      }
+      },
+      dedupe: ['yjs', 'y-protocols', 'y-prosemirror']
     },
     plugins: [react(), tailwindcss()]
   }

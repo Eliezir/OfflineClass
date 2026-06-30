@@ -56,7 +56,7 @@ export function HomePage(): React.JSX.Element {
   const live = activeSession
     ? {
         provaTitle: activeSession.examTitle,
-        groups: 1,
+        groups: activeSession.groups?.length ?? 0,
         students: activeSession.students?.length ?? 0,
         minutesLeft: activeSession.durationMinutes
       }

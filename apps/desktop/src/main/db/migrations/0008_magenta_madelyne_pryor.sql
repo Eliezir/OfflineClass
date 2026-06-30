@@ -1,0 +1,1 @@
+ALTER TABLE `answers` ADD `updated_by` text;

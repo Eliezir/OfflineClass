@@ -536,3 +536,69 @@
     break-inside: avoid;
   }
 }
+
+/* Tiptap Collaborative Cursors & Carets styling for Teacher Dashboard */
+.collaboration-cursor {
+  position: relative;
+  display: inline;
+  margin-left: -1px;
+  margin-right: -1px;
+  pointer-events: none;
+}
+
+.collaboration-cursor__caret {
+  position: absolute;
+  top: -0.15em;
+  bottom: -0.15em;
+  left: 0;
+  width: 2px;
+  background-color: currentColor;
+  box-shadow: 0 0 6px currentColor, 0 0 2px currentColor;
+}
+
+.collaboration-carets__caret {
+  position: relative;
+  display: inline;
+  margin-left: -1px;
+  margin-right: -1px;
+  border-left: 2px solid;
+  border-color: inherit; /* inherits inline border-color */
+  pointer-events: none;
+  word-break: normal;
+}
+
+.collaboration-cursor__label, .collaboration-carets__label {
+  position: absolute;
+  top: 0;
+  left: -1px;
+  transform: translateY(-100%);
+  font-size: 11px;
+  font-weight: 600;
+  color: #fff !important; /* Force text to be white */
+  white-space: nowrap;
+  padding: 2px 6px;
+  border-radius: 4px;
+  line-height: 1.2;
+  box-shadow: var(--shadow-2xs);
+  user-select: none;
+  pointer-events: none;
+  animation: cursor-label-appear 0.2s cubic-bezier(0.2, 0.8, 0.2, 1) forwards;
+}
+
+@keyframes cursor-label-appear {
+  from {
+    opacity: 0;
+    transform: translateY(-80%) scale(0.9);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(-100%) scale(1);
+  }
+}
+
+.collaboration-cursor__selection, .collaboration-carets__selection {
+  background-color: currentColor;
+  opacity: 0.18;
+  pointer-events: none;
+  border-radius: 2px;
+}

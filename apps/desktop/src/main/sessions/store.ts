@@ -23,7 +23,9 @@ import type {
 
 import type { Db } from '../db/client'
 import { rowToQuestion } from '../db/questions-map'
-import { answers, exams, examSessions, questions, students } from '../db/schema'
+import { answers, exams, examSessions, questions, students, groups, groupMembers } from '../db/schema'
+import { shuffleStudentsIntoGroups, listGroups } from './groups'
+import { yjsManager } from './yjs'
 
 export class SessionError extends Error {
   constructor(
@@ -71,6 +73,10 @@ function loadDetailById(
       status: examSessions.status,
       durationMinutes: examSessions.durationMinutes,
       allowLateJoin: examSessions.allowLateJoin,
+      scrambleQuestions: examSessions.scrambleQuestions,
+      scrambleOptions: examSessions.scrambleOptions,
+      groupMode: examSessions.groupMode,
+      maxGroupSize: examSessions.maxGroupSize,
       createdAt: examSessions.createdAt,
       startedAt: examSessions.startedAt,
       endedAt: examSessions.endedAt
@@ -92,10 +98,15 @@ function loadDetailById(
     status: row.status as SessionStatus,
     durationMinutes: row.durationMinutes,
     allowLateJoin: row.allowLateJoin,
+    scrambleQuestions: !!row.scrambleQuestions,
+    scrambleOptions: !!row.scrambleOptions,
+    groupMode: (row.groupMode ?? 'disabled') as 'disabled' | 'free' | 'teacher' | 'shuffle',
+    maxGroupSize: row.maxGroupSize,
     questionsCount: Number(countRow?.n ?? 0),
     students: opts?.includeAllStudents
       ? listAllSessionStudents(db, sessionId)
       : listLobbyStudents(db, sessionId),
+    groups: listGroups(db, sessionId),
     createdAt: row.createdAt.getTime(),
     startedAt: row.startedAt ? row.startedAt.getTime() : null,
     endedAt: row.endedAt ? row.endedAt.getTime() : null
@@ -149,7 +160,11 @@ export function createSession(db: Db, ownerId: string, input: SessionCreateInput
       ownerId,
       status: 'lobby',
       durationMinutes: input.durationMinutes,
-      allowLateJoin: !!input.allowLateJoin
+      allowLateJoin: !!input.allowLateJoin,
+      scrambleQuestions: !!input.scrambleQuestions,
+      scrambleOptions: !!input.scrambleOptions,
+      groupMode: input.groupMode ?? 'disabled',
+      maxGroupSize: input.maxGroupSize ?? null
     })
     .run()
   const detail = loadDetailById(db, id)
@@ -183,6 +198,9 @@ export function startSession(db: Db, sessionId: string, ownerId: string): Sessio
   const detail = getSession(db, sessionId, ownerId)
   if (detail.status !== 'lobby') {
     throw new SessionError('Sessão não está no lobby', 'BAD_STATE')
+  }
+  if (detail.groupMode === 'shuffle') {
+    shuffleStudentsIntoGroups(db, sessionId, detail.maxGroupSize)
   }
   db.update(examSessions)
     .set({ status: 'running', startedAt: new Date() })
@@ -240,6 +258,17 @@ export function listSessionsForOwner(db: Db, ownerId: string): SessionSummary[] 
     .all()
   const countBySession = new Map(counts.map((c) => [c.sessionId, c]))
 
+  // Group counts
+  const groupCounts = db
+    .select({
+      sessionId: groups.sessionId,
+      total: sql<number>`count(*)`
+    })
+    .from(groups)
+    .groupBy(groups.sessionId)
+    .all()
+  const groupCountBySession = new Map(groupCounts.map((g) => [g.sessionId, g.total]))
+
   return rows.map((r) => ({
     id: r.id,
     examId: r.examId,
@@ -248,6 +277,7 @@ export function listSessionsForOwner(db: Db, ownerId: string): SessionSummary[] 
     durationMinutes: r.durationMinutes,
     studentsCount: Number(countBySession.get(r.id)?.total ?? 0),
     submittedCount: Number(countBySession.get(r.id)?.submitted ?? 0),
+    groupsCount: Number(groupCountBySession.get(r.id) ?? 0),
     createdAt: r.createdAt.getTime(),
     startedAt: r.startedAt ? r.startedAt.getTime() : null,
     endedAt: r.endedAt ? r.endedAt.getTime() : null
@@ -344,7 +374,10 @@ export function findActiveSessionPublic(db: Db): SessionPublic | null {
       status: examSessions.status,
       examTitle: exams.title,
       durationMinutes: examSessions.durationMinutes,
-      allowLateJoin: examSessions.allowLateJoin
+      allowLateJoin: examSessions.allowLateJoin,
+      scrambleQuestions: examSessions.scrambleQuestions,
+      scrambleOptions: examSessions.scrambleOptions,
+      groupMode: examSessions.groupMode
     })
     .from(examSessions)
     .innerJoin(exams, eq(exams.id, examSessions.examId))
@@ -357,7 +390,10 @@ export function findActiveSessionPublic(db: Db): SessionPublic | null {
     status: row.status as SessionStatus,
     examTitle: row.examTitle,
     durationMinutes: row.durationMinutes,
-    allowLateJoin: row.allowLateJoin
+    allowLateJoin: row.allowLateJoin,
+    scrambleQuestions: !!row.scrambleQuestions,
+    scrambleOptions: !!row.scrambleOptions,
+    groupMode: (row.groupMode ?? 'disabled') as 'disabled' | 'free' | 'teacher' | 'shuffle'
   }
 }
 
@@ -530,7 +566,9 @@ export function getStudentExam(db: Db, studentId: string): StudentExam {
       examDescription: exams.description,
       durationMinutes: examSessions.durationMinutes,
       startedAt: examSessions.startedAt,
-      status: examSessions.status
+      status: examSessions.status,
+      scrambleQuestions: examSessions.scrambleQuestions,
+      scrambleOptions: examSessions.scrambleOptions
     })
     .from(examSessions)
     .innerJoin(exams, eq(exams.id, examSessions.examId))
@@ -551,6 +589,8 @@ export function getStudentExam(db: Db, studentId: string): StudentExam {
     examDescription: session.examDescription,
     durationMinutes: session.durationMinutes,
     startedAt: session.startedAt ? session.startedAt.getTime() : null,
+    scrambleQuestions: !!session.scrambleQuestions,
+    scrambleOptions: !!session.scrambleOptions,
     questions: qRows.map(questionRowToStudent)
   }
 }
@@ -559,7 +599,13 @@ export function getStudentSessionState(db: Db, studentId: string): StudentSessio
   const student = loadStudentFull(db, studentId)
   if (!student) throw new SessionError('Aluno não encontrado', 'NOT_FOUND')
   const session = db
-    .select({ status: examSessions.status })
+    .select({
+      status: examSessions.status,
+      groupMode: examSessions.groupMode,
+      maxGroupSize: examSessions.maxGroupSize,
+      scrambleQuestions: examSessions.scrambleQuestions,
+      scrambleOptions: examSessions.scrambleOptions
+    })
     .from(examSessions)
     .where(eq(examSessions.id, student.sessionId))
     .get()
@@ -577,7 +623,11 @@ export function getStudentSessionState(db: Db, studentId: string): StudentSessio
     studentName: student.name,
     studentMatricula: student.matricula,
     submittedAt: student.submittedAt ? student.submittedAt.getTime() : null,
-    answers: answerSnapshots
+    answers: answerSnapshots,
+    groupMode: session.groupMode as import('@offlineclass/shared').GroupMode,
+    maxGroupSize: session.maxGroupSize,
+    scrambleQuestions: !!session.scrambleQuestions,
+    scrambleOptions: !!session.scrambleOptions
   }
 }
 
@@ -585,7 +635,7 @@ export function recordHeartbeat(db: Db, studentId: string): void {
   db.update(students).set({ lastSeenAt: new Date() }).where(eq(students.id, studentId)).run()
 }
 
-export function saveAnswer(db: Db, studentId: string, questionId: string, value: string): void {
+export function saveAnswer(db: Db, studentId: string, questionId: string, value: string, updatedBy?: string | null): void {
   const student = loadStudentFull(db, studentId)
   if (!student) throw new SessionError('Aluno não encontrado', 'NOT_FOUND')
   if (student.submittedAt) {
@@ -607,17 +657,19 @@ export function saveAnswer(db: Db, studentId: string, questionId: string, value:
   if (!q) throw new SessionError('Questão inválida', 'NOT_FOUND')
 
   const now = new Date()
+  const dbUpdatedBy = updatedBy !== undefined ? updatedBy : studentId
   db.insert(answers)
     .values({
       id: randomUUID(),
       studentId,
       questionId,
       value,
+      updatedBy: dbUpdatedBy,
       updatedAt: now
     })
     .onConflictDoUpdate({
       target: [answers.studentId, answers.questionId],
-      set: { value, updatedAt: now }
+      set: { value, updatedBy: dbUpdatedBy, updatedAt: now }
     })
     .run()
   db.update(students).set({ lastSeenAt: now }).where(eq(students.id, studentId)).run()
@@ -628,7 +680,7 @@ export function submitStudent(db: Db, studentId: string): void {
   if (!student) throw new SessionError('Aluno não encontrado', 'NOT_FOUND')
   if (student.submittedAt) return // idempotent
   const session = db
-    .select({ status: examSessions.status })
+    .select({ status: examSessions.status, groupMode: examSessions.groupMode })
     .from(examSessions)
     .where(eq(examSessions.id, student.sessionId))
     .get()
@@ -636,6 +688,36 @@ export function submitStudent(db: Db, studentId: string): void {
     throw new SessionError('Sessão já encerrada', 'BAD_STATE')
   }
   const now = new Date()
+
+  if (session.groupMode !== 'disabled') {
+    const memberRow = db
+      .select({ groupId: groupMembers.groupId })
+      .from(groupMembers)
+      .where(eq(groupMembers.studentId, studentId))
+      .get()
+
+    if (memberRow?.groupId) {
+      // 1. Flush Yjs snapshot to SQLite immediately
+      yjsManager.flushPendingSave(db, memberRow.groupId)
+
+      // 2. Find siblings in group
+      const siblings = db
+        .select({ studentId: groupMembers.studentId })
+        .from(groupMembers)
+        .where(eq(groupMembers.groupId, memberRow.groupId))
+        .all()
+
+      // 3. Mark all siblings as submitted
+      for (const sibling of siblings) {
+        db.update(students)
+          .set({ submittedAt: now, lastSeenAt: now })
+          .where(eq(students.id, sibling.studentId))
+          .run()
+      }
+      return
+    }
+  }
+
   db.update(students)
     .set({ submittedAt: now, lastSeenAt: now })
     .where(eq(students.id, studentId))
@@ -717,6 +799,14 @@ export function loadStudentAnswers(
     .get()
   if (!studentRow) throw new SessionError('Aluno não encontrado', 'NOT_FOUND')
 
+  const studentGroup = db
+    .select({ name: groups.name })
+    .from(groups)
+    .innerJoin(groupMembers, eq(groupMembers.groupId, groups.id))
+    .where(and(eq(groups.sessionId, sessionId), eq(groupMembers.studentId, studentId)))
+    .get()
+  const groupName = studentGroup?.name ?? null
+
   const questionRows = db
     .select()
     .from(questions)
@@ -754,6 +844,7 @@ export function loadStudentAnswers(
     studentName: studentRow.name,
     studentMatricula: studentRow.matricula,
     examTitle: sessionRow.examTitle,
+    groupName,
     submittedAt: studentRow.submittedAt ? studentRow.submittedAt.getTime() : null,
     joinedAt: studentRow.joinedAt.getTime(),
     leftAt: studentRow.leftAt ? studentRow.leftAt.getTime() : null,

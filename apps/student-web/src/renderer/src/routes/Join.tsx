@@ -12,7 +12,7 @@ import { createApi } from '../lib/api'
 import { saveToken } from '../lib/session'
 import { notify } from '../lib/toast'
 import { useServerUrl } from '../lib/serverContext'
-import { loadProfile, initials } from '../lib/studentProfile'
+import { loadProfile, saveProfile, initials } from '../lib/studentProfile'
 
 export default function JoinRoute(): React.JSX.Element {
   const navigate = useNavigate()
@@ -49,6 +49,7 @@ export default function JoinRoute(): React.JSX.Element {
     },
     onSuccess: (res) => {
       saveToken(res.token)
+      saveProfile({ name: res.studentName, matricula: res.studentMatricula })
       notify.success(`Bem-vindo, ${res.studentName}!`)
       if (res.status === 'running') {
         navigate('/test', { replace: true })
@@ -77,7 +78,7 @@ export default function JoinRoute(): React.JSX.Element {
   const examTitle = active.data?.examTitle
 
   return (
-    <main className="flex flex-1 flex-col items-center justify-center gap-6 px-6 py-10">
+    <main className="flex flex-1 flex-col items-center justify-center gap-6 px-6 py-10 overflow-y-auto">
       <Card className="w-full max-w-sm">
         <CardHeader>
           <CardTitle>Entrar na prova</CardTitle>

@@ -8,6 +8,7 @@ import { StudentStatusBadge } from './student-status-badge'
 
 type StudentProgressRowProps = {
   student: SessionLobbyStudent
+  groupName?: string
   questionsCount: number
   now: number
   onSelect: () => void
@@ -17,6 +18,7 @@ type StudentProgressRowProps = {
     Clicking opens the single-student drill-down. */
 export function StudentProgressRow({
   student,
+  groupName,
   questionsCount,
   now,
   onSelect
@@ -34,7 +36,14 @@ export function StudentProgressRow({
       <StudentAvatar name={student.name} />
 
       <div className="min-w-0 flex-1">
-        <div className="truncate text-sm font-bold">{student.name}</div>
+        <div className="truncate text-sm font-bold flex items-center gap-1.5">
+          <span>{student.name}</span>
+          {groupName && (
+            <span className="inline-flex shrink-0 items-center rounded bg-primary-soft px-1.5 py-0.5 text-[9px] font-bold text-primary-soft-foreground uppercase tracking-wider">
+              {groupName}
+            </span>
+          )}
+        </div>
         <div className="text-xs font-semibold text-muted-foreground">{student.matricula}</div>
       </div>
 
