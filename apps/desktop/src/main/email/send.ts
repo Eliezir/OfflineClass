@@ -2,7 +2,6 @@ import nodemailer, { type Transporter } from 'nodemailer'
 import type {
   EmailResultsInput,
   EmailSendResult,
-  EmailSettings,
   EmailSettingsInput,
   EmailTestResult,
   SessionAnswersReview,
@@ -11,9 +10,9 @@ import type {
 
 import type { Db } from '../db/client'
 import { loadStudentAnswers, SessionError } from '../sessions/store'
-import { getEmailSettings } from './store'
+import { getEmailSecret } from './store'
 
-function buildTransport(settings: EmailSettings | EmailSettingsInput): Transporter {
+function buildTransport(settings: EmailSettingsInput): Transporter {
   return nodemailer.createTransport({
     host: settings.host,
     port: settings.port,
@@ -204,7 +203,7 @@ export async function sendResults(
   ownerId: string,
   input: EmailResultsInput
 ): Promise<EmailSendResult[]> {
-  const settings = getEmailSettings(db, ownerId)
+  const settings = getEmailSecret(db, ownerId)
   if (!settings) {
     throw new SessionError('Configure o e-mail (SMTP) nas Configurações primeiro', 'BAD_STATE')
   }

@@ -43,7 +43,9 @@ function toForm(s: EmailSettings | null): FormState {
     port: String(s.port),
     secure: s.secure,
     username: s.username,
-    password: s.password,
+    // The real password never leaves the main process; leave the field blank
+    // (a blank password on save keeps the stored one).
+    password: '',
     fromName: s.fromName,
     fromEmail: s.fromEmail
   }
@@ -176,7 +178,9 @@ function EmailForm({ initial }: { initial: EmailSettings | null }): React.JSX.El
             type="password"
             value={form.password}
             autoComplete="new-password"
-            placeholder="••••••••"
+            placeholder={
+              initial?.hasPassword ? t`•••••••• (salva — deixe em branco para manter)` : '••••••••'
+            }
             onChange={(e) => set('password', e.target.value)}
           />
         </Field>

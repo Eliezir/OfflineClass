@@ -504,14 +504,27 @@ export const EmailSettingsInput = z.object({
   // true → implicit TLS (port 465); false → STARTTLS (port 587).
   secure: z.boolean(),
   username: z.string().max(255),
+  // On save, an empty password means "keep the one already stored" — the
+  // renderer never receives the real password, so it can't echo it back.
   password: z.string().max(500),
   fromName: z.string().min(1, 'Obrigatório').max(120),
   fromEmail: z.string().email('E-mail inválido').max(160)
 })
 export type EmailSettingsInput = z.infer<typeof EmailSettingsInput>
 
-/** Stored settings as returned to the renderer (null when never configured). */
-export const EmailSettings = EmailSettingsInput
+/** Stored settings as returned to the renderer (null when never configured).
+    The SMTP password is NEVER sent back: it's encrypted at rest (Electron
+    safeStorage) and only decrypted in the main process when connecting.
+    `hasPassword` just tells the form whether one is already saved. */
+export const EmailSettings = z.object({
+  host: z.string(),
+  port: z.number().int(),
+  secure: z.boolean(),
+  username: z.string(),
+  hasPassword: z.boolean(),
+  fromName: z.string(),
+  fromEmail: z.string()
+})
 export type EmailSettings = z.infer<typeof EmailSettings>
 
 /** Result of a connection/auth test against the SMTP server. */
