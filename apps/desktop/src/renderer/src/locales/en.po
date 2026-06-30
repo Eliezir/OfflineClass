@@ -1149,7 +1149,7 @@ msgid "Sessão encerrada"
 msgstr "Session ended"
 
 msgid "Sessão no lobby"
-msgstr ""
+msgstr "Session in lobby"
 
 msgid "Sessões aplicadas"
 msgstr "Sessions run"
