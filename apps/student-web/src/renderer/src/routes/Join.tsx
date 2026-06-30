@@ -1,7 +1,7 @@
 import { useState } from 'react'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { useNavigate } from 'react-router-dom'
-import { ArrowLeft, ArrowRight, LogIn, RefreshCw, Loader2, Pencil } from 'lucide-react'
+import { ArrowLeft, ArrowRight, LogIn, RefreshCw, Loader2, Pencil, Shuffle } from 'lucide-react'
 import { JoinInput, type AvatarConfig } from '@offlineclass/shared'
 import { Avatar, randomAvatar } from '@offlineclass/avatar'
 
@@ -9,6 +9,7 @@ import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
+import { AvatarEditorModal } from '@/components/avatar/AvatarEditorModal'
 import { createApi } from '../lib/api'
 import { saveToken } from '../lib/session'
 import { notify } from '../lib/toast'
@@ -28,6 +29,7 @@ export default function JoinRoute(): React.JSX.Element {
   const [name, setName] = useState('')
   const [email, setEmail] = useState('')
   const [avatar, setAvatar] = useState<AvatarConfig>(() => randomAvatar())
+  const [editorOpen, setEditorOpen] = useState(false)
   const [error, setError] = useState<string | null>(null)
 
   if (!teacherUrl) {
@@ -212,7 +214,7 @@ export default function JoinRoute(): React.JSX.Element {
               {step === 'back' && (
                 <div className="space-y-4">
                   <div className="flex flex-col items-center gap-2 text-center">
-                    <Avatar config={avatar} size={96} />
+                    <EditableAvatar config={avatar} onEdit={() => setEditorOpen(true)} />
                     <span className="bg-secondary-soft text-secondary-soft-foreground mt-1 rounded-full px-3 py-1 text-xs font-bold">
                       👋 Bem-vindo de volta!
                     </span>
@@ -250,6 +252,24 @@ export default function JoinRoute(): React.JSX.Element {
                     join()
                   }}
                 >
+                  <div className="flex flex-col items-center gap-2">
+                    <EditableAvatar config={avatar} onEdit={() => setEditorOpen(true)} />
+                    <div className="flex gap-1">
+                      <Button
+                        type="button"
+                        variant="ghost"
+                        size="sm"
+                        onClick={() => setAvatar(randomAvatar())}
+                      >
+                        <Shuffle className="size-3.5" />
+                        Aleatório
+                      </Button>
+                      <Button type="button" variant="ghost" size="sm" onClick={() => setEditorOpen(true)}>
+                        <Pencil className="size-3.5" />
+                        Personalizar
+                      </Button>
+                    </div>
+                  </div>
                   <div className="space-y-2">
                     <Label htmlFor="name">Nome completo</Label>
                     <Input id="name" value={name} onChange={(e) => setName(e.target.value)} placeholder="Seu nome" autoFocus />
@@ -289,6 +309,36 @@ export default function JoinRoute(): React.JSX.Element {
           )}
         </CardContent>
       </Card>
+
+      {editorOpen && (
+        <AvatarEditorModal
+          value={avatar}
+          onSave={setAvatar}
+          onClose={() => setEditorOpen(false)}
+        />
+      )}
     </main>
+  )
+}
+
+function EditableAvatar({
+  config,
+  onEdit
+}: {
+  config: AvatarConfig
+  onEdit: () => void
+}): React.JSX.Element {
+  return (
+    <button
+      type="button"
+      onClick={onEdit}
+      aria-label="Personalizar avatar"
+      className="relative rounded-full transition active:scale-95"
+    >
+      <Avatar config={config} size={96} />
+      <span className="border-card bg-primary text-primary-foreground absolute -right-1 -bottom-1 grid size-8 place-items-center rounded-full border-2 shadow">
+        <Pencil className="size-3.5" />
+      </span>
+    </button>
   )
 }

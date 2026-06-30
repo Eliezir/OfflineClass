@@ -89,7 +89,7 @@ export function AvatarBuilder({ value, onChange, onDone, onClose }: AvatarBuilde
             type="button"
             onClick={onClose}
             aria-label="Fechar"
-            className="absolute top-4 left-4 z-10 grid size-10 place-items-center rounded-full bg-white/85 text-foreground shadow-sm backdrop-blur transition hover:bg-white"
+            className="absolute top-4 left-4 z-10 grid size-10 place-items-center rounded-full bg-white text-gray-900 shadow-md transition hover:bg-white/90"
           >
             <X className="size-4.5" />
           </button>
