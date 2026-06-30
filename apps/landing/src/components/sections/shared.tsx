@@ -11,6 +11,9 @@ import {
   Apple,
   Monitor,
   Terminal,
+  Network,
+  Database,
+  ShieldCheck,
   type LucideIcon,
 } from 'lucide-react'
 import { BlurFade } from '@/components/magicui/blur-fade'
@@ -39,6 +42,13 @@ export const INTERACTIVE_ICONS: Record<string, LucideIcon> = {
   panel: Activity,
   reconnect: PlugZap,
   offline: WifiOff,
+}
+
+export const UNDERHOOD_ICONS: Record<string, LucideIcon> = {
+  discovery: RadioTower,
+  crdt: Network,
+  durable: Database,
+  topology: ShieldCheck,
 }
 
 export function SectionHeading({

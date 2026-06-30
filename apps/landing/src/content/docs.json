@@ -1,62 +1,21 @@
 {
-  "intro": "Guia de documentação oficial do OfflineClass. Conheça o funcionamento do sistema, as tecnologias aplicadas e como gerenciar avaliações offline e colaborativas em tempo real.",
+  "intro": "Como o OfflineClass funciona por dentro — a engenharia de rede, sincronização e persistência que sustenta uma avaliação colaborativa rodando inteiramente na LAN da sala, sem internet. Escrito para a disciplina de **Sistemas Operacionais e Redes**: cada slide liga uma decisão de implementação ao conceito de SO/Redes por trás dela.",
   "sections": [
     {
-      "id": "visao-geral",
-      "title": "Visão Geral & Stack",
+      "id": "arquitetura",
+      "title": "Arquitetura",
       "articles": [
         {
           "id": "arquitetura",
-          "title": "Arquitetura do Projeto",
+          "title": "Offline-first e isolamento de processo",
+          "icon": "process",
+          "diagram": "process",
           "body": [
-            "O OfflineClass é uma plataforma de prova colaborativa **offline-first** projetada para rodar em redes locais (LAN) escolares, sem dependência de internet.",
-            "O projeto é estruturado como um monorepo dividido em:",
-            "- **Professor (apps/desktop)**: Aplicativo Electron local que embarca a interface de gestão e autoria, o banco de dados e o servidor local de rede.",
-            "- **Aluno (apps/student-web)**: SPA (Single Page Application) servida pelo desktop do professor que roda em navegadores ou via app cliente do aluno.",
-            "- **Pacotes Compartilhados (packages/shared)**: Schemas Zod e definições de tipos TypeScript compartilhados para garantir a integridade dos dados.",
-            "Esta divisão garante segurança e isolamento, permitindo que a aplicação funcione de forma totalmente independente de serviços na nuvem durante as avaliações."
-          ]
-        },
-        {
-          "id": "tecnologias",
-          "title": "Tecnologias Aplicadas",
-          "body": [
-            "A stack tecnológica foi cuidadosamente selecionada para garantir robustez, alto desempenho e facilidade de deploy:",
-            "- **Shell & Interface**: Electron 39 e React 19 com Tailwind CSS v4 para uma interface moderna baseada no design system **Indigo Pop**.",
-            "- **Servidor Local LAN**: Hono (@hono/node-server) que serve a SPA do aluno e provê a API REST e servidor de WebSockets no ambiente local.",
-            "- **Persistência de Dados**: SQLite gerenciado com Drizzle ORM e better-sqlite3 no processo principal (main) do Electron.",
-            "- **Colaboração**: Yjs (CRDTs) para sincronização de estado em tempo real entre membros de um grupo.",
-            "- **Criptografia & Descoberta**: bonjour-service para anúncios mDNS e selfsigned para geração automática de certificados TLS autoassinados.",
-            "- **E-mail & Criptografia**: nodemailer para envio de e-mails de resultados via SMTP e safeStorage do Electron para armazenamento seguro e criptografado de credenciais na máquina do professor."
-          ]
-        }
-      ]
-    },
-    {
-      "id": "instalacao-e-contas",
-      "title": "Primeiros Passos",
-      "articles": [
-        {
-          "id": "instalacao",
-          "title": "Instalação",
-          "body": [
-            "Baixe a versão mais recente na seção **Download** da landing page ou direto nas releases do GitHub.",
-            "O OfflineClass é fornecido como um instalador único para cada sistema operacional:",
-            "- **Windows** — arquivo executável `.exe`",
-            "- **macOS** — instalador `.dmg`",
-            "- **Linux** — pacotes `.AppImage`, `.deb` ou `.rpm`",
-            "O aplicativo do professor gerencia todo o ambiente local de forma autônoma. Não é necessária nenhuma instalação ou configuração de servidor externo por parte da escola."
-          ]
-        },
-        {
-          "id": "contas",
-          "title": "Contas de Professor",
-          "body": [
-            "Na primeira execução, o professor deve realizar o cadastro de sua conta local (nome, e-mail e senha).",
-            "As credenciais de acesso são criptografadas localmente com hash bcrypt e salvas diretamente no SQLite do computador do professor.",
-            "O sistema suporta múltiplos perfis de professor na mesma máquina, mantendo bancos de dados e provas totalmente isolados entre as contas.",
-            "O login é persistente e a sessão é armazenada de forma segura para resistir a restarts do aplicativo."
-          ]
+            "Não existe servidor externo. O backend roda **dentro do processo principal (main) do Electron**, no computador do professor — um servidor HTTP/WebSocket, o banco SQLite e a sincronização ao vivo, tudo no mesmo binário.",
+            "A interface do professor (o **renderer**) não fala HTTP com esse backend. Ela conversa com o main por **IPC** (`ipcMain.handle('domain.action', …)`), exposto à UI por uma ponte tipada `window.api.*`. Já os alunos, esses sim, chegam pela rede via HTTP/WebSocket.",
+            "Quando o app abre, um `bootstrap()` sobe os serviços em ordem antes de mostrar a janela: banco + migrações → certificado TLS → servidor da LAN → anúncio mDNS → handlers de IPC. Uma splash screen segura até tudo estar `ready`."
+          ],
+          "concept": "Isolamento de processos. O main (com privilégio de rede e disco) e o renderer (UI em sandbox) são processos separados que se comunicam por troca de mensagens (IPC) — o mesmo modelo de separação de responsabilidades e canais de comunicação entre processos visto em SO."
         }
       ]
     },
@@ -65,163 +24,128 @@
       "title": "Rede & Conectividade",
       "articles": [
         {
-          "id": "descoberta-mdns",
-          "title": "Descoberta Automatizada",
+          "id": "descoberta",
+          "title": "Descoberta na rede: mDNS, QR e TLS",
+          "icon": "discovery",
+          "diagram": "discovery",
           "body": [
-            "Ao iniciar uma sessão de avaliação, o computador do professor ativa o servidor Hono local e anuncia o serviço na rede local via mDNS com o identificador `offlineclass._https._tcp.local`.",
-            "Alunos que utilizam o aplicativo cliente do Aluno descobrem a sala automaticamente na rede sem necessidade de configurações adicionais.",
-            "Como alternativa ou para conexões via navegador web convencional, o painel do professor exibe um **QR Code** de acesso e o endereço amigável `https://offlineclass.local:8000` (ou IP local equivalente)."
-          ]
+            "Para o aluno achar o professor na Wi-Fi sem digitar IP, o servidor anuncia a si mesmo com **mDNS** (Multicast DNS, via `bonjour-service`), publicando um serviço `_https._tcp` resolvível como `offlineclass.local`. É o mesmo mecanismo de *zero-configuration networking* do AirPlay e de impressoras de rede.",
+            "Como nem toda máquina resolve mDNS, há dois caminhos redundantes de entrada:",
+            "- **QR code** na tela do professor, com a URL já contendo o IP da LAN (ex.: `https://192.168.1.100:8000`)",
+            "- **Endereço manual** — o aluno digita `IP:porta` direto no navegador",
+            "O servidor usa **HTTPS com certificado self-signed** (RSA 2048, gerado e persistido no primeiro boot). Como é colaboração em tempo real sobre WebSocket, o transporte precisa ser seguro; o Electron confia no certificado apenas para os hostnames conhecidos."
+          ],
+          "concept": "Resolução de nomes e descoberta de serviços. O mDNS resolve nomes por multicast dentro do domínio `.local`, sem um servidor DNS central — útil exatamente quando não há infraestrutura (nem internet) na sala."
         },
         {
-          "id": "seguranca-tls",
-          "title": "Segurança e TLS",
+          "id": "conexao",
+          "title": "Como aluno e professor se conectam",
+          "icon": "connection",
+          "diagram": "topology",
           "body": [
-            "Toda a comunicação na rede local entre alunos e professor utiliza criptografia HTTPS e WSS (Secure WebSockets).",
-            "No primeiro boot da aplicação, um certificado SSL/TLS autoassinado é gerado dinamicamente e armazenado na pasta de dados do usuário (`userData`), garantindo que o tráfego permaneça seguro e protegido contra interceptações.",
-            "**Restrição de Dispositivos**: O acesso de alunos é intencionalmente restrito a computadores (desktops ou notebooks) na mesma Wi-Fi da sala. Dispositivos móveis (smartphones) não são suportados para evitar o uso de redes móveis (3G/4G/5G) que violariam a integridade da rede local (anti-cheat base)."
-          ]
+            "O servidor da sala é um app **Hono** rodando sobre Node (`@hono/node-server`), escutando em `0.0.0.0:8000` — todas as interfaces de rede, na porta 8000 (ou a próxima livre, se ocupada). Ele acumula três papéis na mesma origem:",
+            "1. **Serve a SPA do aluno** (React) como arquivos estáticos — o aluno só abre o navegador, nada para instalar.",
+            "2. **API REST** em `/api/*` para o ciclo de vida: `POST /api/join` exige nome completo, e-mail do aluno (com máscara de validação) e matrícula (com máscara numérica), devolvendo um **token Bearer** efêmero para a sessão. As demais rotas exigem esse token.",
+            "3. **WebSocket** em `/api/ws` (via `@hono/node-ws`) para o tempo real — o token é validado já no handshake; conexão sem token válido é recusada.",
+            "Salvar uma resposta é híbrido por garantia: o `POST /api/answers` grava no SQLite **e** atualiza o documento colaborativo do grupo, então o painel do professor recebe a resposta mesmo se o canal WebSocket de um aluno oscilar."
+          ],
+          "concept": "O modelo cliente-servidor e a pilha de transporte. O professor é o servidor; cada aluno é um cliente sobre TCP — HTTP para requisições pontuais, WebSocket para um canal full-duplex persistente. Dois padrões de comunicação para necessidades diferentes."
         }
       ]
     },
     {
-      "id": "autoria-provas",
-      "title": "Criação de Provas",
+      "id": "tempo-real",
+      "title": "Tempo real",
       "articles": [
         {
-          "id": "form-builder",
-          "title": "Form Builder Unificado",
+          "id": "yjs",
+          "title": "Colaboração com Yjs (CRDT)",
+          "icon": "crdt",
+          "diagram": "crdt",
           "body": [
-            "O professor cria e edita provas locais através de uma ferramenta de autoria com arrastar e soltar (drag & drop) para ordenar blocos de questões e conteúdos.",
-            "Suporta a inserção de sete tipos de questões com pontuações parametrizadas:",
-            "- **Múltipla Escolha**: Questão com única resposta correta.",
-            "- **Seleção Múltipla**: Questão com uma ou mais opções corretas e suporte a políticas de pontuação parcial (`all-or-nothing` ou `proporcional`).",
-            "- **Verdadeiro ou Falso (V/F)**: Variação rápida de escolha única.",
-            "- **Resposta Curta**: Entrada de texto com verificação automática por correspondência exata de termos (trim e case-insensitive).",
-            "- **Dissertativa**: Questão aberta com editor de texto formatado.",
-            "- **Código**: Editor com espaçamento mono e sintaxe voltada a desenvolvimento de software.",
-            "- **Ordenação & Associação**: Organização lógica de itens e associação de pares de colunas."
-          ]
+            "O coração colaborativo é o **Yjs**, uma implementação de **CRDT** (Conflict-free Replicated Data Type). Cada grupo tem um documento `Y.Doc` próprio, mantido em memória pelo servidor num registro (`Map<groupId, Y.Doc>`).",
+            "Dentro do documento, o estado é tipado pelo tipo de questão:",
+            "- Questões objetivas ficam num `Y.Map('answers')` — chave é o id da questão, valor é a resposta + quem editou por último",
+            "- Dissertativa e código usam um `Y.XmlFragment` por questão (texto rico colaborativo, à la Tiptap), deixando dois alunos digitarem no mesmo texto ao mesmo tempo",
+            "A sincronização não passa por JSON: cada alteração vira um **update binário do Yjs** trafegado pelo WebSocket. O primeiro byte do frame é um discriminador — `0` para update do documento, `1` para *awareness*. O servidor repassa o update aos outros membros do grupo (nunca de volta para quem enviou)."
+          ],
+          "concept": "Sistemas distribuídos e consistência. Sem um relógio global confiável, um CRDT garante que todas as réplicas convergem para o mesmo estado independentemente da ordem em que os updates chegam — resolvendo escritas concorrentes sem um lock central. É o problema clássico de concorrência distribuída resolvido na prática."
         },
         {
-          "id": "materiais-inline",
-          "title": "Materiais de Apoio",
+          "id": "awareness",
+          "title": "Presença e awareness",
+          "icon": "presence",
           "body": [
-            "O professor pode intercalar blocos de materiais auxiliares diretamente entre as questões da avaliação.",
-            "Formatos suportados:",
-            "- Documentos **PDF**",
-            "- Imagens (**JPG, PNG, WEBP**)",
-            "- Vídeos locais (**MP4, WEBM** renderizados via HTML5 nativo)",
-            "- Links externos para referências adicionais",
-            "Todos os arquivos de apoio anexados são copiados para a pasta de dados local do professor e servidos diretamente pela rede local. Para preservar o funcionamento offline, não há suporte para embeds de plataformas online como YouTube ou Vimeo."
-          ]
+            "Além das respostas, o grupo vê quem está ali: cursores, em qual questão cada um está, nome e avatar. Isso é o **awareness** do Yjs (`y-protocols/awareness`) — um estado **transiente**, que não é persistido.",
+            "Awareness viaja em frames próprios (byte de tipo `1`), separado dos updates do documento. Quando o socket cai, a presença daquele aluno some; ao reconectar, ela é recriada do zero. O estado da prova (as respostas) sobrevive; a presença, não — e é exatamente isso que se quer.",
+            "A presença também é encaminhada por IPC ao renderer do professor, então o painel ao vivo mostra a turma se movimentando em tempo real."
+          ],
+          "concept": "Estado efêmero vs. estado durável. Presença é como uma sessão volátil — vale enquanto a conexão existe e pode ser descartada sem prejuízo; já as respostas precisam de durabilidade. Tratar cada um com o canal e a política certos evita desperdício e inconsistência."
         }
       ]
     },
     {
-      "id": "ciclo-sessao",
-      "title": "Gestão de Sessão & Lobby",
+      "id": "dados",
+      "title": "Dados",
       "articles": [
         {
-          "id": "ciclo-vida",
-          "title": "Ciclo de Vida da Sessão",
+          "id": "persistencia",
+          "title": "Persistência offline e recuperação",
+          "icon": "durable",
+          "diagram": "snapshot",
           "body": [
-            "Uma sessão de prova é gerida em quatro fases estruturadas:",
-            "1. **Rascunho (Draft)**: O professor prepara e ajusta as configurações da sessão.",
-            "2. **Saguão (Lobby)**: O servidor está ativo. Os alunos conectam na rede local, cadastram-se preenchendo obrigatoriamente nome completo, e-mail (com máscara de validação) e matrícula (com máscara numérica), personalizam avatares e formam grupos.",
-            "3. **Em Andamento (Running)**: A composição dos grupos é travada, o cronômetro inicia e os alunos começam a responder à prova.",
-            "4. **Encerrada (Ended)**: Respostas não são mais aceitas. Alunos recebem aviso de conclusão e a sessão é direcionada para correção."
-          ]
-        },
-        {
-          "id": "projetor-e-painel",
-          "title": "Painel ao Vivo & Vista Projetor",
-          "body": [
-            "O painel do professor oferece monitoramento detalhado em tempo real sobre a sessão em andamento, incluindo conexões ativas, progresso de preenchimento e status de submissão.",
-            "O aplicativo fornece a **Vista do Projetor**, uma janela Electron secundária projetada para exibição pública na sala de aula.",
-            "Esta tela exibe o cronômetro regressivo da prova, orientações de conexão e o roster de grupos formados, ocultando dados pessoais e respostas dos estudantes para garantir segurança e privacidade."
-          ]
+            "O armazenamento durável é **SQLite** via `better-sqlite3`, com o **Drizzle** como camada de schema e queries. As queries são **síncronas** — sem `await` —, o que simplifica o raciocínio e cabe bem num backend single-machine. As migrações são aplicadas no boot, antes de abrir qualquer janela.",
+            "O documento Yjs de cada grupo vive em memória, mas é serializado para o banco de forma **debounced (2 s após a última alteração)**: o estado completo (`Y.encodeStateAsUpdate`) é gravado como BLOB na tabela `group_yjs_snapshots`, e as respostas são também espelhadas na tabela `answers`.",
+            "Isso dá **recuperação a falhas**: se o app do professor fechar no meio da prova, ao reabrir o `Y.Doc` é reconstruído a partir do último snapshot. Se nem snapshot houver, ele é semeado a partir das respostas já gravadas. Nada se perde."
+          ],
+          "concept": "Durabilidade e checkpointing. Manter o estado quente em memória e gravar snapshots periódicos no disco é o mesmo padrão de checkpoint/restore usado por bancos e sistemas de arquivos para equilibrar desempenho e resistência a falhas."
         }
       ]
     },
     {
-      "id": "grupos-e-colaboracao",
-      "title": "Grupos & Tempo Real",
+      "id": "sessoes",
+      "title": "Sessões",
       "articles": [
         {
-          "id": "modos-grupo",
-          "title": "Modos de Formação",
+          "id": "sessoes",
+          "title": "Sessões, grupos e submissão coordenada",
+          "icon": "session",
+          "diagram": "states",
           "body": [
-            "O OfflineClass possui quatro modos de agrupamento de estudantes, configurados no momento da abertura da sessão:",
-            "- **Desativado (Individual)**: Cada aluno realiza a avaliação de forma isolada, correspondendo a um grupo de um integrante.",
-            "- **Livre (Free)**: Os estudantes criam, entram e gerenciam seus próprios grupos diretamente pela interface do aluno no Lobby.",
-            "- **Designado (Teacher)**: O professor arrasta e aloca os estudantes nos respectivos grupos diretamente pelo painel principal.",
-            "- **Sorteio (Shuffle)**: Ao iniciar a prova, o sistema aloca os alunos aleatoriamente nos grupos respeitando o tamanho máximo definido.",
-            "Em todos os modos em grupo, as respostas e o progresso são compartilhados e unificados por equipe."
-          ]
-        },
-        {
-          "id": "sincronizacao-crdt",
-          "title": "Colaboração em Tempo Real (Yjs)",
-          "body": [
-            "A colaboração de respostas dentro do grupo utiliza algoritmos de CRDT baseados na biblioteca **Yjs**.",
-            "Todos os integrantes do grupo podem editar respostas de forma concorrente sob a política de *last-write-wins*.",
-            "A interface exibe cursores de presença ao vivo e indicações de quem editou cada questão. As questões dissertativas e de código utilizam o editor colaborativo TipTap acoplado ao `Y.Doc`.",
-            "O transporte de atualizações é otimizado:",
-            "- **Alunos**: Comunicam-se via WebSockets trocando frames binários compactados com o servidor.",
-            "- **Professor**: O monitor de grupos do professor sincroniza diretamente com o processo de Node.js via IPC do Electron, fornecendo visualização ao vivo sem dependência de conexões de loopback."
-          ]
-        },
-        {
-          "id": "submissao-grupo",
-          "title": "Submissão por Consenso",
-          "body": [
-            "Para evitar submissões acidentais ou unilaterais, o encerramento da prova exige consenso de todos os membros ativos da equipe.",
-            "Qualquer integrante do grupo pode solicitar a submissão. Ao fazê-lo, uma notificação de confirmação é enviada em tempo real para as telas dos demais membros online.",
-            "A prova só é enviada em definitivo quando todos os alunos online confirmarem a submissão.",
-            "Estudantes offline no momento da entrega não bloqueiam o fluxo."
-          ]
+            "Uma sessão de prova é uma **máquina de estados**: `lobby → em andamento → encerrada`. No lobby os alunos entram e formam grupos; ao iniciar, a composição dos grupos **trava** e o cronômetro começa; ao encerrar, ninguém mais responde.",
+            "Os grupos podem se formar de modos diferentes, escolhidos pelo professor: **livre** (alunos criam/entram), **designado** (o professor monta) ou **sorteio** (o sistema divide pelo tamanho desejado). Aluno sozinho é um grupo de um.",
+            "O envio é **coordenado entre os membros**: qualquer um inicia a submissão e os demais que estão online confirmam. Só com a confirmação o grupo é marcado como enviado e o documento daquele grupo é congelado."
+          ],
+          "concept": "Sincronização e seção crítica. Travar a composição na transição de estado e exigir confirmação coletiva para submeter são formas de coordenar processos concorrentes sobre um recurso compartilhado — evitando race conditions entre membros do mesmo grupo."
         }
       ]
     },
     {
-      "id": "resultados-correcao",
-      "title": "Correção & Auditoria",
+      "id": "seguranca",
+      "title": "Segurança",
       "articles": [
         {
-          "id": "correcao-manual-auto",
-          "title": "Correção & Envio de Resultados",
+          "id": "seguranca",
+          "title": "Segurança por topologia",
+          "icon": "security",
+          "diagram": "security",
           "body": [
-            "Questões objetivas (múltipla escolha, V/F, resposta curta) são processadas e corrigidas automaticamente contra o gabarito cadastrado.",
-            "Questões abertas (dissertativas e blocos de código) são avaliadas manualmente pelo professor, que pode atribuir notas e tecer comentários individuais por questão.",
-            "O professor pode exportar os resultados localmente em formato **CSV** estruturado ou gerar um arquivo **PDF** de revisão usando a impressão nativa do Electron.",
-            "**Envio de Resultados por E-mail**: Se o SMTP estiver configurado, o professor pode clicar em 'Enviar e-mails' para distribuir as notas, gabaritos e comentários personalizados aos alunos de forma automatizada e direta a partir do aplicativo."
-          ]
+            "As ações sensíveis do professor (criar prova, abrir/encerrar sessão, corrigir) **não existem como rotas HTTP** — vivem apenas como handlers de IPC dentro do app. Um aluno na LAN simplesmente não tem como alcançá-las: a confiança vem da **topologia**, não só de um middleware.",
+            "Para os alunos, o controle é por **token Bearer** emitido no `join`, válido só naquela sessão e escopado ao próprio aluno e seu grupo. Toda entrada HTTP é validada com **Zod** (schemas compartilhados em `packages/shared`), e cada leitura/escrita do professor é escopada por `ownerId`.",
+            "Como a prova roda só na LAN da sala, nada trafega pela internet — é essa garantia *LAN-only* que sustenta o anti-cheat básico e mantém os dados dos alunos locais por padrão."
+          ],
+          "concept": "Superfície de ataque e menor privilégio. Não expor uma operação na rede é mais forte do que protegê-la com autenticação — você reduz a superfície de ataque na origem. Tokens com escopo e validação de entrada complementam isso para o que precisa, sim, atravessar a rede."
         },
         {
-          "id": "auditoria",
-          "title": "Log de Auditoria",
+          "id": "envio-email",
+          "title": "Envio de resultados via SMTP local",
+          "icon": "security",
           "body": [
-            "O sistema registra o histórico de atividades e o ciclo de conexões de cada estudante durante a aplicação da avaliação.",
-            "O professor pode acessar uma linha do tempo detalhada que documenta horários exatos de entrada na sessão (`joinedAt`), envio de batimentos de presença (heartbeat), desconexões ou saída voluntária da sala (`leftAt`), e o momento exato de envio da prova (`submittedAt`).",
-            "Notificações instantâneas (toasts) avisam o professor em tempo real quando alunos entram, se desconectam ou submetem suas respostas."
-          ]
-        }
-      ]
-    },
-    {
-      "id": "sync-opcional",
-      "title": "Sincronização com Nuvem",
-      "articles": [
-        {
-          "id": "stay-local",
-          "title": "Design Local-First",
-          "body": [
-            "O OfflineClass opera de forma 100% autônoma e offline-first por padrão. A opção de sincronização é estritamente opt-in e manual.",
-            "Ao ativar a opção de vinculação com a nuvem, o professor pode associar o aplicativo desktop a uma conta em um servidor VPS remoto utilizando credenciais de acesso seguro.",
-            "A integração permite realizar backup das definições de provas e enviar os resultados das avaliações consolidadas para armazenamento remoto.",
-            "A infraestrutura de sincronização será integrada com a tecnologia **PowerSync** para controle e replicação inteligente de dados."
-          ]
+            "Ao concluir a correção, o professor pode disparar as notas e gabaritos diretamente aos e-mails dos alunos a partir do próprio aplicativo desktop, utilizando conexões SMTP locais configuradas na área de configurações.",
+            "A senha do SMTP é criptografada em repouso (at-rest) de forma robusta por meio do `safeStorage` do Electron, delegando o armazenamento do segredo criptográfico ao chaveiro seguro nativo do sistema operacional (Keychain no macOS, DPAPI no Windows, ou libsecret no Linux).",
+            "A interface do professor também oferece um assistente integrado para guiar a configuração de Senhas de App para contas do Gmail, além de feedbacks e alertas de timeout para maior resiliência em redes locais lentas."
+          ],
+          "concept": "Armazenamento seguro e encriptação de segredos em repouso. Em vez de armazenar senhas em texto puro no banco de dados local ou delegar a segurança a serviços centralizados em nuvem, o software utiliza a chave mestra criptográfica mantida nativamente pelo gerenciador de credenciais do sistema operacional do computador do professor."
         }
       ]
     }
