@@ -1,7 +1,4 @@
 import { app, dialog, type BrowserWindow } from 'electron'
-
-// electron-updater ships as CommonJS; the default-import + destructure form is
-// the supported way to reach `autoUpdater` from an ESM/TS main process.
 import { autoUpdater } from 'electron-updater'
 
 /**

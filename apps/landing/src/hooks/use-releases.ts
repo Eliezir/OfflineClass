@@ -65,6 +65,30 @@ export function matchAsset(
   return assets.find((a) => regs.some((r) => r.test(a.name)))
 }
 
+/**
+ * Find the installer for a specific app on a specific platform. An asset must
+ * match BOTH the app's name discriminator (e.g. teacher vs student) AND one of
+ * the platform's patterns — the two apps share the same `…-setup.exe` suffix,
+ * so platform matching alone can't tell them apart.
+ */
+// Auto-update metadata / installer sidecars — never a user-facing download.
+const NON_INSTALLER = /\.(blockmap|yml|yaml|sha512|sha256)$/i
+
+export function matchAppAsset(
+  assets: ReleaseAsset[],
+  appPattern: string,
+  platformPatterns: string[],
+): ReleaseAsset | undefined {
+  const appReg = new RegExp(appPattern, 'i')
+  const platformRegs = platformPatterns.map((p) => new RegExp(p, 'i'))
+  return assets.find(
+    (a) =>
+      !NON_INSTALLER.test(a.name) &&
+      appReg.test(a.name) &&
+      platformRegs.some((r) => r.test(a.name)),
+  )
+}
+
 export function formatBytes(n: number): string {
   if (!n) return ''
   const mb = n / 1024 / 1024

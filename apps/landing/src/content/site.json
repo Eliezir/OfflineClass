@@ -136,6 +136,23 @@
     { "id": "windows", "label": "Windows", "icon": "windows", "match": ["\\.exe$", "-win", "windows", "setup", "\\.msi$"] },
     { "id": "linux", "label": "Linux", "icon": "linux", "match": ["\\.appimage$", "\\.deb$", "\\.rpm$", "linux", "\\.tar\\.gz$", "\\.snap$"] }
   ],
+  "apps": [
+    {
+      "id": "teacher",
+      "label": "Professor",
+      "icon": "teacher",
+      "blurb": "Cria a sala e o servidor da avaliação. Instale no computador do professor.",
+      "match": "^offlineclass-(?!student)"
+    },
+    {
+      "id": "student",
+      "label": "Aluno",
+      "icon": "student",
+      "blurb": "App dedicado para os alunos entrarem na prova.",
+      "hint": "Os alunos também podem entrar pelo navegador, sem instalar nada.",
+      "match": "offlineclass-student"
+    }
+  ],
   "stack": [
     "TypeScript", "Electron", "React", "Hono", "WebSocket", "Yjs", "Drizzle", "SQLite", "Zod", "Tailwind"
   ],
