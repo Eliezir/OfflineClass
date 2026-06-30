@@ -11,15 +11,26 @@ import {
   PopoverDescription,
   PopoverTrigger
 } from '@/components/ui/popover'
+import { Avatar } from '@offlineclass/avatar'
 import { SettingsDialog } from '@/components/SettingsDialog'
 import { cn } from '@/lib/utils'
-import { type StudentProfile, loadProfile, saveProfile, clearProfile, initials } from '@/lib/studentProfile'
+import {
+  type StudentProfile,
+  loadProfile,
+  saveProfile,
+  clearProfile,
+  getLastMatricula,
+  initials
+} from '@/lib/studentProfile'
 import { clearToken } from '@/lib/session'
 import { isElectron } from '@/lib/platform'
+import { maskEmail } from '@/lib/mask'
 
 interface StudentMenuProps {
   onProfileChange: (profile: StudentProfile | null) => void
 }
+
+const isValidEmail = (value: string): boolean => /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(value.trim())
 
 export function StudentMenu({ onProfileChange }: StudentMenuProps): React.JSX.Element {
   const [open, setOpen] = useState(false)
@@ -27,20 +38,30 @@ export function StudentMenu({ onProfileChange }: StudentMenuProps): React.JSX.El
   const [settingsOpen, setSettingsOpen] = useState(false)
   const [name, setName] = useState('')
   const [matricula, setMatricula] = useState('')
+  const [email, setEmail] = useState('')
 
-  const stored = loadProfile()
+  const last = getLastMatricula()
+  const stored = last ? loadProfile(last) : null
 
   const handleEdit = (): void => {
     if (stored) {
       setName(stored.name)
       setMatricula(stored.matricula)
+      setEmail(stored.email ?? '')
     }
     setEditing(true)
   }
 
+  const canSave = name.trim().length >= 2 && matricula.trim().length >= 2 && isValidEmail(email)
+
   const handleSave = (): void => {
-    if (name.trim().length < 2 || matricula.trim().length < 2) return
-    const profile: StudentProfile = { name: name.trim(), matricula: matricula.trim() }
+    if (!canSave) return
+    const profile: StudentProfile = {
+      name: name.trim(),
+      matricula: matricula.trim(),
+      email: email.trim(),
+      avatar: stored?.avatar ?? null
+    }
     saveProfile(profile)
     onProfileChange(profile)
     setEditing(false)
@@ -48,7 +69,7 @@ export function StudentMenu({ onProfileChange }: StudentMenuProps): React.JSX.El
   }
 
   const handleClear = (): void => {
-    clearProfile()
+    if (stored) clearProfile(stored.matricula)
     clearToken()
     onProfileChange(null)
     setOpen(false)
@@ -57,7 +78,7 @@ export function StudentMenu({ onProfileChange }: StudentMenuProps): React.JSX.El
   const handleQuit = (): void => {
     setOpen(false)
     if (isElectron()) {
-      clearProfile()
+      if (stored) clearProfile(stored.matricula)
       onProfileChange(null)
       window.api.window.close()
     }
@@ -77,9 +98,13 @@ export function StudentMenu({ onProfileChange }: StudentMenuProps): React.JSX.El
     >
       {stored ? (
         <>
-          <span className="grid size-9 shrink-0 place-items-center rounded-full bg-primary-soft text-sm font-bold text-primary">
-            {initials(stored.name)}
-          </span>
+          {stored.avatar ? (
+            <Avatar config={stored.avatar} size={36} />
+          ) : (
+            <span className="grid size-9 shrink-0 place-items-center rounded-full bg-primary-soft text-sm font-bold text-primary">
+              {initials(stored.name)}
+            </span>
+          )}
           <span className="min-w-0 flex-1">
             <span className="block truncate text-sm font-bold">{stored.name}</span>
             <span className="block truncate text-xs text-muted-foreground">
@@ -130,6 +155,13 @@ export function StudentMenu({ onProfileChange }: StudentMenuProps): React.JSX.El
                 onChange={(e) => setMatricula(e.target.value)}
                 className="border-input-border bg-input w-full rounded-[10px] border px-2.5 py-1.5 text-sm outline-none focus-visible:border-ring focus-visible:ring-[3px] focus-visible:ring-ring/25"
               />
+              <input
+                type="email"
+                placeholder="E-mail"
+                value={email}
+                onChange={(e) => setEmail(maskEmail(e.target.value))}
+                className="border-input-border bg-input w-full rounded-[10px] border px-2.5 py-1.5 text-sm outline-none focus-visible:border-ring focus-visible:ring-[3px] focus-visible:ring-ring/25"
+              />
               <div className="flex gap-2">
                 <button
                   type="button"
@@ -141,7 +173,7 @@ export function StudentMenu({ onProfileChange }: StudentMenuProps): React.JSX.El
                 <button
                   type="button"
                   onClick={handleSave}
-                  disabled={name.trim().length < 2 || matricula.trim().length < 2}
+                  disabled={!canSave}
                   className="bg-primary text-primary-foreground flex-1 cursor-pointer rounded-[10px] px-3 py-1.5 text-sm font-bold disabled:opacity-50"
                 >
                   Salvar
@@ -228,10 +260,17 @@ export function StudentMenu({ onProfileChange }: StudentMenuProps): React.JSX.El
               onChange={(e) => setMatricula(e.target.value)}
               className="border-input-border bg-input w-full rounded-[10px] border px-2.5 py-1.5 text-sm outline-none focus-visible:border-ring focus-visible:ring-[3px] focus-visible:ring-ring/25"
             />
+            <input
+              type="email"
+              placeholder="E-mail"
+              value={email}
+              onChange={(e) => setEmail(maskEmail(e.target.value))}
+              className="border-input-border bg-input w-full rounded-[10px] border px-2.5 py-1.5 text-sm outline-none focus-visible:border-ring focus-visible:ring-[3px] focus-visible:ring-ring/25"
+            />
             <button
               type="button"
               onClick={handleSave}
-              disabled={name.trim().length < 2 || matricula.trim().length < 2}
+              disabled={!canSave}
               className="bg-primary text-primary-foreground w-full cursor-pointer rounded-[10px] px-3 py-1.5 text-sm font-bold disabled:opacity-50"
             >
               Salvar

@@ -1,21 +1,36 @@
-import { Check, X } from 'lucide-react'
-import { Trans } from '@lingui/react/macro'
+import { useState } from 'react'
+import { Check, MessageSquarePlus, X } from 'lucide-react'
+import { Trans, useLingui } from '@lingui/react/macro'
 import { cn } from '@renderer/shared/utils'
 import type { GradedAnswer } from '../types'
 import { GradeInput } from './grade-input'
+import { CommentField } from './comment-field'
 
 type GradedAnswerRowProps = {
   index: number
   answer: GradedAnswer
   onGrade: (score: number) => void
+  onComment: (comment: string) => void | Promise<unknown>
+}
+
+/** Draft comment suggested for a wrong MCQ answer — the teacher edits/confirms. */
+function mcqSuggestion(answer: GradedAnswer): string | undefined {
+  const { question, value } = answer
+  if (question.kind !== 'mcq' || value === null) return undefined
+  const chosen = question.options.find((o) => o.id === value)
+  if (chosen?.correct) return undefined
+  const correct = question.options.find((o) => o.correct)
+  if (!correct) return undefined
+  return `A resposta correta é "${correct.text}".`
 }
 
 export function GradedAnswerRow({
   index,
   answer,
-  onGrade
+  onGrade,
+  onComment
 }: GradedAnswerRowProps): React.JSX.Element {
-  const { question, value, points, awarded } = answer
+  const { question, value, points, awarded, feedback } = answer
   const answered = value !== null
 
   return (
@@ -57,7 +72,56 @@ export function GradedAnswerRow({
           </div>
         </div>
       )}
+
+      <AnswerComment
+        feedback={feedback}
+        onComment={onComment}
+        suggestion={mcqSuggestion(answer)}
+      />
     </article>
+  )
+}
+
+/** Collapsible per-answer feedback field. Saved on blur when it changed. */
+function AnswerComment({
+  feedback,
+  onComment,
+  suggestion
+}: {
+  feedback: string | null
+  onComment: (comment: string) => void | Promise<unknown>
+  suggestion?: string
+}): React.JSX.Element {
+  const { t } = useLingui()
+  // Auto-open when there's already a comment or a suggestion to confirm.
+  const [open, setOpen] = useState(feedback !== null || !!suggestion)
+
+  if (!open) {
+    return (
+      <button
+        type="button"
+        onClick={() => setOpen(true)}
+        className="mt-3 inline-flex items-center gap-1.5 text-xs font-bold text-muted-foreground transition-colors hover:text-foreground"
+      >
+        <MessageSquarePlus className="size-3.5" />
+        <Trans>Adicionar comentário</Trans>
+      </button>
+    )
+  }
+
+  return (
+    <div className="mt-3 space-y-1.5">
+      <span className="text-xs font-bold text-muted-foreground">
+        <Trans>Comentário para o aluno</Trans>
+      </span>
+      <CommentField
+        value={feedback}
+        onSave={onComment}
+        initialDraft={suggestion}
+        placeholder={t`Escreva um comentário sobre esta resposta…`}
+        ariaLabel={t`Comentário para o aluno`}
+      />
+    </div>
   )
 }
 

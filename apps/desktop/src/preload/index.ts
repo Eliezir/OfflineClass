@@ -9,7 +9,15 @@ import type {
   IpcOutput
 } from '@shared/ipc/contract'
 import type {
+  AvatarConfig,
+  CommentAnswerInput,
+  CommentStudentInput,
   DiscoveryStatus,
+  EmailResultsInput,
+  EmailSendResult,
+  EmailSettings,
+  EmailSettingsInput,
+  EmailTestResult,
   Exam,
   ExamInput,
   ExamSummary,
@@ -24,6 +32,7 @@ import type {
   SessionDetail,
   SessionResultSummary,
   SessionSummary,
+  SetStudentEmailInput,
   Teacher,
   GroupPublic
 } from '@offlineclass/shared'
@@ -54,6 +63,8 @@ const domain = {
       ipcRenderer.invoke('auth.register', input),
     login: (input: LoginInput): Promise<Teacher> => ipcRenderer.invoke('auth.login', input),
     me: (): Promise<Teacher | null> => ipcRenderer.invoke('auth.me'),
+    updateAvatar: (avatar: AvatarConfig | null): Promise<Teacher> =>
+      ipcRenderer.invoke('auth.updateAvatar', avatar),
     logout: (): Promise<null> => ipcRenderer.invoke('auth.logout'),
     getToken: (): Promise<string | null> => ipcRenderer.invoke('auth.getToken')
   },
@@ -91,6 +102,20 @@ const domain = {
       ipcRenderer.invoke('sessions.studentAnswers', sessionId, studentId),
     gradeAnswer: (sessionId: string, input: GradeAnswerInput): Promise<SessionAnswersReview> =>
       ipcRenderer.invoke('sessions.gradeAnswer', sessionId, input),
+    commentAnswer: (sessionId: string, input: CommentAnswerInput): Promise<SessionAnswersReview> =>
+      ipcRenderer.invoke('sessions.commentAnswer', sessionId, input),
+    commentStudent: (
+      sessionId: string,
+      input: CommentStudentInput
+    ): Promise<SessionAnswersReview> =>
+      ipcRenderer.invoke('sessions.commentStudent', sessionId, input),
+    setStudentEmail: (
+      sessionId: string,
+      input: SetStudentEmailInput
+    ): Promise<SessionAnswersReview> =>
+      ipcRenderer.invoke('sessions.setStudentEmail', sessionId, input),
+    emailResults: (sessionId: string, input: EmailResultsInput): Promise<EmailSendResult[]> =>
+      ipcRenderer.invoke('sessions.emailResults', sessionId, input),
     createGroup: (sessionId: string, name: string, studentId: string): Promise<GroupPublic> =>
       ipcRenderer.invoke('sessions.createGroup', sessionId, name, studentId),
     joinGroup: (groupId: string, studentId: string): Promise<void> =>
@@ -117,12 +142,21 @@ const domain = {
       ipcRenderer.invoke('sessions.subscribeGroupAwareness', groupId),
     unsubscribeGroupAwareness: (groupId: string): Promise<void> =>
       ipcRenderer.invoke('sessions.unsubscribeGroupAwareness', groupId),
-    onGroupAwarenessUpdate: (handler: (groupId: string, encoded: Uint8Array) => void): (() => void) => {
+    onGroupAwarenessUpdate: (
+      handler: (groupId: string, encoded: Uint8Array) => void
+    ): (() => void) => {
       const listener = (_e: IpcRendererEvent, groupId: string, encoded: Uint8Array): void =>
         handler(groupId, encoded)
       ipcRenderer.on('group.awareness.update', listener)
       return () => ipcRenderer.removeListener('group.awareness.update', listener)
     }
+  },
+  email: {
+    getSettings: (): Promise<EmailSettings | null> => ipcRenderer.invoke('email.getSettings'),
+    saveSettings: (input: EmailSettingsInput): Promise<EmailSettings> =>
+      ipcRenderer.invoke('email.saveSettings', input),
+    test: (input: EmailSettingsInput): Promise<EmailTestResult> =>
+      ipcRenderer.invoke('email.test', input)
   }
 }
 

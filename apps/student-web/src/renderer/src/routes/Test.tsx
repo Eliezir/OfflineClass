@@ -647,15 +647,15 @@ function QuestionCard({
   studentId,
   lastEditor
 }: QuestionCardProps): React.JSX.Element {
-  const optionList =
+  const options =
     question.kind === 'mcq' || question.kind === 'multi' ? question.options : undefined
   const scrambledOptions = useMemo(() => {
-    if (scrambleOptions && optionList) {
+    if (scrambleOptions && options) {
       const seed = `${studentId || 'student'}-${question.id}`
-      return seededShuffle(optionList, seed)
+      return seededShuffle(options, seed)
     }
-    return optionList ?? []
-  }, [scrambleOptions, optionList, question.id, studentId])
+    return options ?? []
+  }, [scrambleOptions, options, question.id, studentId])
 
   return (
     <Card>

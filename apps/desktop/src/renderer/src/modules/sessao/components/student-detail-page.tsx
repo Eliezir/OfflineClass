@@ -3,6 +3,7 @@ import { Link } from '@tanstack/react-router'
 import { Trans, useLingui } from '@lingui/react/macro'
 import type { SessionAnswersReview, SessionLobbyStudent } from '@offlineclass/shared'
 import { Button } from '@renderer/shared/ui/button'
+import { Breadcrumb } from '@renderer/shared/components/breadcrumb'
 import { EmptyState } from '@renderer/shared/ui/empty-state'
 import { formatRelativeTime } from '@renderer/shared/utils/format'
 import { useActiveSessionQuery, useStudentAnswersQuery } from '../queries'
@@ -35,12 +36,9 @@ export function StudentDetailPage({ studentId }: StudentDetailPageProps): React.
   return (
     <main className="scrollbar-subtle flex flex-1 flex-col overflow-y-auto px-6 pb-6">
       <div className="flex items-center justify-between gap-3 pt-6">
-        <Button asChild variant="ghost" size="sm">
-          <Link to="/sessao">
-            <ArrowLeft />
-            <Trans>Voltar para a sessão</Trans>
-          </Link>
-        </Button>
+        <Breadcrumb
+          items={[{ label: t`Sessão`, to: '/sessao' }, { label: student?.name ?? t`Aluno` }]}
+        />
         {session && session.status === 'running' && (
           <div className="flex items-center gap-2">
             <StatusPill status={session.status} />
@@ -114,7 +112,7 @@ function StudentDetail({
     <>
       {/* Hero */}
       <header className="mt-4 flex flex-wrap items-center gap-4 rounded-2xl border border-border bg-card p-5">
-        <StudentAvatar name={student.name} className="size-14 text-base" />
+        <StudentAvatar name={student.name} avatar={student.avatar} className="size-14 text-base" />
         <div className="min-w-0 flex-1">
           <h1 className="font-display text-2xl font-bold tracking-tight flex items-center gap-2">
             <span>{student.name}</span>

@@ -6,7 +6,7 @@ import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { StudentMenu } from '@/components/StudentMenu'
 import { useServerUrl } from '../lib/serverContext'
-import { loadProfile, type StudentProfile } from '../lib/studentProfile'
+import { loadProfile, getLastMatricula, type StudentProfile } from '../lib/studentProfile'
 
 interface DiscoveredSession {
   url: string
@@ -22,7 +22,10 @@ export default function DiscoverRoute(): React.JSX.Element {
   const { teacherUrl, setTeacherUrl } = useServerUrl()
   const [status, setStatus] = useState<DiscoverStatus>('scanning')
   const [session, setSession] = useState<DiscoveredSession | null>(null)
-  const [profile, setProfile] = useState<StudentProfile | null>(loadProfile)
+  const [profile, setProfile] = useState<StudentProfile | null>(() => {
+    const last = getLastMatricula()
+    return last ? loadProfile(last) : null
+  })
   const timeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null)
 
   const clearScanTimeout = useCallback(() => {

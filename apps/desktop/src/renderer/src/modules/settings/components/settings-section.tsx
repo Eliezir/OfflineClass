@@ -6,11 +6,14 @@ export function SettingsSection({
   icon: Icon,
   title,
   description,
+  action,
   children
 }: {
   icon: LucideIcon
   title: string
   description?: string
+  /** Optional control rendered at the right of the header (e.g. a help button). */
+  action?: React.ReactNode
   children: React.ReactNode
 }): React.JSX.Element {
   return (
@@ -19,10 +22,11 @@ export function SettingsSection({
         <span className="grid size-10 shrink-0 place-items-center rounded-[6px] bg-primary-soft text-primary">
           <Icon className="size-5" />
         </span>
-        <div className="min-w-0">
+        <div className="min-w-0 flex-1">
           <h2 className="text-base font-semibold text-foreground">{title}</h2>
           {description && <p className="mt-0.5 text-sm text-muted-foreground">{description}</p>}
         </div>
+        {action && <div className="shrink-0">{action}</div>}
       </div>
       <div className="divide-y divide-border/60">{children}</div>
     </section>

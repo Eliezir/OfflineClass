@@ -3,6 +3,7 @@ import { and, asc, eq, isNull } from 'drizzle-orm'
 import type { GroupMember, GroupPublic } from '@offlineclass/shared'
 import type { Db } from '../db/client'
 import { groupMembers, groups, students } from '../db/schema'
+import { parseAvatar } from './store'
 
 export class GroupError extends Error {
   code: string
@@ -79,6 +80,7 @@ function loadGroup(db: Db, groupId: string): GroupPublic {
       studentId: students.id,
       studentName: students.name,
       studentMatricula: students.matricula,
+      avatar: students.avatar,
       joinedAt: groupMembers.joinedAt
     })
     .from(groupMembers)
@@ -91,6 +93,7 @@ function loadGroup(db: Db, groupId: string): GroupPublic {
     studentId: m.studentId,
     studentName: m.studentName,
     studentMatricula: m.studentMatricula,
+    avatar: parseAvatar(m.avatar),
     joinedAt: m.joinedAt.getTime()
   }))
 

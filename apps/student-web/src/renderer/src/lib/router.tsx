@@ -7,6 +7,7 @@ import WaitingRoute from '../routes/Waiting'
 import TestRoute from '../routes/Test'
 import DoneRoute from '../routes/Done'
 import EndedRoute from '../routes/Ended'
+import AvatarPreviewRoute from '../routes/AvatarPreview'
 
 export const router = createHashRouter([
   {
@@ -18,6 +19,7 @@ export const router = createHashRouter([
       { path: '/test', element: <TestRoute /> },
       { path: '/done', element: <DoneRoute /> },
       { path: '/ended', element: <EndedRoute /> },
+      { path: '/avatar', element: <AvatarPreviewRoute /> },
       { path: '*', element: <Navigate to="/" replace /> }
     ]
   }

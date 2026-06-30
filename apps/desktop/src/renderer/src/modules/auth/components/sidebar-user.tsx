@@ -2,6 +2,7 @@ import { useState } from 'react'
 import { ChevronsUpDown, LogOut, Settings, UserRound } from 'lucide-react'
 import { useLingui } from '@lingui/react/macro'
 import { useNavigate } from '@tanstack/react-router'
+import { Avatar } from '@offlineclass/avatar'
 import {
   Popover,
   PopoverContent,
@@ -56,9 +57,13 @@ export function SidebarUser(): React.JSX.Element | null {
             'data-[state=open]:bg-foreground/[0.05]'
           )}
         >
-          <span className="grid size-9 shrink-0 place-items-center rounded-full bg-primary-soft text-sm font-bold text-primary">
-            {initials(me.name)}
-          </span>
+          {me.avatar ? (
+            <Avatar config={me.avatar} size={36} />
+          ) : (
+            <span className="grid size-9 shrink-0 place-items-center rounded-full bg-primary-soft text-sm font-bold text-primary">
+              {initials(me.name)}
+            </span>
+          )}
           <span className="min-w-0 flex-1">
             <span className="block truncate text-sm font-bold">{me.name}</span>
             <span className="block truncate text-xs text-muted-foreground">{me.email}</span>

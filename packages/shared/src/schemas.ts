@@ -8,12 +8,35 @@ export const DiscoveryStatus = z.object({
 })
 export type DiscoveryStatus = z.infer<typeof DiscoveryStatus>
 
+// -- Avatar ----------------------------------------------------------------
+
+/** DiceBear "adventurer" avatar — only the part IDs travel the LAN; the art is
+    bundled in both apps (`packages/avatar`). Empty string = "none" for the
+    optional parts (hair/glasses/earrings/features). Shared by students and the
+    teacher's own optional profile avatar. */
+const AvatarId = z.string().max(40)
+export const AvatarConfig = z.object({
+  skinColor: AvatarId,
+  hair: AvatarId,
+  hairColor: AvatarId,
+  eyes: AvatarId,
+  eyebrows: AvatarId,
+  mouth: AvatarId,
+  glasses: AvatarId,
+  earrings: AvatarId,
+  features: AvatarId,
+  backgroundColor: AvatarId
+})
+export type AvatarConfig = z.infer<typeof AvatarConfig>
+
 // -- Auth ------------------------------------------------------------------
 
 export const Teacher = z.object({
   id: z.string(),
   email: z.string().email(),
-  name: z.string()
+  name: z.string(),
+  /** Optional profile avatar. Null = fall back to initials everywhere. */
+  avatar: AvatarConfig.nullable()
 })
 export type Teacher = z.infer<typeof Teacher>
 
@@ -214,6 +237,8 @@ export const SessionLobbyStudent = z.object({
   id: z.string(),
   name: z.string(),
   matricula: z.string(),
+  avatar: AvatarConfig.nullable(),
+  email: z.string().nullable(),
   joinedAt: z.number().int(),
   lastSeenAt: z.number().int(),
   submittedAt: z.number().int().nullable(),
@@ -242,6 +267,7 @@ export const GroupMember = z.object({
   studentId: z.string(),
   studentName: z.string(),
   studentMatricula: z.string(),
+  avatar: AvatarConfig.nullable(),
   joinedAt: z.number().int()
 })
 export type GroupMember = z.infer<typeof GroupMember>
@@ -258,6 +284,8 @@ export const SessionDetail = z.object({
   id: z.string(),
   examId: z.string(),
   examTitle: z.string(),
+  // Disciplina/matéria da prova (pode não estar preenchida).
+  examSubject: z.string().nullable(),
   status: SessionStatus,
   durationMinutes: z.number().int(),
   allowLateJoin: z.boolean(),
@@ -284,13 +312,29 @@ export const SessionPublic = z.object({
   allowLateJoin: z.boolean(),
   scrambleQuestions: z.boolean(),
   scrambleOptions: z.boolean(),
-  groupMode: GroupMode
+  groupMode: GroupMode,
+  // Who is running the room, so students can confirm they joined the right one.
+  teacherName: z.string(),
+  teacherAvatar: AvatarConfig.nullable()
 })
 export type SessionPublic = z.infer<typeof SessionPublic>
 
+/** Required student e-mail: a valid address, used so the teacher can e-mail the
+    grade after the test. The teacher can still edit it on the results screen. */
+export const RequiredStudentEmail = z
+  .string()
+  .min(1, 'E-mail obrigatório')
+  .email('E-mail inválido')
+  .max(160)
+export type RequiredStudentEmail = z.infer<typeof RequiredStudentEmail>
+
 export const JoinInput = z.object({
   name: z.string().min(2, 'Nome obrigatório').max(80),
-  matricula: z.string().min(2, 'Matrícula obrigatória').max(40)
+  matricula: z.string().min(2, 'Matrícula obrigatória').max(40),
+  // Required — lets the teacher e-mail the grade afterwards.
+  email: RequiredStudentEmail,
+  // Optional avatar; teacher/peers fall back to initials when absent.
+  avatar: AvatarConfig.optional()
 })
 export type JoinInput = z.infer<typeof JoinInput>
 
@@ -304,7 +348,16 @@ export const JoinResult = z.object({
 })
 export type JoinResult = z.infer<typeof JoinResult>
 
+// Slim roster sent to students (peers see only name + avatar, never matrícula).
+export const RosterStudent = z.object({
+  id: z.string(),
+  name: z.string(),
+  avatar: AvatarConfig.nullable()
+})
+export type RosterStudent = z.infer<typeof RosterStudent>
 
+export const UpdateAvatarInput = z.object({ avatar: AvatarConfig })
+export type UpdateAvatarInput = z.infer<typeof UpdateAvatarInput>
 
 export const WsServerEvent = z.discriminatedUnion('type', [
   z.object({
@@ -314,6 +367,10 @@ export const WsServerEvent = z.discriminatedUnion('type', [
   z.object({
     type: z.literal('session.lobby.update'),
     students: z.array(SessionLobbyStudent)
+  }),
+  z.object({
+    type: z.literal('session.roster.update'),
+    students: z.array(RosterStudent)
   }),
   z.object({
     type: z.literal('session.started'),
@@ -456,7 +513,9 @@ export const StudentAnswerReview = z.object({
   correct: z.boolean().nullable(),
   // 1.0 / 0.0 derived for MCQ. For essay: null until the teacher grades it,
   // then whatever score they entered.
-  score: z.number().nullable()
+  score: z.number().nullable(),
+  // Free-text feedback the teacher leaves on this answer (any question kind).
+  feedback: z.string().nullable()
 })
 export type StudentAnswerReview = z.infer<typeof StudentAnswerReview>
 
@@ -465,7 +524,15 @@ export const SessionAnswersReview = z.object({
   studentId: z.string(),
   studentName: z.string(),
   studentMatricula: z.string(),
+  studentEmail: z.string().nullable(),
+  studentAvatar: AvatarConfig.nullable(),
+  // Overall remark the teacher leaves on the student (not tied to one question).
+  studentFeedback: z.string().nullable(),
+  // When the teacher last e-mailed this student their results; null = never.
+  resultsSentAt: z.number().int().nullable(),
   examTitle: z.string(),
+  // Disciplina/matéria da prova (pode não estar preenchida).
+  examSubject: z.string().nullable(),
   groupName: z.string().nullable(),
   submittedAt: z.number().int().nullable(),
   joinedAt: z.number().int(),
@@ -484,6 +551,28 @@ export const GradeAnswerInput = z.object({
   score: z.number().min(0).max(10)
 })
 export type GradeAnswerInput = z.infer<typeof GradeAnswerInput>
+
+/** Free-text feedback on a single answer. Empty string clears the comment. */
+export const CommentAnswerInput = z.object({
+  studentId: z.string(),
+  questionId: z.string(),
+  comment: z.string().max(2000)
+})
+export type CommentAnswerInput = z.infer<typeof CommentAnswerInput>
+
+/** Overall remark on a student's exam. Empty string clears it. */
+export const CommentStudentInput = z.object({
+  studentId: z.string(),
+  comment: z.string().max(2000)
+})
+export type CommentStudentInput = z.infer<typeof CommentStudentInput>
+
+/** Teacher sets/edits a student's e-mail on the results screen. */
+export const SetStudentEmailInput = z.object({
+  studentId: z.string(),
+  email: z.union([z.literal(''), z.string().email('E-mail inválido').max(160)])
+})
+export type SetStudentEmailInput = z.infer<typeof SetStudentEmailInput>
 
 // Compact row for the "activities applied" list on the teacher Home.
 export const SessionSummary = z.object({
@@ -512,3 +601,61 @@ export const SessionResultSummary = z.object({
   endedAt: z.number().int().nullable()
 })
 export type SessionResultSummary = z.infer<typeof SessionResultSummary>
+
+// -- E-mail (send grades after the exam) ----------------------------------
+
+/** SMTP configuration the teacher fills in Settings. Stored owner-scoped in the
+    local DB; only used when the teacher chooses to e-mail grades (online-only). */
+export const EmailSettingsInput = z.object({
+  host: z.string().min(1, 'Obrigatório').max(255),
+  port: z.number().int().positive().max(65535),
+  // true → implicit TLS (port 465); false → STARTTLS (port 587).
+  secure: z.boolean(),
+  username: z.string().max(255),
+  // On save, an empty password means "keep the one already stored" — the
+  // renderer never receives the real password, so it can't echo it back.
+  password: z.string().max(500),
+  fromName: z.string().min(1, 'Obrigatório').max(120),
+  fromEmail: z.string().email('E-mail inválido').max(160)
+})
+export type EmailSettingsInput = z.infer<typeof EmailSettingsInput>
+
+/** Stored settings as returned to the renderer (null when never configured).
+    The SMTP password is NEVER sent back: it's encrypted at rest (Electron
+    safeStorage) and only decrypted in the main process when connecting.
+    `hasPassword` just tells the form whether one is already saved. */
+export const EmailSettings = z.object({
+  host: z.string(),
+  port: z.number().int(),
+  secure: z.boolean(),
+  username: z.string(),
+  hasPassword: z.boolean(),
+  fromName: z.string(),
+  fromEmail: z.string()
+})
+export type EmailSettings = z.infer<typeof EmailSettings>
+
+/** Result of a connection/auth test against the SMTP server. */
+export const EmailTestResult = z.object({
+  ok: z.boolean(),
+  error: z.string().nullable()
+})
+export type EmailTestResult = z.infer<typeof EmailTestResult>
+
+/** Which students to e-mail + optional subject/message overrides. */
+export const EmailResultsInput = z.object({
+  studentIds: z.array(z.string()).min(1, 'Selecione ao menos um aluno'),
+  subject: z.string().max(200).optional(),
+  message: z.string().max(2000).optional()
+})
+export type EmailResultsInput = z.infer<typeof EmailResultsInput>
+
+/** Per-student outcome of an e-mail batch. */
+export const EmailSendResult = z.object({
+  studentId: z.string(),
+  name: z.string(),
+  email: z.string().nullable(),
+  ok: z.boolean(),
+  error: z.string().nullable()
+})
+export type EmailSendResult = z.infer<typeof EmailSendResult>

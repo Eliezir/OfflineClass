@@ -140,6 +140,7 @@ async function bootstrap(): Promise<void> {
       registerIpcHandlers({
         auth: { db },
         discovery: { port: serverHandle.port, mdnsName: mdnsHandle.name },
+        email: { db },
         exams: { db },
         questions: { db },
         sessions: { db, rooms: activeRooms }

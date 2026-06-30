@@ -3,6 +3,11 @@
 @import '@fontsource-variable/nunito';
 @import '@fontsource-variable/jetbrains-mono';
 
+/* The shared avatar builder lives in packages/avatar; register it so Tailwind
+   generates the utility classes its components use (auto-detection skips it
+   because it resolves through node_modules). */
+@source "../../../../../../../packages/avatar/src";
+
 @custom-variant dark (&:is(.dark *));
 
 /* `tall:` opts in to height-dependent layout — used by the Home dashboard to

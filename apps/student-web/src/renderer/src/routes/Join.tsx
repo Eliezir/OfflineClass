@@ -1,18 +1,22 @@
 import { useState } from 'react'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { useNavigate } from 'react-router-dom'
-import { ArrowLeft, LogIn, RefreshCw, Loader2 } from 'lucide-react'
-import { JoinInput } from '@offlineclass/shared'
+import { ArrowLeft, ArrowRight, LogIn, RefreshCw, Loader2, Pencil, Shuffle } from 'lucide-react'
+import { JoinInput, type AvatarConfig } from '@offlineclass/shared'
+import { Avatar, AvatarEditorModal, randomAvatar } from '@offlineclass/avatar'
 
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
+import { TeacherChip } from '@/components/TeacherChip'
 import { createApi } from '../lib/api'
 import { saveToken } from '../lib/session'
 import { notify } from '../lib/toast'
 import { useServerUrl } from '../lib/serverContext'
-import { loadProfile, saveProfile, initials } from '../lib/studentProfile'
+import { loadProfile, saveProfile, getLastMatricula } from '../lib/studentProfile'
+
+type Step = 'matricula' | 'back' | 'identity'
 
 export default function JoinRoute(): React.JSX.Element {
   const navigate = useNavigate()
@@ -20,9 +24,12 @@ export default function JoinRoute(): React.JSX.Element {
   const { teacherUrl } = useServerUrl()
   const api = createApi(teacherUrl)
 
-  const stored = loadProfile()
-  const [name, setName] = useState(stored?.name ?? '')
-  const [matricula, setMatricula] = useState(stored?.matricula ?? '')
+  const [step, setStep] = useState<Step>('matricula')
+  const [matricula, setMatricula] = useState(getLastMatricula() ?? '')
+  const [name, setName] = useState('')
+  const [email, setEmail] = useState('')
+  const [avatar, setAvatar] = useState<AvatarConfig>(() => randomAvatar())
+  const [editorOpen, setEditorOpen] = useState(false)
   const [error, setError] = useState<string | null>(null)
 
   if (!teacherUrl) {
@@ -33,29 +40,22 @@ export default function JoinRoute(): React.JSX.Element {
   const active = useQuery({
     queryKey: ['session', 'active', teacherUrl],
     queryFn: api.sessionActive,
-    // Poll every 3s — the session might appear at any moment.
     refetchInterval: 3000,
     retry: false
   })
 
   const joinMutation = useMutation({
-    mutationFn: () => {
-      const profile = stored ?? { name, matricula }
-      const parsed = JoinInput.safeParse(profile)
-      if (!parsed.success) {
-        throw new Error(parsed.error.issues[0]?.message ?? 'Dados inválidos')
-      }
-      return api.join(parsed.data)
-    },
+    mutationFn: (input: JoinInput) => api.join(input),
     onSuccess: (res) => {
       saveToken(res.token)
-      saveProfile({ name: res.studentName, matricula: res.studentMatricula })
+      saveProfile({
+        name: res.studentName,
+        matricula: res.studentMatricula,
+        email: email.trim() || null,
+        avatar
+      })
       notify.success(`Bem-vindo, ${res.studentName}!`)
-      if (res.status === 'running') {
-        navigate('/test', { replace: true })
-      } else {
-        navigate('/waiting', { replace: true })
-      }
+      navigate(res.status === 'running' ? '/test' : '/waiting', { replace: true })
     },
     onError: (err: Error) => {
       setError(err.message)
@@ -63,22 +63,65 @@ export default function JoinRoute(): React.JSX.Element {
     }
   })
 
-  const handleSubmit = (e: React.FormEvent): void => {
-    e.preventDefault()
-    setError(null)
-    joinMutation.mutate()
-  }
-
-  const handleRefresh = (): void => {
-    qc.invalidateQueries({ queryKey: ['session', 'active', teacherUrl] })
-  }
+  const handleRefresh = (): void =>
+    void qc.invalidateQueries({ queryKey: ['session', 'active', teacherUrl] })
 
   const noSession = active.isError && (active.error as Error & { status?: number })?.status === 404
-  const sessionAvailable = active.data && (active.data.status === 'lobby' || active.data.status === 'running')
+  const sessionAvailable =
+    active.data && (active.data.status === 'lobby' || active.data.status === 'running')
   const examTitle = active.data?.examTitle
 
+  // ── Step transitions ──────────────────────────────────────────────────
+  function continueFromMatricula(): void {
+    const m = matricula.trim()
+    if (m.length < 2) {
+      setError('Digite sua matrícula')
+      return
+    }
+    setError(null)
+    const saved = loadProfile(m)
+    if (saved) {
+      setName(saved.name)
+      setEmail(saved.email ?? '')
+      if (saved.avatar) setAvatar(saved.avatar)
+      setStep('back')
+    } else {
+      setStep('identity')
+    }
+  }
+
+  function resetToMatricula(): void {
+    setStep('matricula')
+    setError(null)
+  }
+
+  function join(): void {
+    setError(null)
+    const input: JoinInput = {
+      name: name.trim(),
+      matricula: matricula.trim(),
+      email: email.trim(),
+      avatar
+    }
+    const parsed = JoinInput.safeParse(input)
+    if (!parsed.success) {
+      setError(parsed.error.issues[0]?.message ?? 'Dados inválidos')
+      return
+    }
+    saveProfile({ name: input.name, matricula: input.matricula, email: email.trim() || null, avatar })
+    joinMutation.mutate(parsed.data)
+  }
+
+  const joining = joinMutation.isPending
+
   return (
-    <main className="flex flex-1 flex-col items-center justify-center gap-6 px-6 py-10 overflow-y-auto">
+    <main className="flex flex-1 flex-col items-center justify-center gap-6 overflow-y-auto px-6 py-10">
+      <div className="flex flex-col items-center gap-2">
+        <img src="/logo-icon.png" alt="OfflineClass" className="size-12 rounded-2xl shadow-sm" />
+        <span className="text-muted-foreground font-display text-sm font-bold tracking-tight">
+          OfflineClass
+        </span>
+      </div>
       <Card className="w-full max-w-sm">
         <CardHeader>
           <CardTitle>Entrar na prova</CardTitle>
@@ -91,7 +134,6 @@ export default function JoinRoute(): React.JSX.Element {
           </CardDescription>
         </CardHeader>
         <CardContent className="space-y-4">
-          {/* ── Loading ────────────────────────────────────────────────── */}
           {active.isPending && (
             <div className="flex flex-col items-center gap-3 py-6">
               <Loader2 className="text-muted-foreground size-5 animate-spin" />
@@ -99,128 +141,209 @@ export default function JoinRoute(): React.JSX.Element {
             </div>
           )}
 
-          {/* ── No active session ──────────────────────────────────────── */}
           {noSession && (
             <div className="flex flex-col items-center gap-4 py-4 text-center">
               <div className="bg-muted/50 flex flex-col items-center gap-3 rounded-2xl p-4">
                 <Loader2 className="text-muted-foreground size-5 animate-spin" />
-                <p className="text-sm font-medium">
-                  Aguardando o professor abrir a sala…
-                </p>
+                <p className="text-sm font-medium">Aguardando o professor abrir a sala…</p>
                 <p className="text-muted-foreground text-xs leading-relaxed">
-                  O professor ainda não iniciou uma sessão. Esta tela atualiza automaticamente a cada 3 segundos.
+                  O professor ainda não iniciou uma sessão. Esta tela atualiza automaticamente a
+                  cada 3 segundos.
                 </p>
               </div>
               <Button variant="secondary" className="w-full" onClick={handleRefresh}>
                 <RefreshCw className="size-4" />
                 Verificar agora
               </Button>
-              <Button
-                variant="ghost"
-                size="sm"
-                className="w-full"
-                onClick={() => navigate('/', { replace: true })}
-              >
+              <Button variant="ghost" size="sm" className="w-full" onClick={() => navigate('/', { replace: true })}>
                 <ArrowLeft className="size-3.5" />
                 Voltar
               </Button>
             </div>
           )}
 
-          {/* ── Session available ──────────────────────────────────────── */}
           {sessionAvailable && (
-            <form className="space-y-4" onSubmit={handleSubmit}>
-              {/* Profile chip (if registered) */}
-              {stored ? (
-                <div className="bg-primary-soft border-primary/10 flex items-center gap-3 rounded-2xl border p-3">
-                  <span className="grid size-10 shrink-0 place-items-center rounded-full bg-primary text-sm font-bold text-primary-foreground">
-                    {initials(stored.name)}
-                  </span>
-                  <div className="min-w-0 text-left">
-                    <p className="truncate text-sm font-bold text-primary-soft-foreground">
-                      {stored.name}
-                    </p>
-                    <p className="truncate text-xs text-muted-foreground">
-                      {stored.matricula}
-                    </p>
-                  </div>
+            <div className="space-y-4">
+              {active.data?.teacherName && (
+                <div className="flex justify-center">
+                  <TeacherChip name={active.data.teacherName} avatar={active.data.teacherAvatar} />
                 </div>
-              ) : (
-                <>
+              )}
+
+              {/* progress (hidden on the recognized "welcome back" shortcut) */}
+              {step !== 'back' && (
+                <div className="flex gap-1.5">
+                  {(['matricula', 'identity'] as const).map((s, i) => {
+                    const order = { matricula: 0, identity: 1 }
+                    const reached = order[step as 'matricula' | 'identity'] >= i
+                    return (
+                      <span
+                        key={s}
+                        className={`h-1.5 flex-1 rounded-full ${reached ? 'bg-primary' : 'bg-muted'}`}
+                      />
+                    )
+                  })}
+                </div>
+              )}
+
+              {/* STEP: matrícula */}
+              {step === 'matricula' && (
+                <form
+                  className="space-y-4"
+                  onSubmit={(e) => {
+                    e.preventDefault()
+                    continueFromMatricula()
+                  }}
+                >
                   <div className="space-y-2">
-                    <Label htmlFor="name">Nome completo</Label>
-                    <Input
-                      id="name"
-                      value={name}
-                      onChange={(e) => setName(e.target.value)}
-                      placeholder="Seu nome"
-                      autoFocus
-                    />
-                  </div>
-                  <div className="space-y-2">
-                    <Label htmlFor="matricula">Matrícula</Label>
+                    <Label htmlFor="matricula">Qual é a sua matrícula?</Label>
                     <Input
                       id="matricula"
                       value={matricula}
                       onChange={(e) => setMatricula(e.target.value)}
-                      placeholder="Número de matrícula"
+                      placeholder="0000-0000"
+                      className="h-12 text-center text-lg font-bold tracking-wider"
+                      autoFocus
                     />
+                    <p className="text-muted-foreground text-xs">
+                      Já entrou neste computador? Recuperamos seu perfil automaticamente.
+                    </p>
                   </div>
-                </>
+                  {error && <p className="text-destructive text-sm font-medium">{error}</p>}
+                  <Button type="submit" className="w-full" size="lg">
+                    Continuar
+                    <ArrowRight className="size-4" />
+                  </Button>
+                </form>
               )}
 
-              {error && <p className="text-destructive text-sm font-medium">{error}</p>}
-
-              <Button type="submit" className="w-full" size="lg" disabled={joinMutation.isPending}>
-                {joinMutation.isPending ? (
-                  <>
-                    <Loader2 className="size-4 animate-spin" />
-                    Entrando…
-                  </>
-                ) : (
-                  <>
-                    <LogIn className="size-4" />
+              {/* STEP: welcome back (recognized matrícula) */}
+              {step === 'back' && (
+                <div className="space-y-4">
+                  <div className="flex flex-col items-center gap-2 text-center">
+                    <EditableAvatar config={avatar} onEdit={() => setEditorOpen(true)} />
+                    <span className="bg-secondary-soft text-secondary-soft-foreground mt-1 rounded-full px-3 py-1 text-xs font-bold">
+                      👋 Bem-vindo de volta!
+                    </span>
+                    <p className="text-lg font-bold">{name}</p>
+                    <p className="text-muted-foreground text-sm">Matrícula {matricula}</p>
+                    {email && <p className="text-muted-foreground text-xs">{email}</p>}
+                  </div>
+                  {error && <p className="text-destructive text-sm font-medium">{error}</p>}
+                  <Button className="w-full" size="lg" disabled={joining} onClick={join}>
+                    {joining ? <Loader2 className="size-4 animate-spin" /> : <LogIn className="size-4" />}
                     Entrar na sala
-                  </>
-                )}
-              </Button>
+                  </Button>
+                  <div className="flex gap-2">
+                    <Button variant="secondary" className="flex-1" onClick={() => setStep('identity')}>
+                      <Pencil className="size-3.5" />
+                      Editar
+                    </Button>
+                    <Button variant="secondary" className="flex-1" onClick={resetToMatricula}>
+                      Não sou eu
+                    </Button>
+                  </div>
+                </div>
+              )}
 
-              <Button
-                type="button"
-                variant="ghost"
-                size="sm"
-                className="w-full"
-                onClick={() => navigate('/', { replace: true })}
-              >
-                <ArrowLeft className="size-3.5" />
-                Voltar
-              </Button>
-            </form>
+              {/* STEP: identity (name + email) */}
+              {step === 'identity' && (
+                <form
+                  className="space-y-4"
+                  onSubmit={(e) => {
+                    e.preventDefault()
+                    if (name.trim().length < 2) {
+                      setError('Informe seu nome')
+                      return
+                    }
+                    join()
+                  }}
+                >
+                  <div className="flex flex-col items-center gap-2">
+                    <EditableAvatar config={avatar} onEdit={() => setEditorOpen(true)} />
+                    <div className="flex gap-1">
+                      <Button
+                        type="button"
+                        variant="ghost"
+                        size="sm"
+                        onClick={() => setAvatar(randomAvatar())}
+                      >
+                        <Shuffle className="size-3.5" />
+                        Aleatório
+                      </Button>
+                      <Button type="button" variant="ghost" size="sm" onClick={() => setEditorOpen(true)}>
+                        <Pencil className="size-3.5" />
+                        Personalizar
+                      </Button>
+                    </div>
+                  </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="name">Nome completo</Label>
+                    <Input id="name" value={name} onChange={(e) => setName(e.target.value)} placeholder="Seu nome" autoFocus />
+                  </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="email">E-mail</Label>
+                    <Input id="email" type="email" value={email} onChange={(e) => setEmail(e.target.value)} placeholder="seu@email.com" />
+                    <p className="text-muted-foreground text-xs">
+                      O professor usa para enviar seu resultado. Fica salvo neste computador.
+                    </p>
+                  </div>
+                  {error && <p className="text-destructive text-sm font-medium">{error}</p>}
+                  <div className="flex gap-2">
+                    <Button type="button" variant="secondary" onClick={resetToMatricula}>
+                      <ArrowLeft className="size-4" />
+                    </Button>
+                    <Button type="submit" className="flex-1" size="lg" disabled={joining}>
+                      {joining ? <Loader2 className="size-4 animate-spin" /> : <LogIn className="size-4" />}
+                      Entrar na sala
+                    </Button>
+                  </div>
+                </form>
+              )}
+            </div>
           )}
 
-          {/* ── Error loading (not 404) ─────────────────────────────────── */}
           {active.isError && !noSession && (
             <div className="flex flex-col items-center gap-4 py-4 text-center">
-              <p className="text-destructive text-sm">
-                Erro ao conectar: {String(active.error)}
-              </p>
+              <p className="text-destructive text-sm">Erro ao conectar: {String(active.error)}</p>
               <Button variant="secondary" className="w-full" onClick={handleRefresh}>
                 <RefreshCw className="size-4" />
                 Tentar novamente
-              </Button>
-              <Button
-                variant="ghost"
-                size="sm"
-                className="w-full"
-                onClick={() => navigate('/', { replace: true })}
-              >
-                <ArrowLeft className="size-3.5" />
-                Voltar
               </Button>
             </div>
           )}
         </CardContent>
       </Card>
+
+      {editorOpen && (
+        <AvatarEditorModal
+          value={avatar}
+          onSave={setAvatar}
+          onClose={() => setEditorOpen(false)}
+        />
+      )}
     </main>
+  )
+}
+
+function EditableAvatar({
+  config,
+  onEdit
+}: {
+  config: AvatarConfig
+  onEdit: () => void
+}): React.JSX.Element {
+  return (
+    <button
+      type="button"
+      onClick={onEdit}
+      aria-label="Personalizar avatar"
+      className="relative rounded-full transition active:scale-95"
+    >
+      <Avatar config={config} size={96} />
+      <span className="border-card bg-primary text-primary-foreground absolute -right-1 -bottom-1 grid size-8 place-items-center rounded-full border-2 shadow">
+        <Pencil className="size-3.5" />
+      </span>
+    </button>
   )
 }
