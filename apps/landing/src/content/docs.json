@@ -45,7 +45,7 @@
           "body": [
             "O servidor da sala é um app **Hono** rodando sobre Node (`@hono/node-server`), escutando em `0.0.0.0:8000` — todas as interfaces de rede, na porta 8000 (ou a próxima livre, se ocupada). Ele acumula três papéis na mesma origem:",
             "1. **Serve a SPA do aluno** (React) como arquivos estáticos — o aluno só abre o navegador, nada para instalar.",
-            "2. **API REST** em `/api/*` para o ciclo de vida: `POST /api/join` exige nome completo, e-mail do aluno (com máscara de validação) e matrícula (com máscara numérica), devolvendo um **token Bearer** efêmero para a sessão. As demais rotas exigem esse token.",
+            "2. **API REST** em `/api/*` para o ciclo de vida: `POST /api/join` exige nome completo, e-mail do aluno (com máscara de validação) e matrícula (com máscara numérica), devolvendo um **token Bearer** efêmero da sessão; as demais rotas exigem esse token.",
             "3. **WebSocket** em `/api/ws` (via `@hono/node-ws`) para o tempo real — o token é validado já no handshake; conexão sem token válido é recusada.",
             "Salvar uma resposta é híbrido por garantia: o `POST /api/answers` grava no SQLite **e** atualiza o documento colaborativo do grupo, então o painel do professor recebe a resposta mesmo se o canal WebSocket de um aluno oscilar."
           ],
@@ -70,6 +70,17 @@
             "A sincronização não passa por JSON: cada alteração vira um **update binário do Yjs** trafegado pelo WebSocket. O primeiro byte do frame é um discriminador — `0` para update do documento, `1` para *awareness*. O servidor repassa o update aos outros membros do grupo (nunca de volta para quem enviou)."
           ],
           "concept": "Sistemas distribuídos e consistência. Sem um relógio global confiável, um CRDT garante que todas as réplicas convergem para o mesmo estado independentemente da ordem em que os updates chegam — resolvendo escritas concorrentes sem um lock central. É o problema clássico de concorrência distribuída resolvido na prática."
+        },
+        {
+          "id": "editor-canvas",
+          "title": "Interface estilo Canvas & TipTap",
+          "icon": "process",
+          "body": [
+            "A interface da avaliação no lado do aluno é desenhada sob o formato de um canvas vertical contínuo, exibindo as questões, imagens e materiais auxiliares de forma contígua em uma única tela.",
+            "As respostas discursivas e de código utilizam o editor colaborativo TipTap integrado ao `Y.Doc`, renderizando cursores coloridos correspondentes a cada membro ativo do grupo.",
+            "A escrita concorrente é reconciliada dinamicamente pelo motor do Yjs, garantindo consistência visual e lógica instantânea para todos os participantes."
+          ],
+          "concept": "Consistência de dados concorrentes e sincronização de concorrência de documentos. Em vez de bloquear o documento inteiro (locks exclusivos), os editores colaborativos com CRDT decompõem o texto em operações atômicas indexadas, integrando inserções concorrentes em tempo real."
         },
         {
           "id": "awareness",
@@ -117,6 +128,17 @@
             "O envio é **coordenado entre os membros**: qualquer um inicia a submissão e os demais que estão online confirmam. Só com a confirmação o grupo é marcado como enviado e o documento daquele grupo é congelado."
           ],
           "concept": "Sincronização e seção crítica. Travar a composição na transição de estado e exigir confirmação coletiva para submeter são formas de coordenar processos concorrentes sobre um recurso compartilhado — evitando race conditions entre membros do mesmo grupo."
+        },
+        {
+          "id": "monitor-ipc",
+          "title": "Monitor de grupo via IPC (Sem WebSocket)",
+          "icon": "connection",
+          "body": [
+            "O painel de monitoramento do professor (`GroupRealtimeMonitor`) permite visualizar o progresso do grupo e as respostas sendo preenchidas ao vivo.",
+            "Para isso, o renderer da interface do professor se comunica diretamente com o `yjsManager` no processo principal (Node.js) via IPC do Electron, solicitando o snapshot inicial e subscrevendo aos pushes de atualizações de Yjs e presença.",
+            "Ao eliminar a necessidade de conexões WebSocket locais para o monitor do professor, evitamos latências e falhas comuns na conversão e transmissão de buffers binários (`Uint8Array`) sobre a rede de loopback (localhost)."
+          ],
+          "concept": "Comunicação interprocessos (IPC) local rápida. Processos filhos rodando na mesma máquina física podem trocar buffers de memória de forma direta e extremamente otimizada usando os barramentos de IPC do sistema operacional, contornando a sobrecarga de protocolos da pilha de rede TCP/IP local."
         }
       ]
     },
