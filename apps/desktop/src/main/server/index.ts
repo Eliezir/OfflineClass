@@ -12,6 +12,7 @@ import type { TlsBundle } from '../tls'
 import {
   AnswerInput,
   JoinInput,
+  UpdateAvatarInput,
   type SessionPublic,
   type StudentExam,
   type StudentSessionState,
@@ -32,10 +33,12 @@ import {
   joinSession,
   leaveSession,
   listLobbyStudents,
+  listRosterStudents,
   recordHeartbeat,
   saveAnswer,
   SessionError,
-  submitStudent
+  submitStudent,
+  updateStudentAvatar
 } from '../sessions/store'
 import {
   createGroup,
@@ -69,6 +72,12 @@ function broadcastLobbyUpdate(db: Db, rooms: Rooms, sessionId: string): void {
   rooms.toTeachers(sessionId, {
     type: 'session.lobby.update',
     students: listLobbyStudents(db, sessionId)
+  })
+  // Students get a slim roster (name + avatar) so they can see each other in
+  // the waiting room without exposing matrículas to peers.
+  rooms.toStudents(sessionId, {
+    type: 'session.roster.update',
+    students: listRosterStudents(db, sessionId)
   })
 }
 
@@ -173,6 +182,28 @@ export async function startServer(port: number, deps: ServerDeps): Promise<Serve
     // Lobby update is cheap-ish; emit so the teacher sees the lastSeenAt
     // tick. Per-student server-side debounce is left for a later pass.
     broadcastLobbyUpdate(db, rooms, student.sessionId)
+    return c.json({ ok: true })
+  })
+
+  app.post('/api/profile/avatar', async (c) => {
+    const token = extractBearer(c)
+    if (!token) return c.json({ error: 'unauthorized' }, 401)
+    let body: unknown
+    try {
+      body = await c.req.json()
+    } catch {
+      return c.json({ error: 'invalid-json' }, 400)
+    }
+    const parsed = UpdateAvatarInput.safeParse(body)
+    if (!parsed.success) {
+      return c.json(
+        { error: 'invalid-input', message: parsed.error.issues[0]?.message ?? 'Dados inválidos' },
+        400
+      )
+    }
+    const sessionId = updateStudentAvatar(db, token, parsed.data.avatar)
+    if (!sessionId) return c.json({ error: 'unauthorized' }, 401)
+    broadcastLobbyUpdate(db, rooms, sessionId)
     return c.json({ ok: true })
   })
 
@@ -556,6 +587,12 @@ export async function startServer(port: number, deps: ServerDeps): Promise<Serve
             rooms.addStudent(auth.sessionId, auth.studentId, auth.groupId, ws)
             ws.send(
               JSON.stringify({ type: 'connection.ack', role: 'student' } satisfies WsServerEvent)
+            )
+            ws.send(
+              JSON.stringify({
+                type: 'session.roster.update',
+                students: listRosterStudents(db, auth.sessionId)
+              } satisfies WsServerEvent)
             )
             if (auth.groupId) {
               const doc = yjsManager.getOrCreateDoc(db, auth.groupId)

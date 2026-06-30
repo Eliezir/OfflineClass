@@ -82,7 +82,8 @@
     "tslib": "^2.8.1",
     "y-protocols": "^1.0.7",
     "yjs": "^13.6.31",
-    "zod": "^4.4.3"
+    "zod": "^4.4.3",
+    "@offlineclass/avatar": "workspace:*"
   },
   "devDependencies": {
     "@electron-toolkit/eslint-config-prettier": "^3.0.0",

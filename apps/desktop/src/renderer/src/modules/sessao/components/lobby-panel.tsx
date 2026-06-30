@@ -30,14 +30,24 @@ import {
 import { useDiscoveryQuery } from '../queries'
 import type { SessionDetail } from '../types'
 import { RosterRow } from './roster-row'
+import { StudentAvatar } from './student-avatar'
 
 type LobbyPanelProps = {
   session: SessionDetail
 }
 
+// Stable per-group identity colour, cycled by position.
+const GROUP_TONES = [
+  'bg-primary-soft text-primary-soft-foreground',
+  'bg-secondary-soft text-secondary-soft-foreground',
+  'bg-tertiary-soft text-tertiary-soft-foreground',
+  'bg-quaternary-soft text-quaternary-soft-foreground'
+]
+
 interface GroupCardProps {
   group: SessionDetail['groups'][0]
   groupMode: string
+  accent: string
   onDropStudent: (studentId: string) => void
   onRemoveStudent: (studentId: string) => void
   onStudentContextMenu: (
@@ -52,12 +62,14 @@ interface GroupCardProps {
 function GroupCard({
   group,
   groupMode,
+  accent,
   onDropStudent,
   onRemoveStudent,
   onStudentContextMenu,
   onDeleteGroup
 }: GroupCardProps): React.JSX.Element {
   const [isOver, setIsOver] = useState(false)
+  const [draggingMember, setDraggingMember] = useState<string | null>(null)
   const { t } = useLingui()
 
   return (
@@ -81,29 +93,39 @@ function GroupCard({
           }
         }
       }}
-      className={`rounded-xl border p-4 flex flex-col gap-2 transition-colors ${
-        isOver ? 'border-primary bg-primary-soft/10 shadow-sm' : 'border-border bg-card'
+      className={`flex flex-col rounded-2xl border p-3.5 transition-all ${
+        isOver
+          ? 'border-primary bg-primary-soft/10 ring-2 ring-primary/30'
+          : 'border-border bg-card'
       }`}
     >
-      <div className="flex items-center justify-between gap-2">
-        <h3 className="font-bold text-sm truncate max-w-40">{group.name}</h3>
-        <div className="flex items-center gap-1.5 shrink-0">
-          <span className="inline-flex items-center rounded-full bg-muted px-2 py-0.5 text-[10px] font-semibold text-muted-foreground">
-            {group.members.length} membros
-          </span>
-          {groupMode !== 'disabled' && (
-            <button
-              type="button"
-              onClick={() => onDeleteGroup(group.id, group.name)}
-              className="text-muted-foreground hover:text-destructive hover:bg-muted p-1 rounded-lg transition-colors focus:outline-none"
-              title={t`Excluir grupo`}
-            >
-              <X className="size-3.5" />
-            </button>
-          )}
+      {/* Header: identity tile + name + member count + delete */}
+      <div className="flex items-center gap-2.5">
+        <span
+          className={`grid size-8 shrink-0 place-items-center rounded-xl [&_svg]:size-4 ${accent}`}
+        >
+          <Users />
+        </span>
+        <div className="min-w-0 flex-1">
+          <h3 className="truncate text-sm font-bold leading-tight">{group.name}</h3>
+          <p className="text-[11px] font-semibold text-muted-foreground">
+            {group.members.length} {group.members.length === 1 ? t`membro` : t`membros`}
+          </p>
         </div>
+        {groupMode !== 'disabled' && (
+          <button
+            type="button"
+            onClick={() => onDeleteGroup(group.id, group.name)}
+            className="shrink-0 rounded-lg p-1 text-muted-foreground transition-colors hover:bg-muted hover:text-destructive focus:outline-none"
+            title={t`Excluir grupo`}
+          >
+            <X className="size-4" />
+          </button>
+        )}
       </div>
-      <div className="flex-1 space-y-1 mt-1">
+
+      {/* Members */}
+      <div className="mt-3 flex-1 space-y-0.5">
         {group.members.map((m) => (
           <div
             key={m.studentId}
@@ -112,40 +134,40 @@ function GroupCard({
               if (groupMode !== 'disabled') {
                 e.dataTransfer.setData('studentId', m.studentId)
                 e.dataTransfer.setData('fromGroupId', group.id)
+                setDraggingMember(m.studentId)
               }
             }}
+            onDragEnd={() => setDraggingMember(null)}
             onContextMenu={(e) => {
               if (groupMode !== 'disabled') {
                 onStudentContextMenu(e, m.studentId, m.studentName, group.id)
               }
             }}
-            className={`flex items-center justify-between px-2.5 py-1.5 rounded-lg border border-border/40 text-xs bg-muted/20 ${
-              groupMode !== 'disabled'
-                ? 'cursor-grab active:cursor-grabbing hover:bg-muted/40 hover:border-border transition-colors'
-                : ''
-            }`}
+            className={`group/member flex items-center gap-2 rounded-lg px-1.5 py-1 transition-colors ${
+              groupMode !== 'disabled' ? 'cursor-grab hover:bg-muted/60 active:cursor-grabbing' : ''
+            } ${draggingMember === m.studentId ? 'opacity-40' : ''}`}
           >
-            <div className="flex items-center gap-1.5 min-w-0 flex-1">
-              {groupMode !== 'disabled' && (
-                <GripVertical className="size-3.5 shrink-0 text-muted-foreground/60" />
-              )}
-              <span className="truncate font-medium">{m.studentName}</span>
-            </div>
+            <StudentAvatar name={m.studentName} avatar={m.avatar} className="size-7" />
+            <span className="min-w-0 flex-1 truncate text-xs font-semibold">{m.studentName}</span>
             {groupMode !== 'disabled' && (
               <button
                 type="button"
                 onClick={() => onRemoveStudent(m.studentId)}
-                className="text-muted-foreground hover:text-destructive text-[10px] font-bold shrink-0 ml-1.5 focus:outline-none"
+                title={t`Remover`}
+                className="shrink-0 rounded-md p-1 text-muted-foreground opacity-0 transition-all hover:text-destructive focus:opacity-100 focus:outline-none group-hover/member:opacity-100"
               >
-                <Trans>Remover</Trans>
+                <UserMinus className="size-3.5" />
               </button>
             )}
           </div>
         ))}
         {group.members.length === 0 && (
-          <p className="text-xs text-muted-foreground italic text-center py-4">
-            <Trans>Nenhum aluno</Trans>
-          </p>
+          <div className="grid place-items-center gap-1 rounded-xl border border-dashed border-border/70 bg-muted/20 py-5 text-center">
+            <Users className="size-4 text-muted-foreground/50" />
+            <span className="text-[11px] font-semibold text-muted-foreground">
+              {groupMode === 'teacher' ? t`Arraste alunos aqui` : t`Sem alunos ainda`}
+            </span>
+          </div>
         )}
       </div>
     </div>
@@ -160,6 +182,7 @@ export function LobbyPanel({ session }: LobbyPanelProps): React.JSX.Element {
   const [newGroupName, setNewGroupName] = useState('')
   const [showCreate, setShowCreate] = useState(false)
   const [isUnassignedOver, setIsUnassignedOver] = useState(false)
+  const [draggedId, setDraggedId] = useState<string | null>(null)
   const [showBanner, setShowBanner] = useState(true)
   const [studentToKick, setStudentToKick] = useState<{ id: string; name: string } | null>(null)
   const [groupToDelete, setGroupToDelete] = useState<{ id: string; name: string } | null>(null)
@@ -342,24 +365,21 @@ export function LobbyPanel({ session }: LobbyPanelProps): React.JSX.Element {
           <div className="flex flex-col flex-1 min-h-0">
             <div className="flex flex-col md:flex-row flex-1 min-h-0 gap-6">
               {/* Left Column: Unassigned Students */}
-              <div className="w-full md:w-80 flex md:shrink-0 flex-col min-h-[250px] md:min-h-0">
-                <div className="flex shrink-0 items-center justify-between gap-3 mb-3">
-                  <h2 className="text-sm font-bold flex items-center gap-2">
-                    <User className="size-4 text-muted-foreground/80" />
-                    <Trans>Sem grupo ({unassignedStudents.length})</Trans>
+              <div className="flex min-h-[250px] w-full flex-col md:min-h-0 md:w-72 md:shrink-0">
+                <div className="mb-3 flex shrink-0 items-center justify-between gap-3">
+                  <h2 className="flex items-center gap-2 text-sm font-bold">
+                    <User className="size-4 text-muted-foreground" />
+                    <Trans>Sem grupo</Trans>
                   </h2>
+                  <span className="inline-flex items-center rounded-full bg-muted px-2.5 py-1 text-xs font-bold text-muted-foreground">
+                    {unassignedStudents.length}
+                  </span>
                 </div>
 
                 <div
-                  onDragOver={(e) => {
-                    e.preventDefault()
-                  }}
-                  onDragEnter={() => {
-                    setIsUnassignedOver(true)
-                  }}
-                  onDragLeave={() => {
-                    setIsUnassignedOver(false)
-                  }}
+                  onDragOver={(e) => e.preventDefault()}
+                  onDragEnter={() => setIsUnassignedOver(true)}
+                  onDragLeave={() => setIsUnassignedOver(false)}
                   onDrop={async (e) => {
                     e.preventDefault()
                     setIsUnassignedOver(false)
@@ -373,46 +393,62 @@ export function LobbyPanel({ session }: LobbyPanelProps): React.JSX.Element {
                       }
                     }
                   }}
-                  className={`scrollbar-subtle flex-1 overflow-y-auto space-y-1.5 pr-1 rounded-xl transition-colors p-2 ${
+                  className={`scrollbar-subtle flex flex-1 flex-col gap-2 overflow-y-auto rounded-2xl border border-dashed p-2.5 transition-colors ${
                     isUnassignedOver
-                      ? 'border-2 border-dashed border-primary bg-primary-soft/10'
-                      : 'border-2 border-dashed border-transparent'
+                      ? 'border-primary bg-primary-soft/10'
+                      : 'border-border/60 bg-muted/20'
                   }`}
                 >
                   {unassignedStudents.length > 0 ? (
                     unassignedStudents.map((s) => (
                       <div
                         key={s.id}
-                        draggable={true}
+                        draggable
                         onDragStart={(e) => {
                           e.dataTransfer.setData('studentId', s.id)
                           e.dataTransfer.setData('fromGroupId', '')
+                          setDraggedId(s.id)
                         }}
-                        onContextMenu={(e) => {
-                          handleStudentContextMenu(e, s.id, s.name, null)
-                        }}
-                        className="flex items-center gap-1.5 cursor-grab active:cursor-grabbing hover:bg-muted/40 rounded-xl transition-colors px-2 border border-transparent hover:border-border/40"
+                        onDragEnd={() => setDraggedId(null)}
+                        onContextMenu={(e) => handleStudentContextMenu(e, s.id, s.name, null)}
+                        className={`group/u flex cursor-grab items-center gap-2.5 rounded-xl border bg-card px-2.5 py-2 transition-all active:cursor-grabbing ${
+                          draggedId === s.id
+                            ? 'border-dashed border-border opacity-40'
+                            : 'border-border hover:border-primary/40 hover:shadow-sm'
+                        }`}
                       >
-                        <GripVertical className="size-4 shrink-0 text-muted-foreground/60" />
-                        <div className="flex-1 min-w-0">
-                           <RosterRow student={s} />
+                        <StudentAvatar name={s.name} avatar={s.avatar} className="size-8" />
+                        <div className="min-w-0 flex-1">
+                          <div className="truncate text-sm font-bold leading-tight">{s.name}</div>
+                          <div className="truncate text-[11px] font-semibold text-muted-foreground">
+                            {s.matricula}
+                          </div>
                         </div>
+                        <GripVertical className="size-4 shrink-0 text-muted-foreground/40 opacity-0 transition-opacity group-hover/u:opacity-100" />
                       </div>
                     ))
                   ) : (
-                    <p className="text-xs text-muted-foreground italic text-center py-6">
-                      <Trans>Todos os alunos possuem grupo</Trans>
-                    </p>
+                    <div className="grid flex-1 place-items-center gap-1.5 py-8 text-center">
+                      <span className="grid size-9 place-items-center rounded-full bg-secondary-soft text-secondary-soft-foreground [&_svg]:size-4">
+                        <Check />
+                      </span>
+                      <span className="text-xs font-semibold text-muted-foreground">
+                        <Trans>Todos os alunos têm grupo</Trans>
+                      </span>
+                    </div>
                   )}
                 </div>
               </div>
 
               {/* Right Column: Groups Grid */}
-              <div className="flex-1 flex flex-col min-h-[350px] md:min-h-0">
-                <div className="flex shrink-0 items-center justify-between gap-3 mb-3">
-                  <h2 className="text-sm font-bold flex items-center gap-2">
-                    <Users className="size-4" />
-                    <Trans>Grupos ({groups.length})</Trans>
+              <div className="flex min-h-[350px] flex-1 flex-col md:min-h-0">
+                <div className="mb-3 flex shrink-0 items-center justify-between gap-3">
+                  <h2 className="flex items-center gap-2 text-sm font-bold">
+                    <Users className="size-4 text-muted-foreground" />
+                    <Trans>Grupos</Trans>
+                    <span className="inline-flex items-center rounded-full bg-primary-soft px-2.5 py-1 text-xs font-bold text-primary-soft-foreground">
+                      {groups.length}
+                    </span>
                   </h2>
                   {session.groupMode === 'teacher' && (
                     <Button size="xs" variant="outline" onClick={() => setShowCreate(true)}>
@@ -422,13 +458,14 @@ export function LobbyPanel({ session }: LobbyPanelProps): React.JSX.Element {
                   )}
                 </div>
 
-                <div className="scrollbar-subtle flex-1 overflow-y-auto pr-1 flex flex-col gap-4">
+                <div className="scrollbar-subtle grid flex-1 content-start gap-3 overflow-y-auto pr-1 [grid-template-columns:repeat(auto-fill,minmax(230px,1fr))]">
                   {groups.length > 0 ? (
-                    groups.map((g) => (
+                    groups.map((g, i) => (
                       <GroupCard
                         key={g.id}
                         group={g}
                         groupMode={session.groupMode}
+                        accent={GROUP_TONES[i % GROUP_TONES.length]}
                         onDropStudent={(studentId) => handleDropToGroup(studentId, g.id)}
                         onRemoveStudent={(studentId) => handleRemoveFromGroup(g.id, studentId)}
                         onStudentContextMenu={(e, studentId, studentName, groupId) =>
@@ -438,7 +475,7 @@ export function LobbyPanel({ session }: LobbyPanelProps): React.JSX.Element {
                       />
                     ))
                   ) : (
-                    <div className="w-full py-12">
+                    <div className="col-span-full py-12">
                       <EmptyState
                         compact
                         icon={<Users />}

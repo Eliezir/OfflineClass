@@ -9,6 +9,7 @@ import type {
   IpcOutput
 } from '@shared/ipc/contract'
 import type {
+  AvatarConfig,
   CommentAnswerInput,
   CommentStudentInput,
   DiscoveryStatus,
@@ -62,6 +63,8 @@ const domain = {
       ipcRenderer.invoke('auth.register', input),
     login: (input: LoginInput): Promise<Teacher> => ipcRenderer.invoke('auth.login', input),
     me: (): Promise<Teacher | null> => ipcRenderer.invoke('auth.me'),
+    updateAvatar: (avatar: AvatarConfig | null): Promise<Teacher> =>
+      ipcRenderer.invoke('auth.updateAvatar', avatar),
     logout: (): Promise<null> => ipcRenderer.invoke('auth.logout'),
     getToken: (): Promise<string | null> => ipcRenderer.invoke('auth.getToken')
   },

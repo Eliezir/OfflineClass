@@ -1,13 +1,14 @@
 import { randomUUID } from 'node:crypto'
 import { ipcMain } from 'electron'
 import { eq } from 'drizzle-orm'
-import { LoginInput, RegisterInput, type Teacher } from '@offlineclass/shared'
+import { AvatarConfig, LoginInput, RegisterInput, type Teacher } from '@offlineclass/shared'
 
 import { hashPassword, verifyPassword } from '../auth/passwords'
 import { createSession, resolveSession, revokeSession } from '../auth/sessions'
 import { clearActiveToken, loadActiveToken, saveActiveToken } from '../core/sessionStore'
 import type { Db } from '../db/client'
 import { teachers } from '../db/schema'
+import { parseAvatar } from '../sessions/store'
 
 export interface AuthContext {
   db: Db
@@ -54,7 +55,7 @@ export function registerAuthHandlers(ctx: AuthContext): void {
 
     const token = createSession(db, id)
     saveActiveToken(token)
-    return { id, email, name: input.name }
+    return { id, email, name: input.name, avatar: null }
   })
 
   ipcMain.handle('auth.login', async (_event, raw): Promise<Teacher> => {
@@ -69,7 +70,7 @@ export function registerAuthHandlers(ctx: AuthContext): void {
 
     const token = createSession(db, row.id)
     saveActiveToken(token)
-    return { id: row.id, email: row.email, name: row.name }
+    return { id: row.id, email: row.email, name: row.name, avatar: parseAvatar(row.avatar) }
   })
 
   ipcMain.handle('auth.me', async (): Promise<Teacher | null> => {
@@ -81,6 +82,20 @@ export function registerAuthHandlers(ctx: AuthContext): void {
       return null
     }
     return session.teacher
+  })
+
+  // Sets (or clears, when given null) the active teacher's profile avatar.
+  // Persisted as JSON so the LAN server can surface it to students.
+  ipcMain.handle('auth.updateAvatar', async (_event, raw): Promise<Teacher> => {
+    const teacherId = requireTeacherId(db)
+    const avatar = raw == null ? null : AvatarConfig.parse(raw)
+    db.update(teachers)
+      .set({ avatar: avatar ? JSON.stringify(avatar) : null })
+      .where(eq(teachers.id, teacherId))
+      .run()
+    const row = db.select().from(teachers).where(eq(teachers.id, teacherId)).get()
+    if (!row) throw new AuthError('Sessão expirada', 'NOT_AUTHENTICATED')
+    return { id: row.id, email: row.email, name: row.name, avatar }
   })
 
   ipcMain.handle('auth.logout', async (): Promise<null> => {

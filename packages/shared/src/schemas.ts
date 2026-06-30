@@ -8,12 +8,35 @@ export const DiscoveryStatus = z.object({
 })
 export type DiscoveryStatus = z.infer<typeof DiscoveryStatus>
 
+// -- Avatar ----------------------------------------------------------------
+
+/** DiceBear "adventurer" avatar — only the part IDs travel the LAN; the art is
+    bundled in both apps (`packages/avatar`). Empty string = "none" for the
+    optional parts (hair/glasses/earrings/features). Shared by students and the
+    teacher's own optional profile avatar. */
+const AvatarId = z.string().max(40)
+export const AvatarConfig = z.object({
+  skinColor: AvatarId,
+  hair: AvatarId,
+  hairColor: AvatarId,
+  eyes: AvatarId,
+  eyebrows: AvatarId,
+  mouth: AvatarId,
+  glasses: AvatarId,
+  earrings: AvatarId,
+  features: AvatarId,
+  backgroundColor: AvatarId
+})
+export type AvatarConfig = z.infer<typeof AvatarConfig>
+
 // -- Auth ------------------------------------------------------------------
 
 export const Teacher = z.object({
   id: z.string(),
   email: z.string().email(),
-  name: z.string()
+  name: z.string(),
+  /** Optional profile avatar. Null = fall back to initials everywhere. */
+  avatar: AvatarConfig.nullable()
 })
 export type Teacher = z.infer<typeof Teacher>
 
@@ -214,6 +237,7 @@ export const SessionLobbyStudent = z.object({
   id: z.string(),
   name: z.string(),
   matricula: z.string(),
+  avatar: AvatarConfig.nullable(),
   email: z.string().nullable(),
   joinedAt: z.number().int(),
   lastSeenAt: z.number().int(),
@@ -243,6 +267,7 @@ export const GroupMember = z.object({
   studentId: z.string(),
   studentName: z.string(),
   studentMatricula: z.string(),
+  avatar: AvatarConfig.nullable(),
   joinedAt: z.number().int()
 })
 export type GroupMember = z.infer<typeof GroupMember>
@@ -287,7 +312,10 @@ export const SessionPublic = z.object({
   allowLateJoin: z.boolean(),
   scrambleQuestions: z.boolean(),
   scrambleOptions: z.boolean(),
-  groupMode: GroupMode
+  groupMode: GroupMode,
+  // Who is running the room, so students can confirm they joined the right one.
+  teacherName: z.string(),
+  teacherAvatar: AvatarConfig.nullable()
 })
 export type SessionPublic = z.infer<typeof SessionPublic>
 
@@ -304,7 +332,9 @@ export const JoinInput = z.object({
   name: z.string().min(2, 'Nome obrigatório').max(80),
   matricula: z.string().min(2, 'Matrícula obrigatória').max(40),
   // Required — lets the teacher e-mail the grade afterwards.
-  email: RequiredStudentEmail
+  email: RequiredStudentEmail,
+  // Optional avatar; teacher/peers fall back to initials when absent.
+  avatar: AvatarConfig.optional()
 })
 export type JoinInput = z.infer<typeof JoinInput>
 
@@ -318,6 +348,17 @@ export const JoinResult = z.object({
 })
 export type JoinResult = z.infer<typeof JoinResult>
 
+// Slim roster sent to students (peers see only name + avatar, never matrícula).
+export const RosterStudent = z.object({
+  id: z.string(),
+  name: z.string(),
+  avatar: AvatarConfig.nullable()
+})
+export type RosterStudent = z.infer<typeof RosterStudent>
+
+export const UpdateAvatarInput = z.object({ avatar: AvatarConfig })
+export type UpdateAvatarInput = z.infer<typeof UpdateAvatarInput>
+
 export const WsServerEvent = z.discriminatedUnion('type', [
   z.object({
     type: z.literal('connection.ack'),
@@ -326,6 +367,10 @@ export const WsServerEvent = z.discriminatedUnion('type', [
   z.object({
     type: z.literal('session.lobby.update'),
     students: z.array(SessionLobbyStudent)
+  }),
+  z.object({
+    type: z.literal('session.roster.update'),
+    students: z.array(RosterStudent)
   }),
   z.object({
     type: z.literal('session.started'),
@@ -480,6 +525,7 @@ export const SessionAnswersReview = z.object({
   studentName: z.string(),
   studentMatricula: z.string(),
   studentEmail: z.string().nullable(),
+  studentAvatar: AvatarConfig.nullable(),
   // Overall remark the teacher leaves on the student (not tied to one question).
   studentFeedback: z.string().nullable(),
   // When the teacher last e-mailed this student their results; null = never.
