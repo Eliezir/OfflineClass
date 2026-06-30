@@ -17,6 +17,6 @@
     "i18n:compile": "pnpm --filter ./apps/desktop i18n:compile"
   },
   "dependencies": {
-    "pnpm": "^11.5.3"
+    "pnpm": "^11.8.0"
   }
 }
