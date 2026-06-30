@@ -1,0 +1,121 @@
+name: Release
+
+# Builds the OfflineClass desktop installers for Windows and Linux and publishes
+# them to a single GitHub Release. Run manually from the Actions tab.
+#
+# What it produces (one combined Release tagged v<version>):
+#   - Teacher app  (@offlineclass/desktop)     → desktop-<version>-setup.exe, *.AppImage, *.deb
+#                                                 + latest.yml / latest-linux.yml  (auto-update)
+#   - Student app  (@offlineclass/student-web) → student-web-<version>-setup.exe, *.AppImage, *.deb
+#                                                 + student.yml / student-linux.yml (auto-update)
+#
+# The Release is created as a DRAFT — review the assets, then publish it from the
+# GitHub UI to make the tag and downloads public.
+on:
+  workflow_dispatch:
+    inputs:
+      version:
+        description: 'Release version (no leading "v"), e.g. 1.0.0'
+        required: true
+        type: string
+      prerelease:
+        description: 'Mark the release as a pre-release'
+        required: false
+        type: boolean
+        default: false
+
+# Need write access to create the Release and upload assets.
+permissions:
+  contents: write
+
+# Only one release run per version at a time.
+concurrency:
+  group: release-${{ inputs.version }}
+  cancel-in-progress: false
+
+jobs:
+  # Create the draft Release up front so the parallel build jobs only ever
+  # find-and-upload — avoids electron-builder's "two jobs both create the
+  # release" race when several OS/app builds publish to the same tag.
+  prepare:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Create draft release (if absent)
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          tag="v${{ inputs.version }}"
+          if gh release view "$tag" >/dev/null 2>&1; then
+            echo "Release $tag already exists — reusing it."
+          else
+            gh release create "$tag" \
+              --draft \
+              --target "$GITHUB_SHA" \
+              --title "$tag" \
+              --notes "OfflineClass $tag — Teacher (desktop) and Student apps for Windows and Linux." \
+              ${{ inputs.prerelease && '--prerelease' || '' }}
+          fi
+
+  build:
+    needs: prepare
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          # Teacher app
+          - app: '@offlineclass/desktop'
+            dir: apps/desktop
+            os: windows-latest
+            builder: --win
+          - app: '@offlineclass/desktop'
+            dir: apps/desktop
+            os: ubuntu-latest
+            builder: --linux AppImage deb
+          # Student app
+          - app: '@offlineclass/student-web'
+            dir: apps/student-web
+            os: windows-latest
+            builder: --win
+          - app: '@offlineclass/student-web'
+            dir: apps/student-web
+            os: ubuntu-latest
+            builder: --linux AppImage deb
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set release version
+        working-directory: ${{ matrix.dir }}
+        run: npm pkg set version=${{ inputs.version }}
+
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v4
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: pnpm
+
+      # Install just this app and its workspace deps. The app's postinstall runs
+      # `electron-builder install-app-deps`, rebuilding native modules
+      # (better-sqlite3 in the teacher app) for the current OS + Electron ABI.
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile --filter ${{ matrix.app }}...
+
+      - name: Build renderer + main
+        run: pnpm --filter ${{ matrix.app }} run build
+
+      # Package and publish to the draft Release. electron-builder reads each
+      # app's electron-builder.yml (GitHub publish provider) and uploads the
+      # installers + auto-update metadata to v<version>.
+      - name: Package and publish
+        working-directory: ${{ matrix.dir }}
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: pnpm exec electron-builder ${{ matrix.builder }} --publish always

@@ -30,4 +30,11 @@ linux:
 appImage:
   artifactName: ${name}-${version}.${ext}
 npmRebuild: false
-publish: null
+publish:
+  provider: github
+  owner: Eliezir
+  repo: OfflineClass
+  # Distinct channel so the student app's auto-update metadata (student.yml /
+  # student-linux.yml) doesn't collide with the teacher app's latest.yml in the
+  # shared GitHub Release.
+  channel: student

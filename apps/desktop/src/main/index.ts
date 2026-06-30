@@ -12,6 +12,7 @@ import { findFreePort } from './find-free-port'
 import { startServer, type ServerHandle } from './server'
 import { Rooms } from './sessions/rooms'
 import { ensureSelfSignedCert } from './tls'
+import { initAutoUpdater } from './updater'
 import icon from '../../resources/icon.png?asset'
 
 const DEFAULT_PORT = 8000
@@ -183,6 +184,9 @@ app.whenReady().then(() => {
 
   setupCertTrust()
   createSplashWindow()
+
+  // Background update check (packaged builds only; silent when offline).
+  initAutoUpdater(getMainWindow)
 
   // Splash controls, available while startup is failing.
   ipcMain.on(IPC.BACKEND.RETRY, () => void bootstrap())
