@@ -110,10 +110,11 @@ Form builder é **extensível por design** — tipos adicionais (matemática/LaT
 - **[FEATURE]** Review por grupo (grupo submete um único conjunto de respostas; atribuição individual via `updatedBy`)
 - **[FEATURE]** **Campo de comentário por questão** na UI de review — professor pode deixar nota em qualquer questão (auto-corrigida ou manual); o comentário aparece no email de resultado do aluno (e na nota imediata, se habilitada)
 - **[FEATURE]** **Mostrar nota imediatamente ao aluno na SPA** — condicionada pelo toggle "Mostrar nota imediatamente" na criação da sessão (§1.4). Se habilitado: assim que a sessão entra em `ended`, a SPA do aluno renderiza a nota dele + breakdown por questão + comentários. Se desabilitado: SPA mostra só "Sessão encerrada — você receberá o resultado por email".
-- **[FEATURE]** **Envio de resultados por email** — professor clica "Enviar"; o **cloud** (apps/cloud) cuida do envio efetivo via um provedor de email transacional (escolha [A DECIDIR] em §10 — pendente time)
-- **[FEATURE]** Desktop faz POST pra `/api/sync/sessions/results/email` com a lista de tuplas (email, payload); cloud faz fila + retries
-- **[FEATURE]** Payload do email por destinatário: nota total, breakdown por questão (enunciado, resposta do aluno, resposta correta, pontos atribuídos) e o comentário do professor por questão (se houver)
-- **[FEATURE]** Funcionalidade de email exige desktop **vinculado ao cloud** (sem envio se `stay-local` está ON ou cloud inalcançável); UI deixa o botão cinza com tooltip explicando
+- **[FEATURE]** **Envio de resultados por e-mail** — O professor clica em "Enviar e-mails" na tela de resultados. O próprio aplicativo desktop realiza o envio direto de e-mails usando o servidor SMTP configurado localmente pelo professor.
+- **[FEATURE]** **Configuração SMTP local** — O professor define suas credenciais de e-mail (Host, Porta, SSL/TLS, Usuário, Senha criptografada, Nome e E-mail de remetente) na seção Settings -> E-mail. Inclui um guia integrado para configuração de contas Gmail (Senhas de App).
+- **[FEATURE]** **Criptografia at-rest de senhas** — A senha do servidor SMTP é criptografada e armazenada de forma segura na máquina local usando a API `safeStorage` do Electron (com integração ao chaveiro do sistema operacional, como Keychain no macOS, DPAPI no Windows ou libsecret no Linux).
+- **[FEATURE]** Payload do e-mail por destinatário: nota total da avaliação, detalhamento por questão (enunciado, resposta dada, resposta correta se aplicável, e pontos atribuídos) e os comentários personalizados do professor.
+- **[FEATURE]** Funcionalidade de e-mail exige que o servidor SMTP esteja previamente configurado nas configurações locais; a interface do professor desabilita o envio de e-mails com um aviso se a configuração não estiver completa.
 - **[EXTRA]** **Exportar resultados como CSV / PDF / Excel** pros registros do professor (export local, não passa pela cloud)
 
 ---
@@ -345,9 +346,9 @@ Form builder é **extensível por design** — tipos adicionais (matemática/LaT
 
 Lista plana de todos os `[A DECIDIR]` acima, reagrupados por impacto. Use como agenda do review pass.
 
-### Big impact (deferida, não bloqueia)
+### Big impact (resolvida)
 
-1. **Escolha de provedor de email** — SendGrid / Mailgun / Resend / Postmark / Amazon SES / SMTP institucional. Deferida pra decisão do time. Não bloqueia outro trabalho; o módulo de email do cloud é desenhado como interface pra trocar depois.
+1. **Escolha de envio de e-mail** (Resolvido). O envio de e-mails de resultados foi implementado diretamente no aplicativo desktop usando o protocolo SMTP configurado localmente pelo professor com encriptação `safeStorage`, eliminando a dependência do cloud.
 
 ### Medium impact (polish de UX ou clarificação de escopo — resolver antes/durante criação dos issues)
 
