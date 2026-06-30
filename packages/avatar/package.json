@@ -14,10 +14,12 @@
     "@offlineclass/shared": "workspace:*"
   },
   "peerDependencies": {
+    "lucide-react": "*",
     "react": "^19"
   },
   "devDependencies": {
     "@types/react": "^19",
+    "lucide-react": "^1.16.0",
     "typescript": "^5.9.3"
   }
 }
