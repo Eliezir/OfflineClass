@@ -20,6 +20,8 @@ import {
   GitMerge,
   MousePointer2,
   ListChecks,
+  LayoutTemplate,
+  Mail,
   type LucideIcon,
 } from 'lucide-react'
 
@@ -39,16 +41,16 @@ function Node({
   return (
     <div
       className={[
-        'flex items-center gap-2 rounded-lg border px-3 py-2',
+        'flex items-center gap-3 rounded-xl border px-4 py-3',
         accent ? 'border-primary/40 bg-primary/5' : 'border-border bg-card',
       ].join(' ')}
     >
       {Icon && (
-        <Icon className={accent ? 'size-4 shrink-0 text-primary' : 'size-4 shrink-0 text-muted-foreground'} />
+        <Icon className={accent ? 'size-6 shrink-0 text-primary' : 'size-6 shrink-0 text-muted-foreground'} />
       )}
       <div className="min-w-0 leading-tight">
-        <div className="text-xs font-semibold text-foreground">{label}</div>
-        {sub && <div className="text-[0.7rem] text-muted-foreground">{sub}</div>}
+        <div className="text-sm font-semibold text-foreground">{label}</div>
+        {sub && <div className="text-xs text-muted-foreground">{sub}</div>}
       </div>
     </div>
   )
@@ -59,20 +61,20 @@ function Connector({ label, dir = 'down' }: { label?: string; dir?: 'down' | 'ri
   return (
     <div
       className={[
-        'flex items-center justify-center gap-1.5 text-muted-foreground',
+        'flex items-center justify-center gap-2 text-muted-foreground',
         dir === 'right' ? 'flex-row' : 'flex-col',
       ].join(' ')}
     >
-      {label && <span className="font-mono text-[0.65rem] tracking-tight">{label}</span>}
-      <Icon className="size-3.5" />
+      {label && <span className="font-mono text-xs tracking-tight">{label}</span>}
+      <Icon className="size-5" />
     </div>
   )
 }
 
 function Chip({ icon: Icon, children }: { icon?: LucideIcon; children: ReactNode }) {
   return (
-    <span className="inline-flex items-center gap-1.5 rounded-full border border-border bg-card px-2.5 py-1 text-[0.7rem] font-medium text-foreground">
-      {Icon && <Icon className="size-3 text-primary" />}
+    <span className="inline-flex items-center gap-2 rounded-full border border-border bg-card px-3.5 py-1.5 text-sm font-medium text-foreground">
+      {Icon && <Icon className="size-4 text-primary" />}
       {children}
     </span>
   )
@@ -80,7 +82,7 @@ function Chip({ icon: Icon, children }: { icon?: LucideIcon; children: ReactNode
 
 function Frame({ children }: { children: ReactNode }) {
   return (
-    <div className="flex flex-col gap-2 rounded-xl border border-border bg-background/50 p-4">
+    <div className="flex flex-col gap-3 rounded-2xl border border-border bg-background/50 p-6">
       {children}
     </div>
   )
@@ -117,12 +119,12 @@ function DiscoveryDiagram() {
 function TopologyDiagram() {
   return (
     <Frame>
-      <div className="mx-auto w-full max-w-[16rem]">
+      <div className="mx-auto w-full max-w-[20rem]">
         <Node icon={Server} label="PC do professor" sub="servidor da avaliação" accent />
       </div>
-      <div className="flex items-center justify-center gap-1.5 text-muted-foreground">
-        <Wifi className="size-3.5" />
-        <span className="font-mono text-[0.65rem]">Wi-Fi local · HTTPS / WSS</span>
+      <div className="flex items-center justify-center gap-2 text-muted-foreground">
+        <Wifi className="size-5" />
+        <span className="font-mono text-xs">Wi-Fi local · HTTPS / WSS</span>
       </div>
       <div className="grid grid-cols-3 gap-2">
         <Node icon={Monitor} label="Aluno" />
@@ -136,16 +138,16 @@ function TopologyDiagram() {
 function CrdtDiagram() {
   return (
     <Frame>
-      <div className="rounded-lg border border-primary/40 bg-primary/5 p-3">
+      <div className="rounded-xl border border-primary/40 bg-primary/5 p-4">
         <div className="flex items-center gap-2">
-          <GitMerge className="size-4 text-primary" />
-          <span className="text-xs font-bold text-foreground">Y.Doc · Grupo A</span>
+          <GitMerge className="size-5 text-primary" />
+          <span className="text-sm font-bold text-foreground">Y.Doc · Grupo A</span>
         </div>
-        <div className="mt-2 space-y-1.5">
-          <div className="rounded-md border border-border bg-card px-2.5 py-1.5 text-[0.7rem]">
+        <div className="mt-3 space-y-2">
+          <div className="rounded-lg border border-border bg-card px-3 py-2 text-sm">
             <span className="font-semibold">answers</span> · Y.Map
           </div>
-          <div className="rounded-md border border-border bg-card px-2.5 py-1.5 text-[0.7rem]">
+          <div className="rounded-lg border border-border bg-card px-3 py-2 text-sm">
             <span className="font-semibold">dissertativa / código</span> · Y.XmlFragment
           </div>
         </div>
@@ -155,7 +157,7 @@ function CrdtDiagram() {
         <Chip icon={Users}>João</Chip>
         <Chip icon={Users}>Maria</Chip>
       </div>
-      <p className="text-center font-mono text-[0.65rem] text-muted-foreground">
+      <p className="text-center font-mono text-xs text-muted-foreground">
         update binário · frame 0 = doc · 1 = awareness
       </p>
     </Frame>
@@ -168,10 +170,10 @@ function SnapshotDiagram() {
       <Node icon={Cpu} label="Y.Doc em memória" sub="estado quente" accent />
       <Connector label="debounce 2s" />
       <Node icon={Database} label="snapshot BLOB no SQLite" sub="group_yjs_snapshots" />
-      <div className="mt-1 flex items-center justify-center gap-1.5 text-muted-foreground">
-        <RotateCcw className="size-3.5" />
-        <span className="font-mono text-[0.65rem]">recuperação ao reabrir o app</span>
-        <Clock className="size-3.5" />
+      <div className="mt-1 flex items-center justify-center gap-2 text-muted-foreground">
+        <RotateCcw className="size-5" />
+        <span className="font-mono text-xs">recuperação ao reabrir o app</span>
+        <Clock className="size-5" />
       </div>
     </Frame>
   )
@@ -194,19 +196,19 @@ function SecurityDiagram() {
     <Frame>
       <Node icon={Users} label="Alunos · LAN" sub="token Bearer por sessão" />
       <Connector />
-      <div className="flex items-center gap-2 rounded-lg border border-border bg-card px-3 py-2">
-        <Check className="size-4 shrink-0 text-lime" />
-        <span className="text-xs font-medium text-foreground">/api/* · validado por Zod</span>
+      <div className="flex items-center gap-3 rounded-xl border border-border bg-card px-4 py-3">
+        <Check className="size-5 shrink-0 text-lime" />
+        <span className="text-sm font-medium text-foreground">/api/* · validado por Zod</span>
       </div>
-      <div className="flex items-center gap-2 rounded-lg border border-dashed border-border bg-muted/40 px-3 py-2">
-        <Lock className="size-4 shrink-0 text-muted-foreground" />
-        <span className="text-xs font-medium text-muted-foreground">
+      <div className="flex items-center gap-3 rounded-xl border border-dashed border-border bg-muted/40 px-4 py-3">
+        <Lock className="size-5 shrink-0 text-muted-foreground" />
+        <span className="text-sm font-medium text-muted-foreground">
           Ações do professor · só IPC — fora do alcance da rede
         </span>
       </div>
-      <div className="flex items-center justify-center gap-1.5 text-muted-foreground">
-        <ShieldCheck className="size-3.5" />
-        <span className="font-mono text-[0.65rem]">confiança por topologia</span>
+      <div className="flex items-center justify-center gap-2 text-muted-foreground">
+        <ShieldCheck className="size-5" />
+        <span className="font-mono text-xs">confiança por topologia</span>
       </div>
     </Frame>
   )
@@ -231,4 +233,6 @@ export const DOCS_ICONS: Record<string, LucideIcon> = {
   durable: Database,
   session: ListChecks,
   security: ShieldCheck,
+  canvas: LayoutTemplate,
+  email: Mail,
 }

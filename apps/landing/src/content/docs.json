@@ -4,12 +4,14 @@
     {
       "id": "arquitetura",
       "title": "Arquitetura",
+      "lead": "O alicerce: por que tudo roda dentro do app do professor, sem servidor externo, e como os processos se isolam.",
       "articles": [
         {
           "id": "arquitetura",
           "title": "Offline-first e isolamento de processo",
           "icon": "process",
           "diagram": "process",
+          "tech": ["Electron", "IPC · contextBridge", "Hono", "better-sqlite3"],
           "body": [
             "Não existe servidor externo. O backend roda **dentro do processo principal (main) do Electron**, no computador do professor — um servidor HTTP/WebSocket, o banco SQLite e a sincronização ao vivo, tudo no mesmo binário.",
             "A interface do professor (o **renderer**) não fala HTTP com esse backend. Ela conversa com o main por **IPC** (`ipcMain.handle('domain.action', …)`), exposto à UI por uma ponte tipada `window.api.*`. Já os alunos, esses sim, chegam pela rede via HTTP/WebSocket.",
@@ -22,12 +24,14 @@
     {
       "id": "infraestrutura-rede",
       "title": "Rede & Conectividade",
+      "lead": "Como o computador do professor vira o servidor da sala — descoberta, transporte seguro e a ponte entre aluno e professor sobre a Wi-Fi local.",
       "articles": [
         {
           "id": "descoberta",
           "title": "Descoberta na rede: mDNS, QR e TLS",
           "icon": "discovery",
           "diagram": "discovery",
+          "tech": ["bonjour-service · mDNS", "HTTPS", "selfsigned · RSA 2048", "qrcode"],
           "body": [
             "Para o aluno achar o professor na Wi-Fi sem digitar IP, o servidor anuncia a si mesmo com **mDNS** (Multicast DNS, via `bonjour-service`), publicando um serviço `_https._tcp` resolvível como `offlineclass.local`. É o mesmo mecanismo de *zero-configuration networking* do AirPlay e de impressoras de rede.",
             "Como nem toda máquina resolve mDNS, há dois caminhos redundantes de entrada:",
@@ -42,6 +46,7 @@
           "title": "Como aluno e professor se conectam",
           "icon": "connection",
           "diagram": "topology",
+          "tech": ["Hono", "@hono/node-server", "@hono/node-ws · WebSocket", "Bearer token", "Zod"],
           "body": [
             "O servidor da sala é um app **Hono** rodando sobre Node (`@hono/node-server`), escutando em `0.0.0.0:8000` — todas as interfaces de rede, na porta 8000 (ou a próxima livre, se ocupada). Ele acumula três papéis na mesma origem:",
             "1. **Serve a SPA do aluno** (React) como arquivos estáticos — o aluno só abre o navegador, nada para instalar.",
@@ -56,12 +61,14 @@
     {
       "id": "tempo-real",
       "title": "Tempo real",
+      "lead": "Várias mãos no mesmo documento: CRDTs, editor colaborativo e presença ao vivo, tudo reconciliado sem um lock central.",
       "articles": [
         {
           "id": "yjs",
           "title": "Colaboração com Yjs (CRDT)",
           "icon": "crdt",
           "diagram": "crdt",
+          "tech": ["Yjs", "Y.Doc", "Y.Map", "Y.XmlFragment", "WebSocket"],
           "body": [
             "O coração colaborativo é o **Yjs**, uma implementação de **CRDT** (Conflict-free Replicated Data Type). Cada grupo tem um documento `Y.Doc` próprio, mantido em memória pelo servidor num registro (`Map<groupId, Y.Doc>`).",
             "Dentro do documento, o estado é tipado pelo tipo de questão:",
@@ -74,7 +81,9 @@
         {
           "id": "editor-canvas",
           "title": "Interface estilo Canvas & TipTap",
-          "icon": "process",
+          "icon": "canvas",
+          "quote": "Um único canvas colaborativo, editado a várias mãos.",
+          "tech": ["TipTap", "CodeMirror", "Yjs", "React"],
           "body": [
             "A interface da avaliação no lado do aluno é desenhada sob o formato de um canvas vertical contínuo, exibindo as questões, imagens e materiais auxiliares de forma contígua em uma única tela.",
             "As respostas discursivas e de código utilizam o editor colaborativo TipTap integrado ao `Y.Doc`, renderizando cursores coloridos correspondentes a cada membro ativo do grupo.",
@@ -86,6 +95,8 @@
           "id": "awareness",
           "title": "Presença e awareness",
           "icon": "presence",
+          "quote": "A prova sobrevive a uma queda; a presença, não — e é isso que se quer.",
+          "tech": ["y-protocols/awareness", "WebSocket", "IPC"],
           "body": [
             "Além das respostas, o grupo vê quem está ali: cursores, em qual questão cada um está, nome e avatar. Isso é o **awareness** do Yjs (`y-protocols/awareness`) — um estado **transiente**, que não é persistido.",
             "Awareness viaja em frames próprios (byte de tipo `1`), separado dos updates do documento. Quando o socket cai, a presença daquele aluno some; ao reconectar, ela é recriada do zero. O estado da prova (as respostas) sobrevive; a presença, não — e é exatamente isso que se quer.",
@@ -98,12 +109,14 @@
     {
       "id": "dados",
       "title": "Dados",
+      "lead": "Onde o estado mora e como ele sobrevive a uma queda — SQLite, snapshots periódicos e recuperação a falhas.",
       "articles": [
         {
           "id": "persistencia",
           "title": "Persistência offline e recuperação",
           "icon": "durable",
           "diagram": "snapshot",
+          "tech": ["better-sqlite3", "Drizzle", "Y.encodeStateAsUpdate", "BLOB snapshot"],
           "body": [
             "O armazenamento durável é **SQLite** via `better-sqlite3`, com o **Drizzle** como camada de schema e queries. As queries são **síncronas** — sem `await` —, o que simplifica o raciocínio e cabe bem num backend single-machine. As migrações são aplicadas no boot, antes de abrir qualquer janela.",
             "O documento Yjs de cada grupo vive em memória, mas é serializado para o banco de forma **debounced (2 s após a última alteração)**: o estado completo (`Y.encodeStateAsUpdate`) é gravado como BLOB na tabela `group_yjs_snapshots`, e as respostas são também espelhadas na tabela `answers`.",
@@ -116,12 +129,14 @@
     {
       "id": "sessoes",
       "title": "Sessões",
+      "lead": "O ciclo de uma prova como máquina de estados — do lobby à submissão coordenada entre os membros do grupo.",
       "articles": [
         {
           "id": "sessoes",
           "title": "Sessões, grupos e submissão coordenada",
           "icon": "session",
           "diagram": "states",
+          "tech": ["máquina de estados", "Drizzle · SQLite", "Yjs"],
           "body": [
             "Uma sessão de prova é uma **máquina de estados**: `lobby → em andamento → encerrada`. No lobby os alunos entram e formam grupos; ao iniciar, a composição dos grupos **trava** e o cronômetro começa; ao encerrar, ninguém mais responde.",
             "Os grupos podem se formar de modos diferentes, escolhidos pelo professor: **livre** (alunos criam/entram), **designado** (o professor monta) ou **sorteio** (o sistema divide pelo tamanho desejado). Aluno sozinho é um grupo de um.",
@@ -133,6 +148,8 @@
           "id": "monitor-ipc",
           "title": "Monitor de grupo via IPC (Sem WebSocket)",
           "icon": "connection",
+          "quote": "O painel do professor lê o estado direto da memória, sem passar pela rede.",
+          "tech": ["Electron IPC", "yjsManager", "Uint8Array"],
           "body": [
             "O painel de monitoramento do professor (`GroupRealtimeMonitor`) permite visualizar o progresso do grupo e as respostas sendo preenchidas ao vivo.",
             "Para isso, o renderer da interface do professor se comunica diretamente com o `yjsManager` no processo principal (Node.js) via IPC do Electron, solicitando o snapshot inicial e subscrevendo aos pushes de atualizações de Yjs e presença.",
@@ -145,12 +162,14 @@
     {
       "id": "seguranca",
       "title": "Segurança",
+      "lead": "Confiança que vem da topologia: menor superfície de ataque, tokens com escopo e segredos guardados pelo sistema operacional.",
       "articles": [
         {
           "id": "seguranca",
           "title": "Segurança por topologia",
           "icon": "security",
           "diagram": "security",
+          "tech": ["IPC-only", "Zod · @offlineclass/shared", "Bearer token", "ownerId scoping"],
           "body": [
             "As ações sensíveis do professor (criar prova, abrir/encerrar sessão, corrigir) **não existem como rotas HTTP** — vivem apenas como handlers de IPC dentro do app. Um aluno na LAN simplesmente não tem como alcançá-las: a confiança vem da **topologia**, não só de um middleware.",
             "Para os alunos, o controle é por **token Bearer** emitido no `join`, válido só naquela sessão e escopado ao próprio aluno e seu grupo. Toda entrada HTTP é validada com **Zod** (schemas compartilhados em `packages/shared`), e cada leitura/escrita do professor é escopada por `ownerId`.",
@@ -161,7 +180,9 @@
         {
           "id": "envio-email",
           "title": "Envio de resultados via SMTP local",
-          "icon": "security",
+          "icon": "email",
+          "quote": "Notas saem do desktop do professor; a senha nunca sai do chaveiro do sistema.",
+          "tech": ["Nodemailer · SMTP", "Electron safeStorage", "Keychain / DPAPI / libsecret"],
           "body": [
             "Ao concluir a correção, o professor pode disparar as notas e gabaritos diretamente aos e-mails dos alunos a partir do próprio aplicativo desktop, utilizando conexões SMTP locais configuradas na área de configurações.",
             "A senha do SMTP é criptografada em repouso (at-rest) de forma robusta por meio do `safeStorage` do Electron, delegando o armazenamento do segredo criptográfico ao chaveiro seguro nativo do sistema operacional (Keychain no macOS, DPAPI no Windows, ou libsecret no Linux).",

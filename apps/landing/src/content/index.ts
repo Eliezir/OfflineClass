@@ -38,6 +38,10 @@ export interface DocArticle {
   title: string
   icon: string
   diagram?: string
+  /** Pull-quote shown in the visual slot of slides without a diagram. */
+  quote?: string
+  /** Technologies/libraries behind this feature, shown as chips. */
+  tech?: string[]
   body: string[]
   concept: string
 }
@@ -47,6 +51,8 @@ export interface Docs {
   sections: {
     id: string
     title: string
+    /** One-line lead shown on the section's intro slide. */
+    lead: string
     articles: DocArticle[]
   }[]
 }
