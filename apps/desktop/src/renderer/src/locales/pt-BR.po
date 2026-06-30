@@ -34,8 +34,8 @@ msgstr "{unread, plural, one {# nova} other {# novas}}"
 msgid "{untitled} questões ainda estão com o título padrão."
 msgstr "{untitled} questões ainda estão com o título padrão."
 
-msgid "•••••••• (salva — deixe em branco para manter)"
-msgstr "•••••••• (salva — deixe em branco para manter)"
+#~ msgid "•••••••• (salva — deixe em branco para manter)"
+#~ msgstr "•••••••• (salva — deixe em branco para manter)"
 
 msgid "1 questão ainda está com o título padrão."
 msgstr "1 questão ainda está com o título padrão."
@@ -950,6 +950,9 @@ msgstr "Revise a prova e abra a sala para os alunos. Suas alterações já foram
 msgid "Sair"
 msgstr "Sair"
 
+msgid "Salva — deixe em branco para manter"
+msgstr "Salva — deixe em branco para manter"
+
 msgid "Salvando..."
 msgstr "Salvando..."
 
@@ -991,6 +994,9 @@ msgstr "Senha alterada."
 
 msgid "Senha atual"
 msgstr "Senha atual"
+
+msgid "Senha de app do Gmail"
+msgstr "Senha de app do Gmail"
 
 msgid "Série / período"
 msgstr "Série / período"
