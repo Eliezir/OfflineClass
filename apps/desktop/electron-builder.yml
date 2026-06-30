@@ -9,6 +9,11 @@ files:
   - '!{.eslintcache,eslint.config.mjs,.prettierignore,.prettierrc.yaml,dev-app-update.yml,CHANGELOG.md,README.md}'
   - '!{.env,.env.*,.npmrc,pnpm-lock.yaml}'
   - '!{tsconfig.json,tsconfig.node.json,tsconfig.web.json}'
+extraResources:
+  # src/ is excluded from the app bundle, so ship the Drizzle migration SQL +
+  # meta/_journal.json the runtime migrator needs as a resource instead.
+  - from: src/main/db/migrations
+    to: migrations
 asarUnpack:
   - resources/**
   # The Claude Agent SDK ships a native CLI binary that cannot execute from

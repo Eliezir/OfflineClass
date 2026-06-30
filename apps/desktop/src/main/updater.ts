@@ -1,7 +1,4 @@
 import { app, dialog, type BrowserWindow } from 'electron'
-// electron-updater is a pure CommonJS module (`module.exports = { autoUpdater }`,
-// no `default`). After electron-vite bundles it as an external, the default
-// export is undefined — so import the named binding directly.
 import { autoUpdater } from 'electron-updater'
 
 /**
