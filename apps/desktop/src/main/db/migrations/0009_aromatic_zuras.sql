@@ -13,4 +13,5 @@ CREATE TABLE `email_settings` (
 --> statement-breakpoint
 ALTER TABLE `answers` ADD `feedback` text;--> statement-breakpoint
 ALTER TABLE `students` ADD `email` text;--> statement-breakpoint
-ALTER TABLE `students` ADD `feedback` text;
+ALTER TABLE `students` ADD `feedback` text;--> statement-breakpoint
+ALTER TABLE `students` ADD `results_sent_at` integer;

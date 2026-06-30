@@ -27,6 +27,7 @@ export type StudentResult = {
   feedback: string | null
   /** When the teacher last e-mailed this student their results; null = never. */
   resultsSentAt: number | null
+  groupName: string | null
   submittedAt: number | null
   joinedAt: number
   leftAt: number | null

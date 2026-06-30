@@ -12,7 +12,7 @@ import { createApi } from '../lib/api'
 import { saveToken } from '../lib/session'
 import { notify } from '../lib/toast'
 import { useServerUrl } from '../lib/serverContext'
-import { loadProfile, initials } from '../lib/studentProfile'
+import { loadProfile, saveProfile, initials } from '../lib/studentProfile'
 import { maskEmail } from '../lib/mask'
 
 export default function JoinRoute(): React.JSX.Element {
@@ -54,6 +54,7 @@ export default function JoinRoute(): React.JSX.Element {
     },
     onSuccess: (res) => {
       saveToken(res.token)
+      saveProfile({ name: res.studentName, matricula: res.studentMatricula })
       notify.success(`Bem-vindo, ${res.studentName}!`)
       if (res.status === 'running') {
         navigate('/test', { replace: true })
@@ -78,11 +79,12 @@ export default function JoinRoute(): React.JSX.Element {
   }
 
   const noSession = active.isError && (active.error as Error & { status?: number })?.status === 404
-  const sessionAvailable = active.data && (active.data.status === 'lobby' || active.data.status === 'running')
+  const sessionAvailable =
+    active.data && (active.data.status === 'lobby' || active.data.status === 'running')
   const examTitle = active.data?.examTitle
 
   return (
-    <main className="flex flex-1 flex-col items-center justify-center gap-6 px-6 py-10">
+    <main className="flex flex-1 flex-col items-center justify-center gap-6 px-6 py-10 overflow-y-auto">
       <Card className="w-full max-w-sm">
         <CardHeader>
           <CardTitle>Entrar na prova</CardTitle>
@@ -108,11 +110,10 @@ export default function JoinRoute(): React.JSX.Element {
             <div className="flex flex-col items-center gap-4 py-4 text-center">
               <div className="bg-muted/50 flex flex-col items-center gap-3 rounded-2xl p-4">
                 <Loader2 className="text-muted-foreground size-5 animate-spin" />
-                <p className="text-sm font-medium">
-                  Aguardando o professor abrir a sala…
-                </p>
+                <p className="text-sm font-medium">Aguardando o professor abrir a sala…</p>
                 <p className="text-muted-foreground text-xs leading-relaxed">
-                  O professor ainda não iniciou uma sessão. Esta tela atualiza automaticamente a cada 3 segundos.
+                  O professor ainda não iniciou uma sessão. Esta tela atualiza automaticamente a
+                  cada 3 segundos.
                 </p>
               </div>
               <Button variant="secondary" className="w-full" onClick={handleRefresh}>
@@ -144,9 +145,7 @@ export default function JoinRoute(): React.JSX.Element {
                     <p className="truncate text-sm font-bold text-primary-soft-foreground">
                       {stored.name}
                     </p>
-                    <p className="truncate text-xs text-muted-foreground">
-                      {stored.matricula}
-                    </p>
+                    <p className="truncate text-xs text-muted-foreground">{stored.matricula}</p>
                   </div>
                 </div>
               ) : (
@@ -215,9 +214,7 @@ export default function JoinRoute(): React.JSX.Element {
           {/* ── Error loading (not 404) ─────────────────────────────────── */}
           {active.isError && !noSession && (
             <div className="flex flex-col items-center gap-4 py-4 text-center">
-              <p className="text-destructive text-sm">
-                Erro ao conectar: {String(active.error)}
-              </p>
+              <p className="text-destructive text-sm">Erro ao conectar: {String(active.error)}</p>
               <Button variant="secondary" className="w-full" onClick={handleRefresh}>
                 <RefreshCw className="size-4" />
                 Tentar novamente

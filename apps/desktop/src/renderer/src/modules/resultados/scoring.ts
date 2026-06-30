@@ -43,6 +43,7 @@ export function toStudentResult(review: SessionAnswersReview): StudentResult {
     email: review.studentEmail,
     feedback: review.studentFeedback,
     resultsSentAt: review.resultsSentAt,
+    groupName: review.groupName,
     submittedAt: review.submittedAt,
     joinedAt: review.joinedAt,
     leftAt: review.leftAt,

@@ -64,13 +64,19 @@ msgstr ""
 msgid "Abrir painel"
 msgstr "Open panel"
 
-msgid "Abrir sala"
-msgstr "Open room"
+#~ msgid "Abrir sala"
+#~ msgstr "Open room"
+
+msgid "Abrir sala de prova"
+msgstr ""
 
 msgid "Abrir segurança da conta"
 msgstr ""
 
 msgid "Abrir Senhas de app"
+msgstr ""
+
+msgid "Abrir Y.Doc (Tempo Real)"
 msgstr ""
 
 msgid "Acertos (objetivas)"
@@ -125,8 +131,11 @@ msgstr "students"
 msgid "Alunos"
 msgstr "Students"
 
-msgid "Alunos atrasados ainda conseguem entrar."
-msgstr "Late students can still join."
+msgid "Alunos atrasados ainda conseguem entrar após o início da prova."
+msgstr ""
+
+#~ msgid "Alunos atrasados ainda conseguem entrar."
+#~ msgstr "Late students can still join."
 
 msgid "Alunos avaliados"
 msgstr "Students graded"
@@ -150,6 +159,9 @@ msgid "Aplique uma prova ao vivo para a turma."
 msgstr "Run an exam live for the class."
 
 msgid "Arrastar para reordenar"
+msgstr ""
+
+msgid "As alternativas de múltipla escolha e múltipla resposta mudam de ordem."
 msgstr ""
 
 msgid "As senhas não coincidem."
@@ -199,11 +211,20 @@ msgstr ""
 msgid "Buscar…"
 msgstr "Search…"
 
+msgid "Cada grupo ou aluno individual vê as questões em ordens distintas."
+msgstr ""
+
 msgid "Cancelar"
 msgstr "Cancel"
 
 msgid "caracteres"
 msgstr "characters"
+
+msgid "Carregando dados da prova…"
+msgstr ""
+
+msgid "Carregando visualização real-time..."
+msgstr ""
 
 msgid "Centro direita"
 msgstr "Center right"
@@ -250,6 +271,9 @@ msgstr ""
 msgid "Conectando ao servidor… Se demorar, confira host, porta/conexão segura e use uma Senha de app do Gmail."
 msgstr ""
 
+msgid "Conectando…"
+msgstr ""
+
 msgid "Conexão bem-sucedida!"
 msgstr ""
 
@@ -263,6 +287,9 @@ msgid "Configurações"
 msgstr "Settings"
 
 msgid "Configurações de e-mail salvas."
+msgstr ""
+
+msgid "Configurações Gerais"
 msgstr ""
 
 msgid "Configure o servidor de e-mail em"
@@ -292,6 +319,9 @@ msgstr "Correct:"
 msgid "Criar conta"
 msgstr "Create account"
 
+msgid "Criar grupo"
+msgstr ""
+
 msgid "Criar prova"
 msgstr "Create exam"
 
@@ -300,6 +330,9 @@ msgstr "Create your account"
 
 msgid "Crie e organize suas avaliações."
 msgstr "Create and organize your assessments."
+
+msgid "Crie grupos e arraste alunos para eles."
+msgstr ""
 
 msgid "Crie provas com vários tipos de questão e materiais de apoio. Tudo fica salvo no seu computador."
 msgstr "Create exams with various question types and supporting materials. Everything is saved on your computer."
@@ -387,6 +420,9 @@ msgstr ""
 msgid "E-mail inválido para {0}."
 msgstr ""
 
+msgid "Editando agora:"
+msgstr ""
+
 msgid "Editar"
 msgstr "Edit"
 
@@ -410,6 +446,12 @@ msgstr "Coming soon"
 
 msgid "Em curso"
 msgstr "In progress"
+
+msgid "Embaralhar opções MCQ"
+msgstr ""
+
+msgid "Embaralhar questões"
+msgstr ""
 
 msgid "encerrada"
 msgstr "ended"
@@ -467,6 +509,9 @@ msgstr ""
 msgid "Enviar notas por e-mail"
 msgstr ""
 
+msgid "Enviar para grupo"
+msgstr ""
+
 msgid "Erro"
 msgstr "Error"
 
@@ -479,10 +524,13 @@ msgstr "Choose between the app's light and dark theme."
 msgid "Escolha um tipo para inserir na prova."
 msgstr ""
 
-msgid "Escolha uma prova e abra a sala para os alunos entrarem pela rede."
-msgstr "Choose an exam and open the room for students to join over the network."
+#~ msgid "Escolha uma prova e abra a sala para os alunos entrarem pela rede."
+#~ msgstr "Choose an exam and open the room for students to join over the network."
 
 msgid "Escolher ícone"
+msgstr ""
+
+msgid "Escolhido"
 msgstr ""
 
 msgid "Escreva o enunciado…"
@@ -516,6 +564,12 @@ msgid "Ex: Redes de Computadores"
 msgstr ""
 
 msgid "Excluir"
+msgstr ""
+
+msgid "Excluir grupo"
+msgstr ""
+
+msgid "Excluir Grupo"
 msgstr ""
 
 #~ msgid "Excluir prova"
@@ -555,10 +609,23 @@ msgstr "Closes the toast on its own after the duration."
 msgid "Fechar"
 msgstr "Close"
 
+msgid "Fechar aviso"
+msgstr ""
+
+msgid "Formação de grupos"
+msgstr ""
+
 msgid "Gere uma Senha de app"
 msgstr ""
 
 msgid "Gmail (SSL)"
+msgstr ""
+
+msgid "Grupo"
+msgstr ""
+
+#. placeholder {0}: groups.length
+msgid "Grupos ({0})"
 msgstr ""
 
 msgid "Humanas e artes"
@@ -622,6 +689,9 @@ msgstr ""
 msgid "Inserir emoji"
 msgstr ""
 
+msgid "Insira o nome do novo grupo para esta sessão de prova."
+msgstr ""
+
 msgid "Introdução"
 msgstr "Introduction"
 
@@ -664,6 +734,12 @@ msgstr "Maximize"
 msgid "Média da turma"
 msgstr "Class average"
 
+msgid "membros"
+msgstr ""
+
+msgid "Membros do Grupo"
+msgstr ""
+
 msgid "Mensagem de abertura"
 msgstr ""
 
@@ -672,6 +748,9 @@ msgstr "Minimize"
 
 msgid "Mínimo 8 caracteres"
 msgstr "Minimum 8 characters"
+
+msgid "Modo de Grupos Controlado pelo Professor:"
+msgstr ""
 
 msgid "Monte suas provas"
 msgstr "Build your exams"
@@ -721,6 +800,12 @@ msgstr "Don't have an account?"
 msgid "Nenhum aluno"
 msgstr "No students"
 
+msgid "Nenhum aluno neste grupo"
+msgstr ""
+
+msgid "Nenhum grupo"
+msgstr ""
+
 msgid "Nenhum ícone encontrado."
 msgstr ""
 
@@ -733,14 +818,17 @@ msgstr "No exams yet"
 msgid "Nenhuma questão ainda"
 msgstr ""
 
-msgid "Nenhuma sessão ativa"
-msgstr "No active session"
+#~ msgid "Nenhuma sessão ativa"
+#~ msgstr "No active session"
 
 msgid "Nenhuma sessão encerrada"
 msgstr "No ended sessions"
 
 msgid "Nome"
 msgstr "Name"
+
+msgid "Nome do grupo"
+msgstr ""
 
 msgid "Nome do remetente"
 msgstr ""
@@ -772,6 +860,9 @@ msgstr "New password"
 msgid "Nova sessão"
 msgstr "New session"
 
+msgid "Novo Grupo"
+msgstr ""
+
 #. placeholder {0}: settings.data.fromName
 #. placeholder {1}: settings.data.fromEmail
 msgid "O e-mail é enviado em nome de <0>{0}</0> <1><{1}></1> e inclui os dados do professor no rodapé, além da disciplina, prova, nota e comentários."
@@ -801,6 +892,9 @@ msgstr "Optional"
 msgid "Opções da prova"
 msgstr ""
 
+msgid "Organize os alunos arrastando-os entre as colunas \"Sem grupo\" e os grupos criados (lastro visual com o indicador de arrastar). Você também pode clicar com o botão direito sobre qualquer aluno para acessar ações rápidas como remoção de grupo ou remoção da sala."
+msgstr ""
+
 msgid "Os alunos aparecem aqui assim que entram pela rede."
 msgstr "Students appear here as soon as they join over the network."
 
@@ -828,8 +922,11 @@ msgstr "Profile updated."
 msgid "Pergunta sem título"
 msgstr ""
 
-msgid "Permitir entrada após o início"
-msgstr "Allow joining after start"
+#~ msgid "Permitir entrada após o início"
+#~ msgstr "Allow joining after start"
+
+msgid "Permitir entrada tardia"
+msgstr ""
 
 msgid "Personalize a aparência do app."
 msgstr "Customize the app's appearance."
@@ -862,6 +959,9 @@ msgid "Primeiros passos no OfflineClass."
 msgstr "Getting started with OfflineClass."
 
 msgid "Prof. Fulano"
+msgstr ""
+
+msgid "Professor"
 msgstr ""
 
 msgid "Professor · OfflineClass"
@@ -909,13 +1009,31 @@ msgstr "Recent · tap ▶ to run"
 msgid "Refazer introdução"
 msgstr "Redo introduction"
 
+msgid "Regras & Segurança"
+msgstr ""
+
+msgid "Remover"
+msgstr ""
+
 msgid "Remover alternativa"
+msgstr ""
+
+msgid "Remover Aluno"
+msgstr ""
+
+msgid "Remover da sala"
+msgstr ""
+
+msgid "Remover do grupo"
 msgstr ""
 
 msgid "Remover ícone"
 msgstr ""
 
 msgid "Remover imagem"
+msgstr ""
+
+msgid "resp."
 msgstr ""
 
 msgid "Respondendo"
@@ -986,6 +1104,13 @@ msgstr ""
 
 msgid "Selecione uma prova"
 msgstr "Select an exam"
+
+msgid "Sem Grupo"
+msgstr ""
+
+#. placeholder {0}: unassignedStudents.length
+msgid "Sem grupo ({0})"
+msgstr ""
 
 msgid "Sem internet, sem problema"
 msgstr "No internet, no problem"
@@ -1071,11 +1196,25 @@ msgstr "Top right"
 msgid "Superior esquerda"
 msgstr "Top left"
 
+msgid "Tamanho máximo do grupo"
+msgstr ""
+
 msgid "Tecnologia"
+msgstr ""
+
+#. placeholder {0}: groupToDelete?.name
+msgid "Tem certeza que deseja excluir o grupo <0>{0}</0>? Os alunos deste grupo voltarão para a lista de alunos sem grupo."
+msgstr ""
+
+#. placeholder {0}: studentToKick?.name
+msgid "Tem certeza que deseja remover <0>{0}</0> da sala de aula? Esta ação irá desconectá-lo desta sessão."
 msgstr ""
 
 msgid "Tema"
 msgstr "Theme"
+
+msgid "Tempo real"
+msgstr ""
 
 msgid "Testar conexão"
 msgstr ""
@@ -1103,6 +1242,9 @@ msgstr "Test toast — success"
 
 msgid "Toca um som ao aparecer."
 msgstr "Plays a sound on appearance."
+
+msgid "Todos os alunos possuem grupo"
+msgstr ""
 
 msgid "Trilha de navegação"
 msgstr "Breadcrumb"
@@ -1141,6 +1283,9 @@ msgid "Verdadeiro"
 msgstr ""
 
 msgid "Verdadeiro ou falso"
+msgstr ""
+
+msgid "Visualização do Y.Doc do Grupo (Tempo Real)"
 msgstr ""
 
 msgid "Voltar"

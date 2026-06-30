@@ -40,15 +40,36 @@
     {
       "idx": 5,
       "version": "6",
-      "when": 1782444560136,
-      "tag": "0005_stiff_power_man",
+      "when": 1782164960561,
+      "tag": "0005_bitter_orphan",
       "breakpoints": true
     },
     {
       "idx": 6,
       "version": "6",
-      "when": 1782851634981,
-      "tag": "0006_cool_martin_li",
+      "when": 1782264721006,
+      "tag": "0006_yellow_invisible_woman",
+      "breakpoints": true
+    },
+    {
+      "idx": 7,
+      "version": "6",
+      "when": 1782667495459,
+      "tag": "0007_bored_captain_cross",
+      "breakpoints": true
+    },
+    {
+      "idx": 8,
+      "version": "6",
+      "when": 1782670473121,
+      "tag": "0008_magenta_madelyne_pryor",
+      "breakpoints": true
+    },
+    {
+      "idx": 9,
+      "version": "6",
+      "when": 1782852788127,
+      "tag": "0009_aromatic_zuras",
       "breakpoints": true
     }
   ]

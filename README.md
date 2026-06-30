@@ -11,7 +11,7 @@
   <img src="https://img.shields.io/badge/status-em%20desenvolvimento-yellow" alt="Status"/>
   <img src="https://img.shields.io/badge/desktop-Electron-47848F" alt="Electron"/>
   <img src="https://img.shields.io/badge/server-Hono-FF6E1A" alt="Hono"/>
-  <img src="https://img.shields.io/badge/realtime-Socket.IO-010101" alt="Socket.IO"/>
+  <img src="https://img.shields.io/badge/realtime-WebSockets-010101" alt="WebSockets"/>
   <img src="https://img.shields.io/badge/frontend-React%20%2B%20Vite-61DAFB" alt="React"/>
   <img src="https://img.shields.io/badge/license-MIT-blue" alt="License"/>
 </p>
@@ -32,7 +32,7 @@ O foco do projeto está no estudo de **Sistemas Operacionais e Redes**, exploran
 - **Multi-professor** — várias contas locais por instalação, com login/senha (bcrypt) e dados isolados por professor.
 - **Grupos colaborativos** — três modos de formação (livre, professor-designa, sorteio) ou modo individual. Membros do mesmo grupo veem respostas e cursores um do outro em tempo real, com submit confirmado por todos os membros online.
 - **Descoberta automática** — alunos entram via QR code ou URL anunciada por mDNS — sem configuração manual de IPs.
-- **Tempo real sobre LAN** — Socket.IO unifica eventos de sessão, presença e colaboração CRDT (Yjs) num só socket TLS sobre HTTPS local.
+- **Tempo real sobre LAN** — WebSockets unificam eventos de sessão, presença e colaboração CRDT (Yjs) num só socket TLS sobre HTTPS local.
 - **Painel ao vivo do professor** — dashboard com progresso por grupo e sessão de projetor para a turma toda.
 - **Resultados** — exportação local em CSV/JSON e, opcionalmente, envio por e-mail via cloud.
 - **Sync opcional com cloud (VPS)** — backup das definições de prova e upload dos resultados; sempre manual, nunca obrigatório.
@@ -42,8 +42,8 @@ O foco do projeto está no estudo de **Sistemas Operacionais e Redes**, exploran
 | Camada               | Tecnologia                                                                |
 | -------------------- | ------------------------------------------------------------------------- |
 | Desktop (professor)  | Electron + React 19 + Tailwind v4 + shadcn (radix-nova) + TanStack Query  |
-| Servidor LAN         | Hono + Socket.IO (`y-socket.io` para Yjs) + Node `https`                  |
-| Web do aluno         | React 19 + Vite + Tailwind v4 + shadcn + Yjs + Tiptap + `socket.io-client`|
+| Servidor LAN         | Hono + WebSockets (`@hono/node-ws` para Yjs) + Node `https`               |
+| Web do aluno         | React 19 + Vite + Tailwind v4 + shadcn + Yjs + Tiptap + `WebSocket`       |
 | Cloud (VPS opcional) | Hono + Postgres + Drizzle                                                 |
 | DB local             | better-sqlite3 + Drizzle (WAL mode)                                       |
 | Schemas/contratos    | Zod em `packages/shared` (tipos compartilhados client/server)             |
@@ -56,11 +56,11 @@ A escolha das ferramentas prioriza um único runtime JavaScript em toda a stack,
 
 ```
 ┌─────────────────────────────────────┐         LAN          ┌─────────────────┐
-│        Professor (Electron)         │   HTTPS + Socket.IO  │   Aluno (PC)    │
+│        Professor (Electron)         │   HTTPS + WebSocket  │   Aluno (PC)    │
 │  ┌───────────────────────────────┐  │ ◄──────────────────► │  React + Vite   │
 │  │ Main process                  │  │                      │  Yjs + Tiptap   │
-│  │  • Hono LAN server            │  │      mDNS / QR       │  Socket.IO      │
-│  │  • Socket.IO + y-socket.io    │  │ ◄──────────────────► │  client         │
+│  │  • Hono LAN server            │  │      mDNS / QR       │  WebSocket      │
+│  │  • WebSockets (@hono/node-ws) │  │ ◄──────────────────► │  client         │
 │  │  • SQLite (Drizzle, WAL)      │  │                      └─────────────────┘
 │  │  • Cloud sync worker          │  │
 │  └───────────────────────────────┘  │
@@ -71,7 +71,7 @@ A escolha das ferramentas prioriza um único runtime JavaScript em toda a stack,
 └─────────────────────────────────────┘                   └──────────────────┘
 ```
 
-Três fronteiras de protocolo, três zonas de confiança: **Electron IPC** (renderer ↔ main), **HTTPS + Socket.IO em LAN** (alunos ↔ desktop) e **HTTPS pra cloud** (apenas desktop → VPS). O aluno nunca fala com a cloud diretamente. Detalhes completos em [`docs/architecture.md`](docs/architecture.md).
+Três fronteiras de protocolo, três zonas de confiança: **Electron IPC** (renderer ↔ main), **HTTPS + WebSocket em LAN** (alunos ↔ desktop) e **HTTPS pra cloud** (apenas desktop → VPS). O aluno nunca fala com a cloud diretamente. Detalhes completos em [`docs/architecture.md`](docs/architecture.md).
 
 ### Layout do monorepo
 

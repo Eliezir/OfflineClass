@@ -1,1 +1,0 @@
-ALTER TABLE `students` ADD `results_sent_at` integer;

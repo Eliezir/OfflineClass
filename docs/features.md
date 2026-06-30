@@ -157,8 +157,8 @@ Form builder é **extensível por design** — tipos adicionais (matemática/LaT
 - **[CORE]** Filosofia anti-cheat: LAN-only + PC-only é a garantia principal. **Sem** fullscreen lock ou detecção de tab switch no MVP — fácil de burlar e dá falsa sensação de segurança. (Reabrir se feedback pedagógico exigir.)
 
 ### 2.4 Reconexão
-- **[CORE]** Reconexão transparente do Socket.IO (retry com backoff exponencial automático do `socket.io-client`)
-- **[FEATURE]** Awareness do Yjs restaura presença na reconexão; updates CRDT perdidos são sincronizados via protocolo de delta do Yjs; Socket.IO reconecta automaticamente e o server reintegra o socket ao room do grupo
+- **[CORE]** Reconexão transparente do WebSocket (retry com backoff exponencial implementado na camada de WS nativo do aluno)
+- **[FEATURE]** Awareness do Yjs restaura presença na reconexão; updates CRDT perdidos são sincronizados via protocolo de delta do Yjs; o server reintegra o socket ao room do grupo ao reconectar
 - **[CORE]** Indicador visível pro usuário: "reconectando…" depois "online novamente"
 
 ---
@@ -176,17 +176,18 @@ Form builder é **extensível por design** — tipos adicionais (matemática/LaT
 
 ### 3.2 Colaboração em tempo real
 - **[FEATURE]** Cada grupo tem um `Y.Doc` com o estado de resposta do grupo
-- **[FEATURE]** `Y.Map<questionId, answer>` pra slots de MCQ (um valor por questão)
-- **[FEATURE]** `Y.Text` pra dissertativas (edição colaborativa estilo Tiptap)
-- **[FEATURE]** `Awareness` pra cursores, seleção, presença
-- **[FEATURE]** Transporte: `y-socket.io` sobre a conexão Socket.IO do aluno — Yjs e eventos de sessão compartilham o mesmo socket, sem segundo handshake ou URL separada
-- **[FEATURE]** Eventos de sessão e controle de submit trafegam no mesmo socket por event names dedicados (`session.*`, `submit:*`), eliminando o canal paralelo `/api/ws`
-- **[FEATURE]** Server é só relay (snapshots + autenticação na conexão; não autoritativo sobre conteúdo do doc)
+- **[FEATURE]** `Y.Map<questionId, answer>` pra slots de MCQ/truefalse/multi (um valor por questão) — key `'answers'`
+- **[FEATURE]** `Y.XmlFragment` com `Y.XmlText` pra dissertativas e código (edição colaborativa via TipTap + `@tiptap/extension-collaboration`)
+- **[FEATURE]** `Awareness` pra cursores, seleção, presença — codificado por `y-protocols/awareness`
+- **[FEATURE]** **Transporte aluno → servidor:** WebSocket nativo (`/api/ws`) com frames binários (byte `0` = Yjs doc update, byte `1` = awareness update)
+- **[FEATURE]** **Transporte servidor → professor:** IPC Electron — `wc.send('group.yjs.update')` e `wc.send('group.awareness.update')`. O renderer do professor usa `onGroupYjsUpdate`/`onGroupAwarenessUpdate` para aplicar updates ao `Y.Doc` e `Awareness` locais sem WebSocket
+- **[FEATURE]** Server aplica updates Yjs ao `yjsManager` (singleton em memória, 1 `Y.Doc` por grupo) e faz broadcast para todos os membros do grupo (exceto o remetente) via `rooms.broadcastYjsToGroup()`
+- **[FEATURE]** **Dupla gravação REST → Yjs:** `POST /api/answers` também atualiza o `Y.Map('answers')` do grupo no `yjsManager`, garantindo que o monitor do professor receba a resposta mesmo se o caminho WS Yjs falhar
 
 ### 3.3 Persistência
-- **[FEATURE]** Y.Doc serializado como `Uint8Array` e salvo como BLOB no SQLite periodicamente (a cada N updates ou X segundos)
-- **[FEATURE]** Em caso de restart do desktop no meio da sessão, Y.Docs recarregam do snapshot
-- **[FEATURE]** Na submissão do grupo, o server extrai respostas estruturadas do Y.Doc e grava em `group_answers` (fonte da verdade na hora de corrigir)
+- **[FEATURE]** Y.Doc serializado como `Uint8Array` e salvo como BLOB no SQLite periodicamente (debounce de 2 s após cada update), na tabela `group_yjs_snapshots`
+- **[FEATURE]** Em caso de restart do desktop no meio da sessão, Y.Docs recarregam do snapshot; se não houver snapshot, o `yjsManager` semeia o `Y.Doc` a partir das linhas individuais da tabela `answers`
+- **[FEATURE]** O `yjsManager` sincroniza o `Y.Map('answers')` de volta para a tabela `answers` (individual por aluno do grupo) a cada save de snapshot, via `syncAnswersFromYdoc()`
 
 ### 3.4 Submissão
 - **[FEATURE]** Qualquer membro do grupo pode iniciar o submit
@@ -322,7 +323,7 @@ Form builder é **extensível por design** — tipos adicionais (matemática/LaT
 ## 9. Qualidade / não-funcional
 
 ### 9.1 Confiabilidade
-- **[CORE]** Lógica de reconnect do Socket.IO (backoff automático do cliente; servidor reintegra o socket ao room correto na reconexão via `socket.data`)
+- **[CORE]** Lógica de reconnect do WebSocket (reconexão automática com tempo de espera de 1.5s pelo cliente; servidor remove o socket antigo e registra o novo socket com o respectivo room/grupo associado ao token)
 - **[FEATURE]** SQLite em modo WAL (leituras concorrentes durante escritas)
 - **[FEATURE]** Snapshots periódicos do Y.Doc (recuperação de crash do desktop no meio da sessão)
 - **[EXTRA]** Backup do SQLite local (export do arquivo do DB pra USB / cloud)
