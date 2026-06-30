@@ -1,8 +1,6 @@
 import { useState } from 'react'
-import { randomAvatar } from '@offlineclass/avatar'
+import { AvatarBuilder, randomAvatar } from '@offlineclass/avatar'
 import type { AvatarConfig } from '@offlineclass/shared'
-
-import { AvatarBuilder } from '@/components/avatar/AvatarBuilder'
 
 /**
  * Dev-only preview route (#/avatar) for screenshotting the avatar editor in the

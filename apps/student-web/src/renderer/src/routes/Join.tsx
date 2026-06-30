@@ -3,13 +3,13 @@ import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { useNavigate } from 'react-router-dom'
 import { ArrowLeft, ArrowRight, LogIn, RefreshCw, Loader2, Pencil, Shuffle } from 'lucide-react'
 import { JoinInput, type AvatarConfig } from '@offlineclass/shared'
-import { Avatar, randomAvatar } from '@offlineclass/avatar'
+import { Avatar, AvatarEditorModal, randomAvatar } from '@offlineclass/avatar'
 
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
-import { AvatarEditorModal } from '@/components/avatar/AvatarEditorModal'
+import { TeacherChip } from '@/components/TeacherChip'
 import { createApi } from '../lib/api'
 import { saveToken } from '../lib/session'
 import { notify } from '../lib/toast'
@@ -163,6 +163,12 @@ export default function JoinRoute(): React.JSX.Element {
 
           {sessionAvailable && (
             <div className="space-y-4">
+              {active.data?.teacherName && (
+                <div className="flex justify-center">
+                  <TeacherChip name={active.data.teacherName} avatar={active.data.teacherAvatar} />
+                </div>
+              )}
+
               {/* progress (hidden on the recognized "welcome back" shortcut) */}
               {step !== 'back' && (
                 <div className="flex gap-1.5">

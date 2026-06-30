@@ -8,6 +8,7 @@ import { Avatar } from '@offlineclass/avatar'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Input } from '@/components/ui/input'
+import { TeacherChip } from '@/components/TeacherChip'
 import { createApi } from '../lib/api'
 import { clearToken, loadToken } from '../lib/session'
 import { notify } from '../lib/toast'
@@ -40,6 +41,13 @@ export default function WaitingRoute(): React.JSX.Element {
   const groupsQuery = useQuery({
     queryKey: ['groups', teacherUrl],
     queryFn: api.groups.list,
+    retry: false
+  })
+
+  // Public session info — only needed here for the teacher chip (whose room).
+  const sessionQuery = useQuery({
+    queryKey: ['session', 'active', teacherUrl],
+    queryFn: api.sessionActive,
     retry: false
   })
 
@@ -161,6 +169,12 @@ export default function WaitingRoute(): React.JSX.Element {
           </CardDescription>
         </CardHeader>
         <CardContent className="space-y-4">
+          {sessionQuery.data?.teacherName && (
+            <TeacherChip
+              name={sessionQuery.data.teacherName}
+              avatar={sessionQuery.data.teacherAvatar}
+            />
+          )}
           <p className="text-muted-foreground text-sm">
             {meQuery.data
               ? `Matrícula: ${meQuery.data.studentMatricula}`

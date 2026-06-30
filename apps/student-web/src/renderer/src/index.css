@@ -2,6 +2,11 @@
 @import 'tw-animate-css';
 @import '@fontsource-variable/nunito';
 
+/* The shared avatar builder lives in packages/avatar; register it so Tailwind
+   generates the utility classes its components use (auto-detection skips it
+   because it resolves through node_modules). */
+@source "../../../../../packages/avatar/src";
+
 @custom-variant dark (&:is(.dark *));
 
 :root {
