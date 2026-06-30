@@ -13,6 +13,7 @@ import { saveToken } from '../lib/session'
 import { notify } from '../lib/toast'
 import { useServerUrl } from '../lib/serverContext'
 import { loadProfile, saveProfile, initials } from '../lib/studentProfile'
+import { maskEmail } from '../lib/mask'
 
 export default function JoinRoute(): React.JSX.Element {
   const navigate = useNavigate()
@@ -20,9 +21,13 @@ export default function JoinRoute(): React.JSX.Element {
   const { teacherUrl } = useServerUrl()
   const api = createApi(teacherUrl)
 
-  const stored = loadProfile()
-  const [name, setName] = useState(stored?.name ?? '')
-  const [matricula, setMatricula] = useState(stored?.matricula ?? '')
+  const storedRaw = loadProfile()
+  // A complete profile (with e-mail) can join straight from the chip; a legacy
+  // profile without e-mail falls back to the form so the now-required e-mail is filled.
+  const stored = storedRaw?.email ? storedRaw : null
+  const [name, setName] = useState(storedRaw?.name ?? '')
+  const [matricula, setMatricula] = useState(storedRaw?.matricula ?? '')
+  const [email, setEmail] = useState(storedRaw?.email ?? '')
   const [error, setError] = useState<string | null>(null)
 
   if (!teacherUrl) {
@@ -40,7 +45,7 @@ export default function JoinRoute(): React.JSX.Element {
 
   const joinMutation = useMutation({
     mutationFn: () => {
-      const profile = stored ?? { name, matricula }
+      const profile = stored ?? { name, matricula, email: email.trim() }
       const parsed = JoinInput.safeParse(profile)
       if (!parsed.success) {
         throw new Error(parsed.error.issues[0]?.message ?? 'Dados inválidos')
@@ -74,7 +79,8 @@ export default function JoinRoute(): React.JSX.Element {
   }
 
   const noSession = active.isError && (active.error as Error & { status?: number })?.status === 404
-  const sessionAvailable = active.data && (active.data.status === 'lobby' || active.data.status === 'running')
+  const sessionAvailable =
+    active.data && (active.data.status === 'lobby' || active.data.status === 'running')
   const examTitle = active.data?.examTitle
 
   return (
@@ -104,11 +110,10 @@ export default function JoinRoute(): React.JSX.Element {
             <div className="flex flex-col items-center gap-4 py-4 text-center">
               <div className="bg-muted/50 flex flex-col items-center gap-3 rounded-2xl p-4">
                 <Loader2 className="text-muted-foreground size-5 animate-spin" />
-                <p className="text-sm font-medium">
-                  Aguardando o professor abrir a sala…
-                </p>
+                <p className="text-sm font-medium">Aguardando o professor abrir a sala…</p>
                 <p className="text-muted-foreground text-xs leading-relaxed">
-                  O professor ainda não iniciou uma sessão. Esta tela atualiza automaticamente a cada 3 segundos.
+                  O professor ainda não iniciou uma sessão. Esta tela atualiza automaticamente a
+                  cada 3 segundos.
                 </p>
               </div>
               <Button variant="secondary" className="w-full" onClick={handleRefresh}>
@@ -140,9 +145,7 @@ export default function JoinRoute(): React.JSX.Element {
                     <p className="truncate text-sm font-bold text-primary-soft-foreground">
                       {stored.name}
                     </p>
-                    <p className="truncate text-xs text-muted-foreground">
-                      {stored.matricula}
-                    </p>
+                    <p className="truncate text-xs text-muted-foreground">{stored.matricula}</p>
                   </div>
                 </div>
               ) : (
@@ -164,6 +167,16 @@ export default function JoinRoute(): React.JSX.Element {
                       value={matricula}
                       onChange={(e) => setMatricula(e.target.value)}
                       placeholder="Número de matrícula"
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="email">E-mail</Label>
+                    <Input
+                      id="email"
+                      type="email"
+                      value={email}
+                      onChange={(e) => setEmail(maskEmail(e.target.value))}
+                      placeholder="Para receber sua nota"
                     />
                   </div>
                 </>
@@ -201,9 +214,7 @@ export default function JoinRoute(): React.JSX.Element {
           {/* ── Error loading (not 404) ─────────────────────────────────── */}
           {active.isError && !noSession && (
             <div className="flex flex-col items-center gap-4 py-4 text-center">
-              <p className="text-destructive text-sm">
-                Erro ao conectar: {String(active.error)}
-              </p>
+              <p className="text-destructive text-sm">Erro ao conectar: {String(active.error)}</p>
               <Button variant="secondary" className="w-full" onClick={handleRefresh}>
                 <RefreshCw className="size-4" />
                 Tentar novamente

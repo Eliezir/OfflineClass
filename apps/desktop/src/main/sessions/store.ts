@@ -1,5 +1,5 @@
 import { randomUUID } from 'node:crypto'
-import { and, asc, desc, eq, inArray, isNotNull, isNull, sql } from 'drizzle-orm'
+import { and, asc, desc, eq, inArray, isNotNull, isNull, ne, sql } from 'drizzle-orm'
 import type {
   CodeLanguage,
   JoinInput,
@@ -23,7 +23,15 @@ import type {
 
 import type { Db } from '../db/client'
 import { rowToQuestion } from '../db/questions-map'
-import { answers, exams, examSessions, questions, students, groups, groupMembers } from '../db/schema'
+import {
+  answers,
+  exams,
+  examSessions,
+  questions,
+  students,
+  groups,
+  groupMembers
+} from '../db/schema'
 import { shuffleStudentsIntoGroups, listGroups } from './groups'
 import { yjsManager } from './yjs'
 
@@ -52,6 +60,7 @@ function rowToLobbyStudent(
     id: row.id,
     name: row.name,
     matricula: row.matricula,
+    email: row.email ?? null,
     joinedAt: row.joinedAt.getTime(),
     lastSeenAt: row.lastSeenAt.getTime(),
     submittedAt: row.submittedAt ? row.submittedAt.getTime() : null,
@@ -70,6 +79,7 @@ function loadDetailById(
       id: examSessions.id,
       examId: examSessions.examId,
       examTitle: exams.title,
+      examSubject: exams.subject,
       status: examSessions.status,
       durationMinutes: examSessions.durationMinutes,
       allowLateJoin: examSessions.allowLateJoin,
@@ -95,6 +105,7 @@ function loadDetailById(
     id: row.id,
     examId: row.examId,
     examTitle: row.examTitle,
+    examSubject: row.examSubject ?? null,
     status: row.status as SessionStatus,
     durationMinutes: row.durationMinutes,
     allowLateJoin: row.allowLateJoin,
@@ -125,6 +136,10 @@ function listAllSessionStudents(db: Db, sessionId: string): SessionLobbyStudent[
   const answered = db
     .select({ studentId: answers.studentId, n: sql<number>`count(*)` })
     .from(answers)
+    // Comment-only rows (a teacher comment on a question the student never
+    // answered) carry an empty value — exclude them so they don't inflate the
+    // answered count.
+    .where(ne(answers.value, ''))
     .groupBy(answers.studentId)
     .all()
   const answeredByStudent = new Map(answered.map((a) => [a.studentId, Number(a.n)]))
@@ -415,6 +430,7 @@ export function joinSession(db: Db, input: JoinInput): JoinResult {
   const sessionId = active.id
   const matricula = input.matricula.trim()
   const name = input.name.trim()
+  const email = input.email?.trim() ? input.email.trim() : null
   const now = new Date()
 
   // If the same student already has a record (e.g. closed the app without
@@ -428,7 +444,9 @@ export function joinSession(db: Db, input: JoinInput): JoinResult {
   if (existing) {
     const token = randomUUID()
     db.update(students)
-      .set({ name, token, lastSeenAt: now, leftAt: null })
+      // Keep an e-mail the teacher may have already filled when the student
+      // rejoins without providing one.
+      .set({ name, token, lastSeenAt: now, leftAt: null, email: email ?? existing.email })
       .where(eq(students.id, existing.id))
       .run()
     return {
@@ -450,6 +468,7 @@ export function joinSession(db: Db, input: JoinInput): JoinResult {
       sessionId,
       name,
       matricula,
+      email,
       token,
       joinedAt: now,
       lastSeenAt: now
@@ -473,10 +492,7 @@ export function joinSession(db: Db, input: JoinInput): JoinResult {
 export function leaveSession(db: Db, token: string): void {
   const student = findStudentByToken(db, token)
   if (!student) return
-  db.update(students)
-    .set({ leftAt: new Date() })
-    .where(eq(students.id, student.id))
-    .run()
+  db.update(students).set({ leftAt: new Date() }).where(eq(students.id, student.id)).run()
 }
 
 export function listLobbyStudents(db: Db, sessionId: string): SessionLobbyStudent[] {
@@ -492,6 +508,10 @@ export function listLobbyStudents(db: Db, sessionId: string): SessionLobbyStuden
   const answered = db
     .select({ studentId: answers.studentId, n: sql<number>`count(*)` })
     .from(answers)
+    // Comment-only rows (a teacher comment on a question the student never
+    // answered) carry an empty value — exclude them so they don't inflate the
+    // answered count.
+    .where(ne(answers.value, ''))
     .groupBy(answers.studentId)
     .all()
   const answeredByStudent = new Map(answered.map((a) => [a.studentId, Number(a.n)]))
@@ -635,7 +655,13 @@ export function recordHeartbeat(db: Db, studentId: string): void {
   db.update(students).set({ lastSeenAt: new Date() }).where(eq(students.id, studentId)).run()
 }
 
-export function saveAnswer(db: Db, studentId: string, questionId: string, value: string, updatedBy?: string | null): void {
+export function saveAnswer(
+  db: Db,
+  studentId: string,
+  questionId: string,
+  value: string,
+  updatedBy?: string | null
+): void {
   const student = loadStudentFull(db, studentId)
   if (!student) throw new SessionError('Aluno não encontrado', 'NOT_FOUND')
   if (student.submittedAt) {
@@ -783,6 +809,7 @@ export function loadStudentAnswers(
       id: examSessions.id,
       examId: examSessions.examId,
       examTitle: exams.title,
+      examSubject: exams.subject,
       ownerId: examSessions.ownerId
     })
     .from(examSessions)
@@ -825,7 +852,7 @@ export function loadStudentAnswers(
     const auto = autoGrade(question, value)
     const correct = auto ? auto.correct : null
     const score = auto ? auto.score : (ans?.score ?? null)
-    return { question, value, correct, score }
+    return { question, value, correct, score, feedback: ans?.feedback ?? null }
   })
 
   // Points-weighted: auto kinds (correct === non-null) already store the earned
@@ -836,14 +863,20 @@ export function loadStudentAnswers(
   )
   const maxScore = reviews.reduce((acc, r) => acc + r.question.points, 0)
 
-  const answeredCount = answerRows.length
+  // Exclude comment-only rows (empty value) so a teacher comment on an
+  // unanswered question doesn't count as answered.
+  const answeredCount = answerRows.filter((a) => a.value !== '').length
 
   return {
     sessionId,
     studentId,
     studentName: studentRow.name,
     studentMatricula: studentRow.matricula,
+    studentEmail: studentRow.email ?? null,
+    studentFeedback: studentRow.feedback ?? null,
+    resultsSentAt: studentRow.resultsSentAt ? studentRow.resultsSentAt.getTime() : null,
     examTitle: sessionRow.examTitle,
+    examSubject: sessionRow.examSubject ?? null,
     groupName,
     submittedAt: studentRow.submittedAt ? studentRow.submittedAt.getTime() : null,
     joinedAt: studentRow.joinedAt.getTime(),
@@ -853,6 +886,12 @@ export function loadStudentAnswers(
     totalScore,
     maxScore
   }
+}
+
+/** Stamp when the teacher e-mailed a student their results (latest send wins).
+    Ownership is already verified by the caller via loadStudentAnswers. */
+export function markResultsSent(db: Db, studentId: string, when: Date): void {
+  db.update(students).set({ resultsSentAt: when }).where(eq(students.id, studentId)).run()
 }
 
 export function gradeAnswer(
@@ -911,4 +950,101 @@ export function gradeAnswer(
       })
       .run()
   }
+}
+
+/** Re-verify the chain teacher → session → student, returning the session's
+    examId. Throws if the teacher doesn't own the session or the student isn't
+    in it. Shared by the comment/e-mail mutations below. */
+function assertOwnsSessionStudent(
+  db: Db,
+  sessionId: string,
+  studentId: string,
+  ownerId: string
+): { examId: string } {
+  const sessionRow = db
+    .select({ examId: examSessions.examId, ownerId: examSessions.ownerId })
+    .from(examSessions)
+    .where(eq(examSessions.id, sessionId))
+    .get()
+  if (!sessionRow || sessionRow.ownerId !== ownerId) {
+    throw new SessionError('Sessão não encontrada', 'NOT_FOUND')
+  }
+  const studentRow = db
+    .select({ id: students.id })
+    .from(students)
+    .where(and(eq(students.id, studentId), eq(students.sessionId, sessionId)))
+    .get()
+  if (!studentRow) throw new SessionError('Aluno não encontrado', 'NOT_FOUND')
+  return { examId: sessionRow.examId }
+}
+
+/** Normalizes a free-text field: trims, and collapses empty to null (clears it). */
+function emptyToNull(value: string): string | null {
+  const trimmed = value.trim()
+  return trimmed === '' ? null : trimmed
+}
+
+/** Set/clear the teacher's free-text feedback on a single answer (any kind). */
+export function commentAnswer(
+  db: Db,
+  sessionId: string,
+  studentId: string,
+  questionId: string,
+  comment: string,
+  ownerId: string
+): void {
+  const { examId } = assertOwnsSessionStudent(db, sessionId, studentId, ownerId)
+  const questionRow = db
+    .select({ id: questions.id })
+    .from(questions)
+    .where(and(eq(questions.id, questionId), eq(questions.examId, examId)))
+    .get()
+  if (!questionRow) throw new SessionError('Questão inválida', 'NOT_FOUND')
+
+  const feedback = emptyToNull(comment)
+  const existing = db
+    .select({ id: answers.id })
+    .from(answers)
+    .where(and(eq(answers.studentId, studentId), eq(answers.questionId, questionId)))
+    .get()
+  const now = new Date()
+  if (existing) {
+    db.update(answers).set({ feedback, updatedAt: now }).where(eq(answers.id, existing.id)).run()
+  } else {
+    // Allow commenting even when the student never answered — insert a blank
+    // answer row so the comment sticks.
+    db.insert(answers)
+      .values({ id: randomUUID(), studentId, questionId, value: '', feedback, updatedAt: now })
+      .run()
+  }
+}
+
+/** Set/clear the teacher's overall remark on a student's exam. */
+export function commentStudent(
+  db: Db,
+  sessionId: string,
+  studentId: string,
+  comment: string,
+  ownerId: string
+): void {
+  assertOwnsSessionStudent(db, sessionId, studentId, ownerId)
+  db.update(students)
+    .set({ feedback: emptyToNull(comment) })
+    .where(eq(students.id, studentId))
+    .run()
+}
+
+/** Set/clear a student's e-mail (teacher fills it in on the results screen). */
+export function setStudentEmail(
+  db: Db,
+  sessionId: string,
+  studentId: string,
+  email: string,
+  ownerId: string
+): void {
+  assertOwnsSessionStudent(db, sessionId, studentId, ownerId)
+  db.update(students)
+    .set({ email: emptyToNull(email) })
+    .where(eq(students.id, studentId))
+    .run()
 }

@@ -1,7 +1,12 @@
 import { ipcMain, type WebContents } from 'electron'
 import {
+  CommentAnswerInput,
+  CommentStudentInput,
+  EmailResultsInput,
   GradeAnswerInput,
   SessionCreateInput,
+  SetStudentEmailInput,
+  type EmailSendResult,
   type SessionAnswersReview,
   type SessionDetail,
   type SessionResultSummary,
@@ -14,6 +19,8 @@ import { getMainWindow } from '../windows'
 import { requireTeacherId } from './auth'
 import type { Db } from '../db/client'
 import {
+  commentAnswer,
+  commentStudent,
   createSession,
   endSession,
   findActiveSessionForOwner,
@@ -23,8 +30,10 @@ import {
   listRecentResultsForOwner,
   listSessionsForOwner,
   loadStudentAnswers,
+  setStudentEmail,
   startSession
 } from '../sessions/store'
+import { sendResults } from '../email/send'
 import type { Rooms } from '../sessions/rooms'
 import { listGroups, createGroup, joinGroup, leaveGroup, deleteGroup } from '../sessions/groups'
 import { groups, students, groupMembers } from '../db/schema'
@@ -33,7 +42,10 @@ import { yjsManager } from '../sessions/yjs'
 import * as Y from 'yjs'
 
 // Registry: groupId -> Map of WebContents -> its onUpdate listener
-const yjsIpcSubscribers = new Map<string, Map<WebContents, (update: Uint8Array, origin: unknown) => void>>()
+const yjsIpcSubscribers = new Map<
+  string,
+  Map<WebContents, (update: Uint8Array, origin: unknown) => void>
+>()
 
 export interface SessionsContext {
   db: Db
@@ -150,6 +162,17 @@ export function registerSessionsHandlers(ctx: SessionsContext): void {
   )
 
   ipcMain.handle(
+    'sessions.commentAnswer',
+    async (_event, rawSessionId, raw): Promise<SessionAnswersReview> => {
+      const ownerId = requireTeacherId(db)
+      const sessionId = typeof rawSessionId === 'string' ? rawSessionId : ''
+      const input = CommentAnswerInput.parse(raw)
+      commentAnswer(db, sessionId, input.studentId, input.questionId, input.comment, ownerId)
+      return loadStudentAnswers(db, sessionId, input.studentId, ownerId)
+    }
+  )
+
+  ipcMain.handle(
     'sessions.createGroup',
     async (_event, rawSessionId, rawName, rawStudentId): Promise<GroupPublic> => {
       requireTeacherId(db)
@@ -171,73 +194,108 @@ export function registerSessionsHandlers(ctx: SessionsContext): void {
   )
 
   ipcMain.handle(
-    'sessions.joinGroup',
-    async (_event, rawGroupId, rawStudentId): Promise<void> => {
-      requireTeacherId(db)
-      const groupId = typeof rawGroupId === 'string' ? rawGroupId : ''
-      const studentId = typeof rawStudentId === 'string' ? rawStudentId : ''
-      const grp = db.select({ sessionId: groups.sessionId }).from(groups).where(eq(groups.id, groupId)).get()
-      if (!grp) throw new Error('Grupo não encontrado')
-      joinGroup(db, groupId, studentId)
-      rooms.updateStudentGroup(studentId, groupId)
-      const groupsList = listGroups(db, grp.sessionId)
-      rooms.toAll(grp.sessionId, { type: 'group.list', groups: groupsList })
-      rooms.toTeachers(grp.sessionId, {
-        type: 'session.lobby.update',
-        students: listLobbyStudents(db, grp.sessionId)
-      })
+    'sessions.commentStudent',
+    async (_event, rawSessionId, raw): Promise<SessionAnswersReview> => {
+      const ownerId = requireTeacherId(db)
+      const sessionId = typeof rawSessionId === 'string' ? rawSessionId : ''
+      const input = CommentStudentInput.parse(raw)
+      commentStudent(db, sessionId, input.studentId, input.comment, ownerId)
+      return loadStudentAnswers(db, sessionId, input.studentId, ownerId)
     }
   )
+
+  ipcMain.handle('sessions.joinGroup', async (_event, rawGroupId, rawStudentId): Promise<void> => {
+    requireTeacherId(db)
+    const groupId = typeof rawGroupId === 'string' ? rawGroupId : ''
+    const studentId = typeof rawStudentId === 'string' ? rawStudentId : ''
+    const grp = db
+      .select({ sessionId: groups.sessionId })
+      .from(groups)
+      .where(eq(groups.id, groupId))
+      .get()
+    if (!grp) throw new Error('Grupo não encontrado')
+    joinGroup(db, groupId, studentId)
+    rooms.updateStudentGroup(studentId, groupId)
+    const groupsList = listGroups(db, grp.sessionId)
+    rooms.toAll(grp.sessionId, { type: 'group.list', groups: groupsList })
+    rooms.toTeachers(grp.sessionId, {
+      type: 'session.lobby.update',
+      students: listLobbyStudents(db, grp.sessionId)
+    })
+  })
 
   ipcMain.handle(
-    'sessions.leaveGroup',
-    async (_event, rawGroupId, rawStudentId): Promise<void> => {
-      requireTeacherId(db)
-      const groupId = typeof rawGroupId === 'string' ? rawGroupId : ''
-      const studentId = typeof rawStudentId === 'string' ? rawStudentId : ''
-      const grp = db.select({ sessionId: groups.sessionId }).from(groups).where(eq(groups.id, groupId)).get()
-      if (!grp) throw new Error('Grupo não encontrado')
-      leaveGroup(db, groupId, studentId)
-      rooms.updateStudentGroup(studentId, null)
-      const groupsList = listGroups(db, grp.sessionId)
-      rooms.toAll(grp.sessionId, { type: 'group.list', groups: groupsList })
-      rooms.toTeachers(grp.sessionId, {
-        type: 'session.lobby.update',
-        students: listLobbyStudents(db, grp.sessionId)
-      })
+    'sessions.setStudentEmail',
+    async (_event, rawSessionId, raw): Promise<SessionAnswersReview> => {
+      const ownerId = requireTeacherId(db)
+      const sessionId = typeof rawSessionId === 'string' ? rawSessionId : ''
+      const input = SetStudentEmailInput.parse(raw)
+      setStudentEmail(db, sessionId, input.studentId, input.email, ownerId)
+      return loadStudentAnswers(db, sessionId, input.studentId, ownerId)
     }
   )
+
+  ipcMain.handle('sessions.leaveGroup', async (_event, rawGroupId, rawStudentId): Promise<void> => {
+    requireTeacherId(db)
+    const groupId = typeof rawGroupId === 'string' ? rawGroupId : ''
+    const studentId = typeof rawStudentId === 'string' ? rawStudentId : ''
+    const grp = db
+      .select({ sessionId: groups.sessionId })
+      .from(groups)
+      .where(eq(groups.id, groupId))
+      .get()
+    if (!grp) throw new Error('Grupo não encontrado')
+    leaveGroup(db, groupId, studentId)
+    rooms.updateStudentGroup(studentId, null)
+    const groupsList = listGroups(db, grp.sessionId)
+    rooms.toAll(grp.sessionId, { type: 'group.list', groups: groupsList })
+    rooms.toTeachers(grp.sessionId, {
+      type: 'session.lobby.update',
+      students: listLobbyStudents(db, grp.sessionId)
+    })
+  })
 
   ipcMain.handle(
-    'sessions.deleteGroup',
-    async (_event, rawGroupId): Promise<void> => {
-      requireTeacherId(db)
-      const groupId = typeof rawGroupId === 'string' ? rawGroupId : ''
-      const grp = db.select({ sessionId: groups.sessionId }).from(groups).where(eq(groups.id, groupId)).get()
-      if (!grp) throw new Error('Grupo não encontrado')
-
-      // 1. Update rooms for all students in group
-      const members = db
-        .select({ studentId: groupMembers.studentId })
-        .from(groupMembers)
-        .where(eq(groupMembers.groupId, groupId))
-        .all()
-      for (const m of members) {
-        rooms.updateStudentGroup(m.studentId, null)
-      }
-
-      // 2. Delete group from DB
-      deleteGroup(db, groupId)
-
-      // 3. Broadcast
-      const groupsList = listGroups(db, grp.sessionId)
-      rooms.toAll(grp.sessionId, { type: 'group.list', groups: groupsList })
-      rooms.toTeachers(grp.sessionId, {
-        type: 'session.lobby.update',
-        students: listLobbyStudents(db, grp.sessionId)
-      })
+    'sessions.emailResults',
+    async (_event, rawSessionId, raw): Promise<EmailSendResult[]> => {
+      const ownerId = requireTeacherId(db)
+      const sessionId = typeof rawSessionId === 'string' ? rawSessionId : ''
+      const input = EmailResultsInput.parse(raw)
+      return sendResults(db, sessionId, ownerId, input)
     }
   )
+
+  ipcMain.handle('sessions.deleteGroup', async (_event, rawGroupId): Promise<void> => {
+    requireTeacherId(db)
+    const groupId = typeof rawGroupId === 'string' ? rawGroupId : ''
+    const grp = db
+      .select({ sessionId: groups.sessionId })
+      .from(groups)
+      .where(eq(groups.id, groupId))
+      .get()
+    if (!grp) throw new Error('Grupo não encontrado')
+
+    // 1. Update rooms for all students in group
+    const members = db
+      .select({ studentId: groupMembers.studentId })
+      .from(groupMembers)
+      .where(eq(groupMembers.groupId, groupId))
+      .all()
+    for (const m of members) {
+      rooms.updateStudentGroup(m.studentId, null)
+    }
+
+    // 2. Delete group from DB
+    deleteGroup(db, groupId)
+
+    // 3. Broadcast
+    const groupsList = listGroups(db, grp.sessionId)
+    rooms.toAll(grp.sessionId, { type: 'group.list', groups: groupsList })
+    rooms.toTeachers(grp.sessionId, {
+      type: 'session.lobby.update',
+      students: listLobbyStudents(db, grp.sessionId)
+    })
+  })
 
   ipcMain.handle(
     'sessions.kickStudent',
@@ -262,10 +320,7 @@ export function registerSessionsHandlers(ctx: SessionsContext): void {
       }
 
       // 2. Mark student as left in the DB
-      db.update(students)
-        .set({ leftAt: new Date() })
-        .where(eq(students.id, studentId))
-        .run()
+      db.update(students).set({ leftAt: new Date() }).where(eq(students.id, studentId)).run()
 
       // 3. Force disconnect/kick WebSocket
       rooms.kickStudent(studentId)
@@ -283,105 +338,90 @@ export function registerSessionsHandlers(ctx: SessionsContext): void {
   // ── Yjs IPC transport for teacher monitor ──────────────────────────────
   // Returns the full serialised Y.Doc state so the renderer can initialise its
   // local copy without going through the WebSocket path.
-  ipcMain.handle(
-    'sessions.getGroupYjsSnapshot',
-    (_event, rawGroupId): Uint8Array => {
-      requireTeacherId(db)
-      const groupId = typeof rawGroupId === 'string' ? rawGroupId : ''
-      const doc = yjsManager.getOrCreateDoc(db, groupId)
-      const state = Y.encodeStateAsUpdate(doc)
-      console.log(`[IPC] getGroupYjsSnapshot group=${groupId} size=${state.length}`)
-      return state
+  ipcMain.handle('sessions.getGroupYjsSnapshot', (_event, rawGroupId): Uint8Array => {
+    requireTeacherId(db)
+    const groupId = typeof rawGroupId === 'string' ? rawGroupId : ''
+    const doc = yjsManager.getOrCreateDoc(db, groupId)
+    const state = Y.encodeStateAsUpdate(doc)
+    console.log(`[IPC] getGroupYjsSnapshot group=${groupId} size=${state.length}`)
+    return state
+  })
+
+  ipcMain.handle('sessions.subscribeGroupYjs', (event, rawGroupId): void => {
+    requireTeacherId(db)
+    const groupId = typeof rawGroupId === 'string' ? rawGroupId : ''
+
+    // Get or create the subscriber map for this group
+    if (!yjsIpcSubscribers.has(groupId)) {
+      yjsIpcSubscribers.set(groupId, new Map())
     }
-  )
+    const groupSubs = yjsIpcSubscribers.get(groupId)!
 
-  ipcMain.handle(
-    'sessions.subscribeGroupYjs',
-    (event, rawGroupId): void => {
-      requireTeacherId(db)
-      const groupId = typeof rawGroupId === 'string' ? rawGroupId : ''
-
-      // Get or create the subscriber map for this group
-      if (!yjsIpcSubscribers.has(groupId)) {
-        yjsIpcSubscribers.set(groupId, new Map())
-      }
-      const groupSubs = yjsIpcSubscribers.get(groupId)!
-
-      // If already subscribed, remove old listener first to avoid duplicates
-      const existingListener = groupSubs.get(event.sender)
-      if (existingListener) {
-        const doc = yjsManager.getOrCreateDoc(db, groupId)
-        doc.off('update', existingListener)
-      }
-
-      console.log(`[IPC] Teacher renderer subscribed to Yjs updates for group=${groupId}`)
-
-      // Push updates to this subscriber whenever the server-side doc changes.
+    // If already subscribed, remove old listener first to avoid duplicates
+    const existingListener = groupSubs.get(event.sender)
+    if (existingListener) {
       const doc = yjsManager.getOrCreateDoc(db, groupId)
-      const onUpdate = (update: Uint8Array, origin: unknown): void => {
-        if (origin === 'ipc-push') return // avoid loops
-        if (event.sender.isDestroyed()) {
-          doc.off('update', onUpdate)
-          groupSubs.delete(event.sender)
-          return
-        }
-        try {
-          event.sender.send('group.yjs.update', groupId, update)
-        } catch {
-          doc.off('update', onUpdate)
-          groupSubs.delete(event.sender)
-        }
-      }
+      doc.off('update', existingListener)
+    }
 
-      doc.on('update', onUpdate)
-      groupSubs.set(event.sender, onUpdate)
+    console.log(`[IPC] Teacher renderer subscribed to Yjs updates for group=${groupId}`)
 
-      // Cleanup when renderer window closes
-      event.sender.once('destroyed', () => {
+    // Push updates to this subscriber whenever the server-side doc changes.
+    const doc = yjsManager.getOrCreateDoc(db, groupId)
+    const onUpdate = (update: Uint8Array, origin: unknown): void => {
+      if (origin === 'ipc-push') return // avoid loops
+      if (event.sender.isDestroyed()) {
         doc.off('update', onUpdate)
         groupSubs.delete(event.sender)
-        console.log(`[IPC] Teacher renderer unsubscribed (destroyed) from group=${groupId}`)
-      })
-    }
-  )
-
-  ipcMain.handle(
-    'sessions.unsubscribeGroupYjs',
-    (event, rawGroupId): void => {
-      const groupId = typeof rawGroupId === 'string' ? rawGroupId : ''
-      const groupSubs = yjsIpcSubscribers.get(groupId)
-      if (groupSubs) {
-        const listener = groupSubs.get(event.sender)
-        if (listener) {
-          const doc = yjsManager.getOrCreateDoc(db, groupId)
-          doc.off('update', listener)
-          groupSubs.delete(event.sender)
-        }
+        return
       }
-      console.log(`[IPC] Teacher renderer unsubscribed from group=${groupId}`)
+      try {
+        event.sender.send('group.yjs.update', groupId, update)
+      } catch {
+        doc.off('update', onUpdate)
+        groupSubs.delete(event.sender)
+      }
     }
-  )
+
+    doc.on('update', onUpdate)
+    groupSubs.set(event.sender, onUpdate)
+
+    // Cleanup when renderer window closes
+    event.sender.once('destroyed', () => {
+      doc.off('update', onUpdate)
+      groupSubs.delete(event.sender)
+      console.log(`[IPC] Teacher renderer unsubscribed (destroyed) from group=${groupId}`)
+    })
+  })
+
+  ipcMain.handle('sessions.unsubscribeGroupYjs', (event, rawGroupId): void => {
+    const groupId = typeof rawGroupId === 'string' ? rawGroupId : ''
+    const groupSubs = yjsIpcSubscribers.get(groupId)
+    if (groupSubs) {
+      const listener = groupSubs.get(event.sender)
+      if (listener) {
+        const doc = yjsManager.getOrCreateDoc(db, groupId)
+        doc.off('update', listener)
+        groupSubs.delete(event.sender)
+      }
+    }
+    console.log(`[IPC] Teacher renderer unsubscribed from group=${groupId}`)
+  })
 
   // ── Awareness IPC transport ──────────────────────────────────────────────
   // Renderer subscribes to receive student awareness updates (cursor positions,
   // presence) forwarded from the server via IPC — no WS binary needed.
-  ipcMain.handle(
-    'sessions.subscribeGroupAwareness',
-    (event, rawGroupId): void => {
-      requireTeacherId(db)
-      const groupId = typeof rawGroupId === 'string' ? rawGroupId : ''
-      rooms.subscribeAwarenessIpc(groupId, event.sender)
-      event.sender.once('destroyed', () => rooms.unsubscribeAwarenessIpc(groupId, event.sender))
-      console.log(`[IPC] Teacher renderer subscribed to awareness for group=${groupId}`)
-    }
-  )
+  ipcMain.handle('sessions.subscribeGroupAwareness', (event, rawGroupId): void => {
+    requireTeacherId(db)
+    const groupId = typeof rawGroupId === 'string' ? rawGroupId : ''
+    rooms.subscribeAwarenessIpc(groupId, event.sender)
+    event.sender.once('destroyed', () => rooms.unsubscribeAwarenessIpc(groupId, event.sender))
+    console.log(`[IPC] Teacher renderer subscribed to awareness for group=${groupId}`)
+  })
 
-  ipcMain.handle(
-    'sessions.unsubscribeGroupAwareness',
-    (event, rawGroupId): void => {
-      const groupId = typeof rawGroupId === 'string' ? rawGroupId : ''
-      rooms.unsubscribeAwarenessIpc(groupId, event.sender)
-      console.log(`[IPC] Teacher renderer unsubscribed from awareness group=${groupId}`)
-    }
-  )
+  ipcMain.handle('sessions.unsubscribeGroupAwareness', (event, rawGroupId): void => {
+    const groupId = typeof rawGroupId === 'string' ? rawGroupId : ''
+    rooms.unsubscribeAwarenessIpc(groupId, event.sender)
+    console.log(`[IPC] Teacher renderer unsubscribed from awareness group=${groupId}`)
+  })
 }

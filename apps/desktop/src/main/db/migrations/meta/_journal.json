@@ -64,6 +64,13 @@
       "when": 1782670473121,
       "tag": "0008_magenta_madelyne_pryor",
       "breakpoints": true
+    },
+    {
+      "idx": 9,
+      "version": "6",
+      "when": 1782852788127,
+      "tag": "0009_aromatic_zuras",
+      "breakpoints": true
     }
   ]
 }
