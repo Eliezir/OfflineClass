@@ -1,0 +1,2 @@
+# Never commit the real .env (contains DB passwords and JWT secrets)
+.env

@@ -1,0 +1,34 @@
+{
+  "name": "@offlineclass/sync",
+  "private": true,
+  "version": "0.0.0",
+  "description": "PowerSync self-hosted config and backend connector for OfflineClass cloud sync",
+  "type": "module",
+  "scripts": {
+    "dev": "tsx watch src/index.ts",
+    "start": "tsx src/index.ts",
+    "migrate": "tsx src/migrate.ts",
+    "typecheck": "tsc --noEmit",
+    "db:generate": "drizzle-kit generate",
+    "docker:start": "powersync docker start --directory powersync",
+    "docker:stop": "powersync docker stop --directory powersync",
+    "docker:reset": "powersync docker reset --directory powersync"
+  },
+  "dependencies": {
+    "@hono/node-server": "^1.19.14",
+    "@offlineclass/shared": "workspace:*",
+    "bcryptjs": "^3.0.3",
+    "drizzle-orm": "^0.45.2",
+    "hono": "^4.12.21",
+    "jose": "^5.0.0",
+    "postgres": "^3.4.4",
+    "zod": "^4.4.3"
+  },
+  "devDependencies": {
+    "@types/bcryptjs": "^3.0.0",
+    "@types/node": "^22.19.1",
+    "drizzle-kit": "^0.31.10",
+    "tsx": "^4.19.0",
+    "typescript": "^5.9.3"
+  }
+}

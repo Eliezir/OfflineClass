@@ -1,5 +1,6 @@
 import { Trans } from '@lingui/react/macro'
 import { PageHeader } from '@renderer/shared/components/page-header'
+import { SyncSection } from '@renderer/modules/sync/components/sync-section'
 import { AppearanceSection } from './appearance-section'
 import { GeneralSection } from './general-section'
 import { LanguageSection } from './language-section'
@@ -18,6 +19,9 @@ export function SettingsPage(): React.JSX.Element {
         <LanguageSection />
         <div className="@2xl:col-span-2">
           <NotificationsSection />
+        </div>
+        <div className="@2xl:col-span-2">
+          <SyncSection />
         </div>
         <div className="@2xl:col-span-2">
           <GeneralSection />

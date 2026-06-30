@@ -1,0 +1,22 @@
+FROM node:22-alpine
+
+# Install pnpm
+RUN corepack enable && corepack prepare pnpm@latest --activate
+
+WORKDIR /app
+
+# Copy workspace manifests + lockfile for pnpm
+COPY package.json pnpm-workspace.yaml pnpm-lock.yaml ./
+COPY packages/shared/package.json ./packages/shared/
+COPY apps/sync/package.json ./apps/sync/
+
+RUN pnpm install --frozen-lockfile --filter @offlineclass/sync...
+
+# Copy source
+COPY packages/shared/ ./packages/shared/
+COPY apps/sync/ ./apps/sync/
+
+WORKDIR /app/apps/sync
+
+# Run migrations then start the connector
+CMD ["sh", "-c", "node --import tsx/esm src/migrate.ts && node --import tsx/esm src/index.ts"]

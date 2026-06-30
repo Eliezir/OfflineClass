@@ -43,17 +43,14 @@ graph TD
   end
 
   subgraph VPS["VPS (optional, internet)"]
-    Cloud["Cloud Backend<br/>(Hono + Postgres)"]
-    Email["Transactional Email<br/>(SendGrid / Mailgun / Resend — TBD)"]
+    Cloud["apps/sync<br/>(PowerSync + Hono connector + Postgres)"]
   end
 
   StudentA -- "HTTPS + Socket.IO" --> Desktop
   StudentB -- "HTTPS + Socket.IO" --> Desktop
   StudentN -- "HTTPS + Socket.IO" --> Desktop
 
-  Desktop -. "HTTPS (manual sync only)" .-> Cloud
-  Cloud -- "SMTP / API" --> Email
-  Email -. "Email" .-> StudentA
+  Desktop -. "PowerSync uploadData() / Sync Streams (manual, optional)" .-> Cloud
 ```
 
 Solid lines are always-on within the classroom session. Dotted lines are opt-in and triggered manually by the teacher.
@@ -67,7 +64,7 @@ OfflineClass/
 ├── apps/
 │   ├── desktop/          # Electron app (teacher's machine)
 │   ├── student-web/      # Vite SPA served by desktop's Hono over LAN
-│   └── cloud/            # Hono + Drizzle + Postgres backend on the VPS
+│   └── sync/             # PowerSync self-hosted config + Hono connector (optional cloud sync)
 ├── packages/
 │   └── shared/           # Zod schemas, ULID helper, shared DTOs
 ├── docs/
@@ -163,42 +160,62 @@ Pure SPA. Served by the desktop's Hono server over LAN (HTTPS). Loads in a PC br
 - TanStack Query for HTTP calls (`/api/join`, `/api/heartbeat`, `/api/answers`)
 - No build-time backend coupling: the SPA is statically served and discovers the backend by virtue of being served from it (same origin)
 
-### `apps/cloud` (optional cloud-sync tier — planned via PowerSync)
+### `apps/sync` (optional cloud-sync tier — PowerSync self-hosted)
 
-> **Status:** not in the repo. The earlier apresenta-derived `apps/cloud` clone was deleted,
-> and the sync tier will be implemented with **PowerSync** rather than the hand-rolled
-> sync_outbox / LWW design described below. PowerSync handles replication, conflict
-> resolution, and the local-to-remote bridge itself, so the implementation will reduce to a
-> source DB (Postgres), the PowerSync service, and a thin auth-token + write-upload connector.
-> The sections below are kept as the original product intent and will be revised when that
-> work starts.
+> **Status (2026-06-30):** implemented in phases 0–4, 6–7. `apps/sync` is in the repo.
+> The `apps/cloud` clone (apresenta-derived, hand-rolled LWW) was deleted; this replaced it.
+>
+> Architecture: `apps/sync` = PowerSync Docker config (Sync Streams, edition 3) + Hono backend
+> connector (Postgres, Drizzle, JWT). Desktop gets `@powersync/node` + bridge module
+> (`apps/desktop/src/main/sync/`). Full design: [`docs/offline-first/`](./offline-first/README.md).
+> Decisions D-107..D-111 in `decisions.md`. Open: Q-202 (cloud auth UX), Q-205 (PII),
+> Q-206 (VPS hosting), Q-207 (retroactive migration). Phase 5 (end-to-end validation) pending.
+
+The self-hosted cloud stack. Backs up teacher provas and results. Never speaks Yjs.
+
+```
+apps/sync/
+├── src/
+│   ├── index.ts                      # Hono connector (POST /api/upload, POST /api/auth/*, GET /health)
+│   ├── db.ts                         # Drizzle + postgres-js client
+│   ├── schema.ts                     # Postgres schema (mirrors SQLite syncable tables)
+│   ├── auth.ts                       # HS256 JWT utils (jose)
+│   ├── migrate.ts                    # idempotent SQL migration runner
+│   └── migrations/
+│       └── 0001_init.sql             # tables + indexes
+└── powersync/
+    ├── service.yaml                  # PowerSync Service config (replication, storage, auth)
+    ├── sync-config.yaml              # Sync Streams (edition 3, auto_subscribe: true)
+    ├── cli.yaml                      # PowerSync CLI config
+    └── docker/
+        ├── docker-compose.yaml       # pg-db + pg-storage + connector + powersync
+        ├── .env.example
+        └── modules/postgres/db/init-scripts/01-init.sql  # publication FOR ALL TABLES
+```
 
 The VPS-hosted backend. Receives definitions + results, sends email. Never speaks Yjs.
 
 ```
-apps/cloud/
+apps/sync/                            # PowerSync self-hosted config + Hono backend connector
 ├── src/
-│   ├── index.ts                      # Hono server bootstrap
-│   ├── db/
-│   │   ├── client.ts                 # Drizzle + pg
-│   │   ├── schema.ts                 # cloud schema (often mirrors desktop)
-│   │   └── migrations/
-│   ├── auth/
-│   │   ├── teachers.ts               # bcrypt + JWT
-│   │   └── middleware.ts             # Bearer extraction + verify
-│   ├── routes/
-│   │   ├── auth.ts                   # POST /auth/register, /auth/login, /auth/revoke
-│   │   ├── sync-provas.ts            # POST/GET /api/sync/provas
-│   │   ├── sync-results.ts           # POST /api/sync/sessions/results
-│   │   ├── email-results.ts          # POST /api/sync/sessions/results/email
-│   │   └── health.ts
-│   └── email/
-│       ├── provider.ts               # interface (Resend/Mailgun/SendGrid behind it)
-│       └── queue.ts                  # retry + DLQ
-├── Dockerfile
-├── docker-compose.dev.yaml           # cloud + postgres for local dev
-└── package.json
+│   ├── index.ts                      # Hono: POST /api/upload, POST /api/auth/*, GET /health
+│   ├── db.ts                         # Drizzle + postgres-js client
+│   ├── schema.ts                     # Postgres schema (mirrors syncable SQLite tables)
+│   ├── auth.ts                       # HS256 JWT utils (jose + bcryptjs)
+│   ├── migrate.ts                    # idempotent SQL migration runner
+│   └── migrations/
+│       └── 0001_init.sql
+└── powersync/
+    ├── service.yaml                  # PowerSync Service config (replication, storage, JWT auth)
+    ├── sync-config.yaml              # Sync Streams (edition 3, auto_subscribe: true, JOIN queries)
+    ├── cli.yaml                      # PowerSync CLI config
+    └── docker/
+        ├── docker-compose.yaml       # pg-db + pg-storage + connector + powersync
+        ├── .env.example
+        └── modules/postgres/db/init-scripts/01-init.sql  # CREATE PUBLICATION
 ```
+
+The old `apps/cloud` (apresenta-derived hand-rolled LWW) was removed.
 
 ### `packages/shared`
 
@@ -268,6 +285,12 @@ Authentication happens once in the Socket.IO handshake middleware (`io.use()`): 
 
 ### Desktop SQLite (source of truth, local)
 
+> **Sync note:** the `cloud_link` and `sync_outbox` tables below belonged to the superseded
+> LWW design. Under PowerSync (D-101) the upload queue is PowerSync's internal `ps_crud`
+> table and the cloud link is a JWT-based connector — neither is a hand-rolled SQLite table.
+> The audited *implemented* schema (which does **not** include these tables) is in
+> `docs/offline-first/inventory.md`.
+
 Tables (overview — full DDL lives in `apps/desktop/src/main/db/schema.ts`):
 
 ```
@@ -311,11 +334,19 @@ cloud_tokens              id, userId, token, kind (access|refresh), expiresAt
 email_queue               id, recipientEmail, recipientName, payload (JSON), status, attempts, lastError, sentAt
 ```
 
-Cloud rows have the same `id`, `updatedAt`, `deletedAt` columns as the desktop side — that's what makes LWW work.
+Cloud rows share the same `id` (UUID v4) as the desktop side. (The original LWW rationale
+tied to `updatedAt`/`deletedAt` is superseded by PowerSync's checkpoint-based consistency —
+see `docs/offline-first/powersync-design.md`.)
 
 ### ID strategy
 
-All synced entities use **ULID** generated client-side (on the desktop). Reasons:
+> **Implemented reality (audited 2026-06-29):** synced entities use **UUID v4** generated
+> client-side via `node:crypto` `randomUUID()` — **not** ULID, and there is no
+> `packages/shared/ids.ts`. UUID v4 is offline-generable and accepted by PowerSync, so the
+> ULID migration described below is **not** planned for the sync branch. See
+> `docs/offline-first/inventory.md`.
+
+The original target was **ULID** generated client-side (on the desktop). Reasons:
 
 - Offline-generable — no server round trip to mint an ID
 - Time-ordered (good for natural sort, debugging, index locality on Postgres)
@@ -324,13 +355,22 @@ All synced entities use **ULID** generated client-side (on the desktop). Reasons
 
 The `packages/shared/ids.ts` helper exports `ulid()` (random suffix) and `ulidAt(date)` (controllable timestamp for testing).
 
-### Soft delete + LWW
+### Soft delete + conflict resolution
 
-- Every syncable row has `updatedAt` (server-side `Date`) and `deletedAt` (nullable).
-- A soft-deleted row stays in both DBs until the user explicitly purges.
-- On sync push, the server accepts the incoming row only if `incoming.updatedAt > existing.updatedAt`.
-- On sync pull, the desktop applies the cloud's version only if it's newer than the local copy.
-- Auto-incremented counters are **forbidden** for syncable entities — they break under offline ID generation.
+> **Superseded by PowerSync (D-101).** The hand-rolled LWW-by-`updatedAt` scheme below is no
+> longer the plan. PowerSync is **server-authoritative**: conflict resolution and consistency
+> come from its write-checkpoint system, and the client-to-server write path is a
+> developer-defined `uploadData()` connector. Soft-delete is currently **not implemented**
+> (deletes are hard deletes; no `deletedAt` column) and whether it enters the sync branch is
+> an open question — see `docs/offline-first/open-questions.md` (Q-204). Counters/auto-IDs
+> are still forbidden for syncable entities (IDs are UUID v4, client-generable).
+
+Original (superseded) intent:
+
+- Every syncable row had `updatedAt` and `deletedAt` (nullable).
+- A soft-deleted row stayed in both DBs until the user explicitly purged.
+- Sync push accepted the incoming row only if `incoming.updatedAt > existing.updatedAt`.
+- Sync pull applied the cloud's version only if newer than the local copy.
 
 ---
 
@@ -475,29 +515,14 @@ Submitted state is irreversible. The Y.Doc is kept (for audit / projector replay
 - After linking, the header shows: `synced`, `N pending`, `syncing…`, or `error`. Clicking it triggers a sync round.
 - A "session results ready" notification appears in the header when a session ends, prompting the teacher to push.
 
-### Sync round
+### Sync round (PowerSync model)
 
-```mermaid
-sequenceDiagram
-  participant T as Teacher (clicks sync)
-  participant D as Desktop (sync worker)
-  participant SQL as SQLite (sync_outbox)
-  participant C as Cloud
-
-  T->>D: click "sync now"
-  D->>SQL: read pending (provas, questions, materials refs, results)
-  D->>C: POST /api/sync/provas (batch with updatedAt)
-  C->>C: LWW check per row
-  C-->>D: { accepted: [...], rejected: [...] }
-  D->>SQL: mark accepted as syncedAt = now
-  D->>C: GET /api/sync/provas?since=<lastPullAt>
-  C-->>D: { provas: [...newer than since...] }
-  D->>SQL: apply LWW locally
-  D->>C: POST /api/sync/sessions/results (if any pending)
-  C-->>D: { ok }
-  D->>SQL: clear results from outbox
-  D-->>T: indicator → "synced"
-```
+> The hand-rolled `sync_outbox` round below was **superseded by PowerSync (D-101)**. With
+> PowerSync there is no manual outbox or LWW round: local writes land in PowerSync's
+> `ps_crud` queue, the SDK's `uploadData()` pushes them to a backend connector that applies
+> them to Postgres synchronously, and the read path replicates Postgres back to the local
+> SQLite via Sync Rules. The full, authoritative flow lives in
+> [`docs/offline-first/powersync-design.md`](./offline-first/powersync-design.md).
 
 ### What syncs
 
@@ -630,13 +655,13 @@ pnpm --filter @offlineclass/cloud dev         # Hono dev server + postgres via d
 
 ### Migrations
 
-- Both desktop and cloud generate Drizzle migrations via `drizzle-kit generate`. Migrations live alongside their respective schemas (`apps/desktop/src/main/db/migrations/`, `apps/cloud/src/db/migrations/`).
-- Desktop applies migrations in `app.whenReady` before opening any window. Cloud applies migrations on container start (`migrate.ts` invoked by the entrypoint).
+- Both desktop and sync connector generate Drizzle migrations via `drizzle-kit generate`. Migrations live alongside their respective schemas (`apps/desktop/src/main/db/migrations/`, `apps/sync/src/migrations/`).
+- Desktop applies migrations in `app.whenReady` before opening any window. The sync connector applies migrations on container start (`migrate.ts` invoked by the entrypoint).
 
 ### Distribution
 
 - **Desktop:** `electron-builder` outputs `.exe` (Windows), `.dmg` (macOS), `.AppImage` (Linux). Code signing deferred (TCC scope skips it; institutional rollout would add it).
-- **Cloud:** Docker image pushed to the VPS. Compose file on the VPS includes Postgres + the cloud container. TLS termination strategy deferred (reverse proxy vs Hono direct).
+- **Sync stack:** `apps/sync` Docker Compose (`powersync/docker/docker-compose.yaml`) runs on the VPS: two Postgres instances (source + storage), the Hono connector, and the PowerSync Service. TLS termination strategy deferred (❓ Q-206).
 
 ---
 
@@ -681,8 +706,8 @@ Each phase ends with a buildable commit. Cloud and desktop can be developed in p
 | **5** | Groups + lobby | `groups` + `group_members`, three formation modes, UI on both sides |
 | **6** | Socket.IO + Yjs collaboration | `socket.io` attached to Hono's Node server, rooms topology, `y-socket.io` provider, Y.Doc per group, awareness/cursors, snapshot persistence |
 | **7** | Session lifecycle | start/end transitions, Y.Doc → `group_answers` extraction on submit, dashboard live view |
-| **8** | Cloud sync (definitions) | Sync UI in header, link cloud, push/pull with LWW, soft-delete propagation |
-| **9** | Cloud sync (results + email) | Push results after `ended`, email-results flow via cloud's email module |
+| **8** | Cloud sync (definitions) | Sync UI in header, link cloud, push/pull via **PowerSync** (provas + questions). Detailed plan: `docs/offline-first/implementation-plan.md` |
+| **9** | Cloud sync (results) | Push session results after `ended` via PowerSync. (Email-results is out of the sync branch scope — see `docs/offline-first/scope.md`.) |
 | **10** | Packaging | electron-builder for desktop, Dockerfile + compose for cloud |
 
 Each phase maps to a milestone in the GitHub backlog. Issues are labeled by `area:` (cloud / desktop / student-web / shared) and `phase:` (0..10).
@@ -705,8 +730,9 @@ Each phase maps to a milestone in the GitHub backlog. Issues are labeled by `are
 | Rich editor | Tiptap + `extension-collaboration` + `extension-collaboration-cursor` | Plugs into the shared Y.Doc; collab cursors for free |
 | Local DB | better-sqlite3 + Drizzle | Synchronous SQLite on the main process; Drizzle for typed migrations |
 | Cloud DB | Postgres + Drizzle | Mirrors desktop's ORM; same migration tooling |
+| Cloud sync engine | **PowerSync** (`@powersync/node`, self-hosted service) | Server-authoritative bi-directional sync between local SQLite and Postgres; replaces hand-rolled `sync_outbox`/LWW (D-101). See `docs/offline-first/` |
 | Schemas | Zod (in `packages/shared`) + typed Socket.IO event maps (`socket-events.ts`) | Validates wire format on both ends of every boundary; Socket.IO generics enforce event shape at compile time |
-| IDs | ULID via `packages/shared/ids.ts` | Offline-generable, time-ordered, URL-safe |
+| IDs | **UUID v4** via `node:crypto` `randomUUID()` (implemented) | Offline-generable, accepted by PowerSync. (ULID was the original target; not adopted — see `docs/offline-first/inventory.md`.) |
 | Avatars | `react-nice-avatar`-style generative SVG | No image storage, customizable, renderable everywhere |
 | Discovery | `bonjour-service` (mDNS) + `qrcode` | POC-validated |
 | TLS | Self-signed cert generated on first boot | LAN context; manual cert accept on student browsers |

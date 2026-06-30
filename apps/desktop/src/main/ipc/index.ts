@@ -5,6 +5,7 @@ import { registerDiscoveryHandlers, type DiscoveryContext } from './discovery'
 import { registerExamsHandlers, type ExamsContext } from './exams'
 import { registerQuestionsHandlers, type QuestionsContext } from './questions'
 import { registerSessionsHandlers, type SessionsContext } from './sessions'
+import { registerSyncHandlers, type SyncContext } from './sync'
 
 export interface IpcContext {
   auth: AuthContext
@@ -12,6 +13,7 @@ export interface IpcContext {
   exams: ExamsContext
   questions: QuestionsContext
   sessions: SessionsContext
+  sync: SyncContext
 }
 
 export function registerIpcHandlers(ctx: IpcContext): void {
@@ -24,4 +26,6 @@ export function registerIpcHandlers(ctx: IpcContext): void {
   registerExamsHandlers(ctx.exams)
   registerQuestionsHandlers(ctx.questions)
   registerSessionsHandlers(ctx.sessions)
+  // Cloud sync (optional, stay-local ON by default).
+  registerSyncHandlers(ctx.sync)
 }

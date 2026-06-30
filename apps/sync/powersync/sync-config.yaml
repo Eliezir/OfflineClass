@@ -1,0 +1,58 @@
+# Sync Streams configuration for OfflineClass (edition 3)
+# https://docs.powersync.com/sync/streams/overview
+#
+# All streams use auto_subscribe: true → data syncs on connect (offline-first,
+# same behaviour as legacy Sync Rules). Data is scoped per professor via
+# auth.user_id() which equals the JWT `sub` claim (= localTeacherId = owner_id).
+#
+# Sync Streams (vs legacy Sync Rules) enable JOIN support — required to scope
+# questions, students and answers through their parent's owner_id.
+
+config:
+  edition: 3
+
+streams:
+  # Exam definitions (the "provas")
+  exams:
+    auto_subscribe: true
+    query: >
+      SELECT *
+      FROM exams
+      WHERE owner_id = auth.user_id()
+
+  # Questions belong to exams; scoped via JOIN so no owner_id column needed here
+  questions:
+    auto_subscribe: true
+    query: >
+      SELECT q.*
+      FROM questions q
+      JOIN exams e ON q.exam_id = e.id
+      WHERE e.owner_id = auth.user_id()
+
+  # Session metadata (results tier — Phase 6)
+  exam_sessions:
+    auto_subscribe: true
+    query: >
+      SELECT *
+      FROM exam_sessions
+      WHERE owner_id = auth.user_id()
+
+  # Students (PII — Q-205 governs what columns are included)
+  # token column intentionally excluded from Postgres schema
+  students:
+    auto_subscribe: true
+    query: >
+      SELECT s.*
+      FROM students s
+      JOIN exam_sessions es ON s.session_id = es.id
+      WHERE es.owner_id = auth.user_id()
+
+  # Student answers (+ score for graded results)
+  answers:
+    auto_subscribe: true
+    query: >
+      SELECT a.*
+      FROM answers a
+      JOIN students s ON a.student_id = s.id
+      JOIN exam_sessions es ON s.session_id = es.id
+      WHERE es.owner_id = auth.user_id()

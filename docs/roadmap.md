@@ -98,8 +98,10 @@ Replace `modules/home/mock-data.ts` with real queries: recent provas via `useExa
 - **WebSocket transport.** POC uses `@hono/node-ws`. An earlier ask was **Socket.IO**. Default:
   keep node-ws (working); swap to Socket.IO as a later, isolated change if still wanted. The
   Sessão stream should not block on this — build against the current transport.
-- **Cloud sync** — the old `apps/cloud` clone has been **removed**. The optional sync tier
-  will be built on **PowerSync** (separate, later task); nothing in the repo yet.
+- **Cloud sync** — implemented in phases 0–4, 6–7 (branch `pedro/feature/offline-first`).
+  `apps/sync` (PowerSync self-hosted + Hono connector) and `apps/desktop/src/main/sync/`
+  (bridge + PowerSync client) are in place. Phase 5 (end-to-end validation with the stack
+  running) and Phase 8 (final docs) are the remaining items. Decisions: `docs/offline-first/decisions.md` (D-107..D-111). Open questions: Q-202 (cloud auth UX), Q-205 (PII), Q-206 (VPS), Q-207 (retroactive migration).
 - **Exports** (CSV/JSON) and **packaging** (electron-builder + bundled migrations + TLS) come
   after the teacher screens are wired.
 

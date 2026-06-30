@@ -1,0 +1,16 @@
+# PowerSync CLI configuration for local development
+# https://docs.powersync.com/tools/cli
+#
+# Generated equivalent of: powersync init self-hosted + powersync docker configure
+#
+# The CLI links to the local PowerSync Service started by docker-compose.
+# Run: pnpm --filter @offlineclass/sync docker:start
+#  or: cd powersync && powersync docker start
+
+instance:
+  type: self-hosted
+  url: http://localhost:8080
+
+plugins:
+  docker:
+    project_name: offlineclass_powersync

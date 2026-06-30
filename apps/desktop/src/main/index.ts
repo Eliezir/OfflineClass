@@ -12,6 +12,7 @@ import { findFreePort } from './find-free-port'
 import { startServer, type ServerHandle } from './server'
 import { Rooms } from './sessions/rooms'
 import { ensureSelfSignedCert } from './tls'
+import { getOrCreatePowerSyncDb, syncConnect, closePowerSyncDb } from './sync/client'
 import icon from '../../resources/icon.png?asset'
 
 const DEFAULT_PORT = 8000
@@ -135,13 +136,19 @@ async function bootstrap(): Promise<void> {
 
     if (!mdnsHandle) mdnsHandle = await publishMdns(serverHandle.port)
 
+    // Initialize PowerSync managed DB (stay-local ON by default — no connect yet).
+    getOrCreatePowerSyncDb()
+    // If the teacher previously enabled sync, reconnect after restart.
+    void syncConnect()
+
     if (!ipcRegistered) {
       registerIpcHandlers({
         auth: { db },
         discovery: { port: serverHandle.port, mdnsName: mdnsHandle.name },
         exams: { db },
         questions: { db },
-        sessions: { db, rooms: activeRooms }
+        sessions: { db, rooms: activeRooms },
+        sync: { db }
       })
       ipcRegistered = true
     }
@@ -202,8 +209,11 @@ app.on('before-quit', async (event) => {
   if (!serverHandle && !mdnsHandle) return
   event.preventDefault()
   try {
-    await mdnsHandle?.unpublish()
-    await serverHandle?.stop()
+    await Promise.all([
+      mdnsHandle?.unpublish(),
+      serverHandle?.stop(),
+      closePowerSyncDb()
+    ])
   } finally {
     serverHandle = null
     mdnsHandle = null

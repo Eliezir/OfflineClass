@@ -1,0 +1,31 @@
+# PowerSync Service configuration for OfflineClass (self-hosted)
+# https://docs.powersync.com/configuration/powersync-service/self-hosted-instances
+#
+# Environment variables are resolved from docker/.env (via env_file in docker-compose).
+# To start: pnpm --filter @offlineclass/sync docker:start
+#           OR  cd powersync && powersync docker start
+
+# Source database: Postgres with logical replication enabled
+replication:
+  connections:
+    - type: postgresql
+      uri: !env PS_DATA_SOURCE_URI
+      sslmode: disable
+      # Publication created by connector migration (exams, questions, exam_sessions, students, answers)
+      publication: offlineclass_pub
+
+# Bucket storage: Postgres (separate instance from source DB)
+storage:
+  type: postgresql
+  uri: !env PS_STORAGE_URI
+
+# Client JWT authentication — connector signs JWTs with this HS256 secret
+# The JWT sub claim == localTeacherId == owner_id in sync tables
+client_auth:
+  supabase_jwt_secret: !env PS_JWT_SECRET
+
+# Sync Streams config (edition 3 — replaces legacy Sync Rules)
+sync_config:
+  path: /config/sync-config.yaml
+
+port: 8080

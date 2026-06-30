@@ -1,0 +1,94 @@
+# Docker Compose for OfflineClass PowerSync self-hosted stack
+#
+# Services:
+#   pg-db       — Source Postgres (offlineclass data; WAL logical replication)
+#   pg-storage  — Storage Postgres (PowerSync bucket storage)
+#   connector   — Backend connector (Hono; applies uploadData() to pg-db; issues JWTs)
+#   powersync   — PowerSync Service (replicates pg-db → clients via Sync Streams)
+#
+# Start:  docker compose up -d          (or: pnpm --filter @offlineclass/sync docker:start)
+# Stop:   docker compose down
+# Reset:  docker compose down -v        (removes volumes — full clean state)
+#
+# First run: connector auto-runs migrations (creates tables + publication).
+
+services:
+  pg-db:
+    image: postgres:16
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: ${PS_PG_DB_USER}
+      POSTGRES_PASSWORD: ${PS_PG_DB_PASSWORD}
+      POSTGRES_DB: ${PS_PG_DB_NAME}
+    volumes:
+      - pg_data:/var/lib/postgresql/data
+      - ./modules/postgres/db/init-scripts:/docker-entrypoint-initdb.d
+    ports:
+      - "${PS_PG_DB_PORT:-5432}:5432"
+    command: ["postgres", "-c", "wal_level=logical"]
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${PS_PG_DB_USER} -d ${PS_PG_DB_NAME}"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+  pg-storage:
+    image: postgres:16
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: ${PS_PG_STORAGE_USER}
+      POSTGRES_PASSWORD: ${PS_PG_STORAGE_PASSWORD}
+      POSTGRES_DB: ${PS_PG_STORAGE_DB}
+    volumes:
+      - pg_storage_data:/var/lib/postgresql/data
+    ports:
+      - "${PS_PG_STORAGE_PORT:-5433}:5432"
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${PS_PG_STORAGE_USER} -d ${PS_PG_STORAGE_DB}"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+  connector:
+    build:
+      context: ../../../..
+      dockerfile: apps/sync/powersync/docker/Dockerfile.connector
+    restart: unless-stopped
+    env_file: .env
+    environment:
+      CONNECTOR_DATABASE_URL: postgresql://${PS_PG_DB_USER}:${PS_PG_DB_PASSWORD}@pg-db:5432/${PS_PG_DB_NAME}
+    depends_on:
+      pg-db:
+        condition: service_healthy
+    ports:
+      - "${CONNECTOR_PORT:-3001}:3001"
+    healthcheck:
+      test: ["CMD-SHELL", "wget -qO- http://localhost:3001/health > /dev/null || exit 1"]
+      interval: 10s
+      timeout: 5s
+      retries: 6
+      start_period: 15s
+
+  powersync:
+    image: journeyapps/powersync-service:latest
+    restart: unless-stopped
+    command: ["start", "-r", "unified"]
+    volumes:
+      - ../service.yaml:/config/service.yaml
+      - ../sync-config.yaml:/config/sync-config.yaml
+    env_file: .env
+    environment:
+      POWERSYNC_CONFIG_PATH: /config/service.yaml
+    depends_on:
+      pg-db:
+        condition: service_healthy
+      pg-storage:
+        condition: service_healthy
+      connector:
+        condition: service_healthy
+    ports:
+      - "${POWERSYNC_PORT:-8080}:8080"
+
+volumes:
+  pg_data:
+  pg_storage_data:

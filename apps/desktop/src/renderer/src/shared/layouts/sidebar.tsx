@@ -9,6 +9,7 @@ import { Popover, PopoverContent, PopoverItem, PopoverTrigger } from '@renderer/
 import { cn } from '@renderer/shared/utils'
 import { WindowControls } from '@renderer/shared/layouts/window-controls'
 import { SidebarUser } from '@renderer/modules/auth/components/sidebar-user'
+import { useSyncStatus } from '@renderer/modules/sync/queries'
 import { NotificationsMenu } from './notifications-menu'
 
 type NavTo = '/home' | '/provas' | '/sessao' | '/resultados' | '/profile' | '/settings'
@@ -118,6 +119,9 @@ function NavRow({ item, active }: { item: NavItem; active: boolean }): React.JSX
 
 export function Sidebar(): React.JSX.Element {
   const pathname = useRouterState({ select: (s) => s.location.pathname })
+  const { data: syncStatus } = useSyncStatus()
+  // Show an attention dot on Settings when sync is unlinked, error, or missing.
+  const showSyncBadge = syncStatus != null && (!syncStatus.linked || syncStatus.state === 'error')
 
   return (
     <aside
@@ -159,7 +163,16 @@ export function Sidebar(): React.JSX.Element {
         {primaryNav.map((item) => (
           <NavRow key={item.to} item={item} active={item.to === pathname} />
         ))}
-        <NavRow item={settingsNav} active={pathname === '/settings'} />
+        {/* Settings row with optional sync-attention badge */}
+        <div className="relative">
+          <NavRow item={settingsNav} active={pathname === '/settings'} />
+          {showSyncBadge && (
+            <span
+              className="pointer-events-none absolute top-1.5 right-1.5 size-2 rounded-full bg-warning"
+              aria-hidden
+            />
+          )}
+        </div>
       </nav>
 
       <div className="mt-2 border-t border-border px-3 py-2" style={noDragRegion}>

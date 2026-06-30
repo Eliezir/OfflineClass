@@ -1,0 +1,14 @@
+node_modules
+dist
+.DS_Store
+*.log*
+*.tsbuildinfo
+
+# Environment variables — never commit secrets
+powersync/docker/.env
+
+# Generated Drizzle migrations (keep hand-written ones, ignore generated artifacts)
+drizzle/
+
+# PowerSync CLI state
+.powersync/

@@ -97,7 +97,20 @@ const api = {
   ...bridge,
   ...domain,
   print: (): Promise<void> => ipcRenderer.invoke('sessions.print'),
-  exportPdf: (): Promise<string | null> => ipcRenderer.invoke('sessions.exportPdf')
+  exportPdf: (): Promise<string | null> => ipcRenderer.invoke('sessions.exportPdf'),
+  sync: {
+    getStatus: () => ipcRenderer.invoke('sync.getStatus'),
+    linkAccount: (args: {
+      connectorUrl: string
+      email: string
+      password: string
+      mode: 'register' | 'login'
+    }) => ipcRenderer.invoke('sync.linkAccount', args),
+    enable: () => ipcRenderer.invoke('sync.enable'),
+    disable: () => ipcRenderer.invoke('sync.disable'),
+    trigger: () => ipcRenderer.invoke('sync.trigger'),
+    unlinkAccount: () => ipcRenderer.invoke('sync.unlinkAccount')
+  }
 }
 export type ApiSurface = typeof api
 
