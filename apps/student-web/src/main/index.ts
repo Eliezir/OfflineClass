@@ -2,6 +2,7 @@ import { app, BrowserWindow, ipcMain, shell } from 'electron'
 import { join } from 'path'
 import { electronApp, is } from '@electron-toolkit/utils'
 import { Bonjour } from 'bonjour-service'
+import { initAutoUpdater } from './updater'
 import icon from '../../resources/icon.png?asset'
 
 // Self-signed cert from the teacher's LAN server must be accepted.
@@ -170,6 +171,9 @@ app.whenReady().then(() => {
 
   registerIpc()
   createWindow()
+
+  // Background update check (packaged builds only; silent when offline).
+  initAutoUpdater(() => mainWindow)
 
   // Auto-start mDNS discovery once the window is ready to receive events.
   if (mainWindow) {
