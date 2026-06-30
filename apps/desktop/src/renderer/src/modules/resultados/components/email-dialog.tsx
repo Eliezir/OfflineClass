@@ -18,6 +18,7 @@ import { Input } from '@renderer/shared/ui/input'
 import { Label } from '@renderer/shared/ui/label'
 import { Textarea } from '@renderer/shared/ui/textarea'
 import { notify } from '@renderer/shared/services/toast'
+import { useSlowActionToast } from '@renderer/shared/hooks/use-slow-action-toast'
 import { cn, maskEmail } from '@renderer/shared/utils'
 import { useEmailSettingsQuery } from '@renderer/modules/settings/email-settings'
 import { useEmailResults, useSetStudentEmail } from '../queries'
@@ -97,6 +98,12 @@ function EmailDialogBody({
 
   const configured = !!settings.data
   const sending = send.isPending || setEmail.isPending
+
+  useSlowActionToast(
+    sending,
+    t`Enviando pelo servidor de e-mail… Se demorar, confira host, porta/conexão segura e use uma Senha de app do Gmail.`,
+    { id: 'email-send' }
+  )
   const selectedCount = useMemo(
     () => students.filter((s) => selected[s.studentId]).length,
     [students, selected]
@@ -223,8 +230,9 @@ function EmailDialogBody({
                 <Trans>
                   O e-mail é enviado em nome de{' '}
                   <span className="font-semibold text-foreground">{settings.data.fromName}</span>{' '}
-                  <span className="text-foreground">&lt;{settings.data.fromEmail}&gt;</span> e inclui
-                  os dados do professor no rodapé, além da disciplina, prova, nota e comentários.
+                  <span className="text-foreground">&lt;{settings.data.fromEmail}&gt;</span> e
+                  inclui os dados do professor no rodapé, além da disciplina, prova, nota e
+                  comentários.
                 </Trans>
               ) : (
                 <Trans>
@@ -296,11 +304,7 @@ function EmailDialogBody({
             <Button
               onClick={handleSend}
               disabled={
-                sending ||
-                !configured ||
-                selectedCount === 0 ||
-                !subject.trim() ||
-                !message.trim()
+                sending || !configured || selectedCount === 0 || !subject.trim() || !message.trim()
               }
             >
               {sending ? <Loader2 className="size-4 animate-spin" /> : <Send className="size-4" />}

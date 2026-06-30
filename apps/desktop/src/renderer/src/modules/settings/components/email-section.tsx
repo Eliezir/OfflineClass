@@ -7,6 +7,7 @@ import { Input } from '@renderer/shared/ui/input'
 import { Label } from '@renderer/shared/ui/label'
 import { Switch } from '@renderer/shared/ui/switch'
 import { notify } from '@renderer/shared/services/toast'
+import { useSlowActionToast } from '@renderer/shared/hooks/use-slow-action-toast'
 import {
   useEmailSettingsQuery,
   useSaveEmailSettings,
@@ -85,6 +86,12 @@ function EmailForm({ initial }: { initial: EmailSettings | null }): React.JSX.El
   const test = useTestEmailSettings()
 
   const [form, setForm] = useState<FormState>(() => toForm(initial))
+
+  useSlowActionToast(
+    test.isPending,
+    t`Conectando ao servidor… Se demorar, confira host, porta/conexão segura e use uma Senha de app do Gmail.`,
+    { id: 'email-test' }
+  )
 
   const set = <K extends keyof FormState>(key: K, value: FormState[K]): void =>
     setForm((prev) => ({ ...prev, [key]: value }))
