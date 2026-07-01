@@ -530,7 +530,7 @@ export default function TestRoute(): React.JSX.Element {
       <SettingsDialog open={settingsOpen} onOpenChange={setSettingsOpen} />
 
       <ol
-        className="mx-auto flex max-w-2xl flex-col gap-4 px-3 py-4 sm:px-4"
+        className="mx-auto flex w-full max-w-2xl flex-col gap-4 px-3 py-4 sm:px-4"
         style={{ fontSize: 'calc(1rem * var(--font-scale))' }}
       >
         {scrambledQuestions.map((q, idx) => (
@@ -1001,4 +1001,3 @@ function CollabEditor({
     </div>
   )
 }
-
