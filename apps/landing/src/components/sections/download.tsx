@@ -8,6 +8,7 @@ import {
   Lightbulb,
   MonitorDown,
   Terminal,
+  TriangleAlert,
 } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Logo } from '@/components/logo'
@@ -226,8 +227,8 @@ export function Download() {
                 Como instalar
               </h3>
               <p className="mt-2 text-sm text-muted-foreground text-pretty">
-                Os instaladores ainda não possuem assinatura digital. Baixe somente pelos releases
-                oficiais deste projeto.
+                Os instaladores ainda não possuem assinatura digital, por isso o sistema pode
+                exibir um aviso de segurança. Baixe somente pelos releases oficiais deste projeto.
               </p>
             </div>
 
@@ -236,6 +237,18 @@ export function Download() {
                 <div className="flex items-center gap-2 font-semibold">
                   <MonitorDown className="size-5 text-primary" />
                   Windows
+                </div>
+                <div className="mt-3 flex items-start gap-3 rounded-xl border border-amber/40 bg-amber/10 p-3.5">
+                  <TriangleAlert className="mt-0.5 size-5 shrink-0 text-amber" />
+                  <div>
+                    <p className="text-sm font-semibold text-foreground">
+                      O Windows pode proteger o computador
+                    </p>
+                    <p className="mt-1 text-xs leading-relaxed text-muted-foreground">
+                      Esse aviso aparece porque o instalador ainda não é assinado, não porque o
+                      arquivo falhou na verificação.
+                    </p>
+                  </div>
                 </div>
                 <ol className="mt-3 list-decimal space-y-2 pl-5 text-sm leading-relaxed text-muted-foreground marker:text-foreground">
                   <li>
@@ -264,12 +277,18 @@ export function Download() {
                   <li>Abra o Terminal e execute o comando do app instalado:</li>
                 </ol>
                 <div className="mt-3 space-y-2">
-                  <code className="block overflow-x-auto rounded-lg bg-muted px-3 py-2.5 font-mono text-[11px] text-foreground sm:text-xs">
-                    {MAC_TEACHER_COMMAND}
-                  </code>
-                  <code className="block overflow-x-auto rounded-lg bg-muted px-3 py-2.5 font-mono text-[11px] text-foreground sm:text-xs">
-                    {MAC_STUDENT_COMMAND}
-                  </code>
+                  <div>
+                    <p className="mb-1.5 text-xs font-semibold text-foreground">Professor</p>
+                    <code className="block overflow-x-auto rounded-lg bg-muted px-3 py-2.5 font-mono text-[11px] text-foreground sm:text-xs">
+                      {MAC_TEACHER_COMMAND}
+                    </code>
+                  </div>
+                  <div>
+                    <p className="mb-1.5 text-xs font-semibold text-foreground">Aluno</p>
+                    <code className="block overflow-x-auto rounded-lg bg-muted px-3 py-2.5 font-mono text-[11px] text-foreground sm:text-xs">
+                      {MAC_STUDENT_COMMAND}
+                    </code>
+                  </div>
                 </div>
               </div>
             </div>
