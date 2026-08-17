@@ -18,6 +18,7 @@ nsis:
   uninstallDisplayName: ${productName}
   createDesktopShortcut: always
 mac:
+  executableName: OfflineClass Student
   entitlementsInherit: build/entitlements.mac.plist
   notarize: false
 dmg:

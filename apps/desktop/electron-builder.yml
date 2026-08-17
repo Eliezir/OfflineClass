@@ -1,5 +1,5 @@
-appId: com.electron.app
-productName: frontend
+appId: com.offlineclass.teacher
+productName: OfflineClass
 directories:
   buildResources: build
 files:
@@ -14,6 +14,9 @@ extraResources:
   # meta/_journal.json the runtime migrator needs as a resource instead.
   - from: src/main/db/migrations
     to: migrations
+  # The teacher's LAN server also serves the student SPA to browsers.
+  - from: ../student-web/out/renderer
+    to: student-web/out/renderer
 asarUnpack:
   - resources/**
   # The Claude Agent SDK ships a native CLI binary that cannot execute from
@@ -28,6 +31,7 @@ nsis:
   uninstallDisplayName: ${productName}
   createDesktopShortcut: always
 mac:
+  executableName: OfflineClass
   entitlementsInherit: build/entitlements.mac.plist
   extendInfo:
     - NSCameraUsageDescription: Application requests access to the device's camera.
