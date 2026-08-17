@@ -6,6 +6,9 @@ import {
   ArrowUpRight,
   Smartphone,
   Lightbulb,
+  MonitorDown,
+  Terminal,
+  TriangleAlert,
 } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Logo } from '@/components/logo'
@@ -18,6 +21,9 @@ import { site } from '@/content'
 
 type AppDef = (typeof site.apps)[number]
 type ReleaseStatus = ReturnType<typeof useReleasesContext>['status']
+const MAC_TEACHER_COMMAND = 'xattr -dr com.apple.quarantine "/Applications/OfflineClass.app"'
+const MAC_STUDENT_COMMAND =
+  'xattr -dr com.apple.quarantine "/Applications/OfflineClass Student.app"'
 
 function detectMobile(): boolean {
   if (typeof navigator === 'undefined') return false
@@ -191,8 +197,8 @@ export function Download() {
             Baixe e comece a aplicar.
           </h2>
           <p className="mx-auto mt-4 max-w-xl text-lg text-muted-foreground text-pretty">
-            Dois apps de desktop: o do professor abre a sala, o do aluno entra na prova. Windows
-            disponível agora — macOS e Linux em breve.
+            Dois apps de desktop: o do professor abre a sala, o do aluno entra na prova. Windows e
+            macOS disponíveis agora.
           </p>
         </BlurFade>
 
@@ -210,6 +216,84 @@ export function Download() {
             </BlurFade>
           ))}
         </div>
+
+        <BlurFade delay={0.35}>
+          <div className="mx-auto mt-12 max-w-4xl border-t border-border pt-10 text-left">
+            <div className="max-w-2xl">
+              <p className="text-xs font-semibold tracking-wide text-primary uppercase">
+                Depois do download
+              </p>
+              <h3 className="mt-2 text-2xl font-semibold tracking-tight sm:text-3xl">
+                Como instalar
+              </h3>
+              <p className="mt-2 text-sm text-muted-foreground text-pretty">
+                Os instaladores ainda não possuem assinatura digital, por isso o sistema pode
+                exibir um aviso de segurança. Baixe somente pelos releases oficiais deste projeto.
+              </p>
+            </div>
+
+            <div className="mt-7 grid gap-8 md:grid-cols-2 md:gap-12">
+              <div>
+                <div className="flex items-center gap-2 font-semibold">
+                  <MonitorDown className="size-5 text-primary" />
+                  Windows
+                </div>
+                <div className="mt-3 flex items-start gap-3 rounded-xl border border-amber/40 bg-amber/10 p-3.5">
+                  <TriangleAlert className="mt-0.5 size-5 shrink-0 text-amber" />
+                  <div>
+                    <p className="text-sm font-semibold text-foreground">
+                      O Windows pode proteger o computador
+                    </p>
+                    <p className="mt-1 text-xs leading-relaxed text-muted-foreground">
+                      Esse aviso aparece porque o instalador ainda não é assinado, não porque o
+                      arquivo falhou na verificação.
+                    </p>
+                  </div>
+                </div>
+                <ol className="mt-3 list-decimal space-y-2 pl-5 text-sm leading-relaxed text-muted-foreground marker:text-foreground">
+                  <li>
+                    Abra o instalador{' '}
+                    <code className="font-mono text-xs text-foreground">.exe</code>.
+                  </li>
+                  <li>
+                    Se o SmartScreen aparecer, escolha{' '}
+                    <strong className="font-semibold text-foreground">Mais informações</strong> e
+                    depois{' '}
+                    <strong className="font-semibold text-foreground">Executar assim mesmo</strong>.
+                  </li>
+                </ol>
+              </div>
+
+              <div>
+                <div className="flex items-center gap-2 font-semibold">
+                  <Terminal className="size-5 text-primary" />
+                  macOS
+                </div>
+                <ol className="mt-3 list-decimal space-y-2 pl-5 text-sm leading-relaxed text-muted-foreground marker:text-foreground">
+                  <li>
+                    Abra o <code className="font-mono text-xs text-foreground">.dmg</code> e arraste
+                    o app para Aplicativos.
+                  </li>
+                  <li>Abra o Terminal e execute o comando do app instalado:</li>
+                </ol>
+                <div className="mt-3 space-y-2">
+                  <div>
+                    <p className="mb-1.5 text-xs font-semibold text-foreground">Professor</p>
+                    <code className="block overflow-x-auto rounded-lg bg-muted px-3 py-2.5 font-mono text-[11px] text-foreground sm:text-xs">
+                      {MAC_TEACHER_COMMAND}
+                    </code>
+                  </div>
+                  <div>
+                    <p className="mb-1.5 text-xs font-semibold text-foreground">Aluno</p>
+                    <code className="block overflow-x-auto rounded-lg bg-muted px-3 py-2.5 font-mono text-[11px] text-foreground sm:text-xs">
+                      {MAC_STUDENT_COMMAND}
+                    </code>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </BlurFade>
 
         <BlurFade delay={0.4}>
           <p className="mt-10 text-sm text-muted-foreground">

@@ -1,17 +1,15 @@
 name: Release
 
-# Builds the OfflineClass Windows installers and publishes them to a single
+# Builds the OfflineClass Windows and macOS installers and publishes them to a single
 # GitHub Release. Run manually from the Actions tab.
-#
-# Windows-only: the Linux (AppImage/deb) targets were dropped — the deb build
-# needs extra per-app metadata and Linux isn't a target platform for the
-# classroom machines. The build matrix below documents how to re-enable Linux.
 #
 # What it produces (one combined Release tagged v<version>):
 #   - Teacher app  (@offlineclass/desktop)     → offlineclass-<version>-setup.exe
-#                                                 + latest.yml  (auto-update)
+#                                                 + offlineclass-<version>.dmg
+#                                                 + update metadata
 #   - Student app  (@offlineclass/student-web) → offlineclass-student-<version>-setup.exe
-#                                                 + student.yml (auto-update)
+#                                                 + offlineclass-student-<version>.dmg
+#                                                 + update metadata
 #
 # The Release is built as a draft, then published automatically once both builds
 # succeed (uncheck the `publish` input to leave it a draft for manual review).
@@ -64,7 +62,7 @@ jobs:
               --draft \
               --target "$GITHUB_SHA" \
               --title "$tag" \
-              --notes "OfflineClass $tag — Teacher (desktop) and Student apps for Windows and Linux." \
+              --notes "OfflineClass $tag — Teacher and Student apps for Windows and macOS." \
               ${{ inputs.prerelease && '--prerelease' || '' }}
           fi
 
@@ -75,19 +73,24 @@ jobs:
       fail-fast: false
       matrix:
         include:
-          # Windows-only: the Linux (AppImage/deb) targets were dropped — see the
-          # `on:` note below. Re-add ubuntu-latest rows with `builder: --linux
-          # AppImage deb` to bring Linux back.
           # Teacher app
           - app: '@offlineclass/desktop'
             dir: apps/desktop
             os: windows-latest
             builder: --win
+          - app: '@offlineclass/desktop'
+            dir: apps/desktop
+            os: macos-latest
+            builder: --mac
           # Student app
           - app: '@offlineclass/student-web'
             dir: apps/student-web
             os: windows-latest
             builder: --win
+          - app: '@offlineclass/student-web'
+            dir: apps/student-web
+            os: macos-latest
+            builder: --mac
 
     steps:
       - name: Checkout
@@ -106,14 +109,17 @@ jobs:
           node-version: 22
           cache: pnpm
 
-      # Install just this app and its workspace deps. The app's postinstall runs
-      # `electron-builder install-app-deps`, rebuilding native modules
-      # (better-sqlite3 in the teacher app) for the current OS + Electron ABI.
+      # Install the workspace so the teacher package can include the student
+      # browser bundle. Postinstall rebuilds native modules for this OS and ABI.
       - name: Install dependencies
-        run: pnpm install --frozen-lockfile --filter ${{ matrix.app }}...
+        run: pnpm install --frozen-lockfile
 
       - name: Build renderer + main
         run: pnpm --filter ${{ matrix.app }} run build
+
+      - name: Build student browser bundle for teacher server
+        if: matrix.app == '@offlineclass/desktop'
+        run: pnpm --filter @offlineclass/student-web run build
 
       # Package and publish to the draft Release. electron-builder reads each
       # app's electron-builder.yml (GitHub publish provider) and uploads the

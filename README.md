@@ -39,16 +39,16 @@ O foco do projeto está no estudo de **Sistemas Operacionais e Redes**, exploran
 
 ## Stack tecnológica
 
-| Camada               | Tecnologia                                                                |
-| -------------------- | ------------------------------------------------------------------------- |
-| Desktop (professor)  | Electron + React 19 + Tailwind v4 + shadcn (radix-nova) + TanStack Query  |
-| Servidor LAN         | Hono + WebSockets (`@hono/node-ws` para Yjs) + Node `https`               |
-| Web do aluno         | React 19 + Vite + Tailwind v4 + shadcn + Yjs + Tiptap + `WebSocket`       |
-| Cloud (VPS opcional) | Hono + Postgres + Drizzle                                                 |
-| DB local             | better-sqlite3 + Drizzle (WAL mode)                                       |
-| Schemas/contratos    | Zod em `packages/shared` (tipos compartilhados client/server)             |
-| Descoberta           | mDNS (`bonjour-service`) + QR code (`qrcode`)                             |
-| Distribuição         | electron-builder (executável único por SO)                                |
+| Camada               | Tecnologia                                                               |
+| -------------------- | ------------------------------------------------------------------------ |
+| Desktop (professor)  | Electron + React 19 + Tailwind v4 + shadcn (radix-nova) + TanStack Query |
+| Servidor LAN         | Hono + WebSockets (`@hono/node-ws` para Yjs) + Node `https`              |
+| Web do aluno         | React 19 + Vite + Tailwind v4 + shadcn + Yjs + Tiptap + `WebSocket`      |
+| Cloud (VPS opcional) | Hono + Postgres + Drizzle                                                |
+| DB local             | better-sqlite3 + Drizzle (WAL mode)                                      |
+| Schemas/contratos    | Zod em `packages/shared` (tipos compartilhados client/server)            |
+| Descoberta           | mDNS (`bonjour-service`) + QR code (`qrcode`)                            |
+| Distribuição         | electron-builder (executável único por SO)                               |
 
 A escolha das ferramentas prioriza um único runtime JavaScript em toda a stack, schemas compartilhados nas duas pontas de cada fronteira, e zero dependência de internet em runtime.
 
@@ -86,21 +86,52 @@ OfflineClass/
 └── docs/              # architecture.md, features.md
 ```
 
-## Como começar
+## Instalação
 
-> Setup detalhado por app será adicionado conforme cada fase do plano de implementação avança (veja a seção *Implementation phases* em `docs/architecture.md`).
+Baixe o instalador mais recente na página de
+[`Releases`](https://github.com/Eliezir/OfflineClass/releases). Há dois aplicativos:
 
-### Pré-requisitos
-- Node.js 20+
-- pnpm 9+
-- Rede Wi-Fi local (não precisa de acesso à internet)
+- **OfflineClass Professor**: cria provas, abre a sala e hospeda o servidor local.
+- **OfflineClass Aluno**: encontra a sala e permite que o aluno participe da prova.
 
-### Instalação (em breve)
+### Windows
+
+1. Baixe o arquivo `.exe` correspondente ao aplicativo desejado.
+2. Abra o instalador e conclua as etapas exibidas.
+3. Se o Windows SmartScreen aparecer, clique em **Mais informações** e depois em
+   **Executar assim mesmo**. Os instaladores atuais ainda não possuem assinatura digital.
+
+### macOS
+
+1. Baixe o arquivo `.dmg` correspondente ao aplicativo desejado.
+2. Abra a imagem e arraste o aplicativo para **Aplicativos**.
+3. Como os builds atuais ainda não são assinados pela Apple, abra o Terminal e execute o
+   comando correspondente ao aplicativo que instalou:
+
+Professor:
+
+```bash
+xattr -dr com.apple.quarantine "/Applications/OfflineClass.app"
+```
+
+Aluno:
+
+```bash
+xattr -dr com.apple.quarantine "/Applications/OfflineClass Student.app"
+```
+
+Depois, abra o aplicativo normalmente pela pasta **Aplicativos**. Execute esses comandos
+somente para arquivos baixados da página oficial de Releases do projeto.
+
+### Desenvolvimento local
+
+Pré-requisitos: Node.js 22, pnpm 10 e uma rede Wi-Fi local para testar sessões entre máquinas.
+
 ```bash
 git clone https://github.com/Eliezir/OfflineClass.git
 cd OfflineClass
-pnpm install
-# instruções específicas de cada app (desktop / student-web / cloud) serão documentadas
+pnpm install --frozen-lockfile
+pnpm dev
 ```
 
 ## Equipe
